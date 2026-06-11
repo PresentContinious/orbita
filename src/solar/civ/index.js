@@ -334,6 +334,34 @@ export class Civ {
     this._buildYard(st, myPlanets)
     const hasYard = myPlanets.some((p) => p.shipyard)
 
+    // гибридная оборона: с тыловой планеты уходят дешёвые диверсанты —
+    // рвать шахтёров и караваны врага, максимум урона при минимуме затрат
+    if (st.tactic === 'defense') {
+      const saboteurs = myShips.filter((s) => s.kind === 'raider').length
+      if (saboteurs < 3 && st.credits >= SHIP.raider.cost && st.ore >= SHIP.raider.ore) {
+        const rear =
+          myPlanets
+            .filter((p) => !p.ground && !this.ships.some((s) => CAP_KINDS.includes(s.kind) && s.hp > 0 && this.hostile(st.id, s.owner) && dist(s, p) < 420))
+            .sort((a, b) => b.pop - a.pop)[0] || myPlanets[0]
+        const r = this._spawnShip('raider', st, rear)
+        if (r) {
+          st.credits -= SHIP.raider.cost
+          st.ore -= SHIP.raider.ore
+          r.mission = { type: 'sabotage', enemy: enemy.id }
+          if (Math.random() < 0.4) this.log(`🗡 ${st.name} шлёт диверсантов в тыл ${enemy.name}`, { x: rear.x, y: rear.y })
+        }
+      }
+    }
+
+    // наёмники: за большое золото вольница на время топит снабжение врага
+    const pirateSt = this.states.find((s) => s.pirate)
+    if (pirateSt && !pirateSt.contract && st.credits >= 300 && Math.random() < 0.25) {
+      st.credits -= 250
+      pirateSt.credits += 250
+      pirateSt.contract = { employer: st.id, enemy: enemy.id, until: this.t + 90 }
+      this.log(`🏴‍☠️💰 ${st.name} нанимает вольницу против ${enemy.name} — золото за кровь`, { imp: true })
+    }
+
     // флот: тяжёлые корпуса требуют руду и верфь
     if (hasYard && st.credits >= SHIP.dread.cost && st.ore >= SHIP.dread.ore && myDreads.length < 3) {
       const d = this._spawnShip('dread', st, myPlanets[0])
@@ -363,7 +391,18 @@ export class Civ {
     if (st.tactic === 'assault') {
       if (idle.length >= 2) {
         const target = ePlanets[0]
-        for (const d of idle) d.mission = { type: 'siege', planet: target.id }
+        // большой флот воюет по всей стране: ядро штурмует, лишние вымпелы
+        // обкладывают остальные планеты — глушат перехватчиков и подкрепления
+        const spare = ePlanets.length > 1 ? Math.min(idle.length - 2, 2, ePlanets.length - 1) : 0
+        const mains = idle.slice(0, idle.length - Math.max(spare, 0))
+        for (const d of mains) d.mission = { type: 'siege', planet: target.id }
+        let bi = 1
+        for (const d of idle) {
+          if (d.mission) continue
+          d.mission = { type: 'blockade', planet: ePlanets[bi % ePlanets.length].id }
+          bi++
+        }
+        if (spare > 0) this.log(`♟ ${st.name} обкладывает тылы ${enemy.name} — поддержка с других планет глушится блокадой`)
         this.log(`⚔️ флот ${st.name} идёт на штурм ${target.name}`, { x: target.x, y: target.y, imp: true })
       }
       // десант волнами: на одном транспорте максимум 500 человек —
@@ -505,8 +544,16 @@ export class Civ {
         this.log(`🏴‍☠️ со стапелей вольницы сошёл корсар`, { x: den.x, y: den.y, imp: true })
       }
     }
-    // цель — грабёж транспортов и шахтёров; корсары охотятся наравне со стаей
-    const prey = this.ships.filter((s) => (s.kind === 'transport' || s.kind === 'miner') && s.owner !== st.id)
+    // наёмный контракт: истёк или враг сгинул — забываем
+    if (st.contract && (this.t > st.contract.until || !this.stateById(st.contract.enemy))) st.contract = null
+
+    // цель — грабёж транспортов и шахтёров; корсары охотятся наравне со стаей.
+    // по контракту бьём врага нанимателя, нанимателя не трогаем
+    let prey = this.ships.filter((s) => (s.kind === 'transport' || s.kind === 'miner') && s.owner !== st.id)
+    if (st.contract) {
+      const hired = prey.filter((s) => s.owner === st.contract.enemy)
+      prey = hired.length ? hired : prey.filter((s) => s.owner !== st.contract.employer)
+    }
     if (prey.length) {
       for (const r of [...raiders, ...corsairs]) {
         if (!r.mission || r.mission.type !== 'hunt') {
@@ -719,6 +766,32 @@ export class Civ {
           }
           this._holdOrbit(sh, homeP, homeP.r + 26, h)
           continue
+        }
+
+        // диверсант: глубокий рейд по экономике — только шахтёры и караваны,
+        // на военных не отвлекается, домой не возвращается (расходный материал)
+        if (sh.kind === 'raider' && m?.type === 'sabotage') {
+          if (!this.isWar(sh.owner, m.enemy) || !this.stateById(m.enemy)) {
+            sh.mission = null
+          } else {
+            let prey = null
+            let bd = Infinity
+            for (const o of this.ships) {
+              if (o.hp <= 0 || o.owner !== m.enemy || (o.kind !== 'miner' && o.kind !== 'transport')) continue
+              const d = dist(sh, o)
+              if (d < bd) {
+                bd = d
+                prey = o
+              }
+            }
+            if (prey) {
+              this._attackRun(sh, prey, h, 8)
+            } else {
+              const eHome = this.planetsOf(this.stateById(m.enemy))[0]
+              if (eHome) this._holdOrbit(sh, eHome, 380, h)
+            }
+            continue
+          }
         }
 
         // палубная тактика носителя
@@ -1279,6 +1352,9 @@ export class Civ {
           const pts =
             sh.kind === 'dread' ? 10 : sh.kind === 'cruiser' ? 6 : sh.kind === 'destroyer' ? 4 : sh.kind === 'transport' ? 4 : sh.kind === 'miner' ? 3 : 1
           diplomacy.addWarScore(this, killer.id, victim.id, pts)
+          // военный трофей: груз сбитого снабженца достаётся победителю
+          if (sh.kind === 'miner' && sh.mission?.haul) killer.ore += Math.round(sh.mission.haul * 0.6)
+          if (sh.kind === 'transport' && sh.mission?.type === 'trade') killer.credits += 15
         }
       }
       if (sh.kind === 'dread' && killer?.pirate) {
@@ -1373,8 +1449,18 @@ export class Civ {
       const defSt = this.stateById(target.owner)
       if (!defSt || !this.hostile(defSt.id, t.owner)) continue
       t.intCalled = true
+      // обложенная блокадой планета перехватчиков не поднимает — вот зачем обкладывают тылы
       const base = this.e.planets
-        .filter((p) => p.alive && p.owner === defSt.id && p.id !== target.id && p.pop > 1 && !p.ground && dist(p, t) < 900)
+        .filter(
+          (p) =>
+            p.alive &&
+            p.owner === defSt.id &&
+            p.id !== target.id &&
+            p.pop > 1 &&
+            !p.ground &&
+            dist(p, t) < 900 &&
+            !this.ships.some((s) => CAP_KINDS.includes(s.kind) && s.hp > 0 && this.hostile(defSt.id, s.owner) && dist(s, p) < 340),
+        )
         .sort((a, b) => dist(a, t) - dist(b, t))[0]
       if (!base) continue
       let raised = 0
@@ -1637,6 +1723,8 @@ export class Civ {
         return `осада ${pName(m.planet)}`
       case 'hunt':
         return sh.interceptor ? 'перехватывает десантный конвой' : 'охотится на добычу'
+      case 'sabotage':
+        return `диверсия в тылу ${this.stateById(m.enemy)?.name || '?'}`
       case 'raid':
         return `рейд по тылам ${this.stateById(m.enemy)?.name || '?'}`
       case 'blockade':
