@@ -788,19 +788,20 @@ export class Engine {
       const a = this._gravityAt(m.x, m.y, null, 'small')
       m.vx += a.x * hs
       m.vy += a.y * hs
-      // боеголовка государств: лёгкое донаведение на цель в конце пути
+      // боеголовка государств: терминальное наведение — по движущейся планете
+      // ракета больше не мажет (промахи делали залпы бессмысленной тратой)
       if ((m.kind === 'warhead' || m.kind === 'breaker') && m.target) {
         const p = this.planets.find((q) => q.id === m.target)
         if (p && p.alive) {
           const d = Math.hypot(p.x - m.x, p.y - m.y)
-          if (d < 320) {
+          if (d < 420) {
             const sp = Math.hypot(m.vx, m.vy) || 1
             const want = Math.atan2(p.y - m.y, p.x - m.x)
             const cur = Math.atan2(m.vy, m.vx)
             let diff = want - cur
             while (diff > Math.PI) diff -= TAU
             while (diff < -Math.PI) diff += TAU
-            const turn = clamp(diff, -0.9 * hs, 0.9 * hs)
+            const turn = clamp(diff, -2.4 * hs, 2.4 * hs)
             m.vx = Math.cos(cur + turn) * sp
             m.vy = Math.sin(cur + turn) * sp
           }
