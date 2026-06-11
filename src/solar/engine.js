@@ -21,6 +21,8 @@ const G_BOOST = 9
 // Смягчение гравитации — небольшое, чтобы близкие пролёты реально швыряло
 const EPS2 = 60
 const LOST_DIST = 3600
+// Логика цивилизаций тикает фиксированным шагом — поведение не зависит от скорости и FPS
+const CIV_TICK = 0.05
 
 // Сфера влияния планеты: внутри неё работает захват на орбиту
 const soiOf = (r) => clamp(r * 5, 45, 160)
@@ -64,6 +66,7 @@ export class Engine {
     this.timeScale = 1
     this.paused = false
     this.simT = 0
+    this.civAcc = 0
     this.visT = 0
     this.followId = null
     this.hoverId = null
@@ -166,6 +169,7 @@ export class Engine {
     this.sunAlive = true
     this.nova = null
     this.civ.reset()
+    this.civAcc = 0
     this.genId++
     this.resetView()
     this.flash = Math.max(this.flash, 0.25)
@@ -202,6 +206,7 @@ export class Engine {
     this.sunAlive = true
     this.nova = null
     this.civ?.reset()
+    this.civAcc = 0
     this.flash = Math.max(this.flash, 0.18)
   }
 
@@ -1027,7 +1032,15 @@ export class Engine {
     }
 
     this.moonAngle += h * (TAU / 2.4)
-    this.civ?.update(h, dt)
+    // затухание визуальных эффектов — каждый кадр, даже на паузе
+    this.civ?.updateVisual(dt)
+    // логика — фиксированными тиками; потолок = бюджет максимальной скорости,
+    // излишек сбрасывается (защита от спирали смерти на слабом железе)
+    this.civAcc = Math.min(this.civAcc + h, CIV_TICK * 10)
+    while (this.civAcc >= CIV_TICK) {
+      this.civ?.tick(CIV_TICK)
+      this.civAcc -= CIV_TICK
+    }
 
     const pdt = this.paused ? 0 : dt * Math.min(this.timeScale, 2.5)
 
