@@ -4,6 +4,7 @@
 import { getSprite } from '../sprites.js'
 import { TAU, SQ, clamp, rand, pick, dist, STATE_COLORS, PIRATE_COLOR, SHIP, nextId } from './constants.js'
 import * as diplomacy from './diplomacy.js'
+import * as economy from './economy.js'
 
 export class Civ {
   constructor(engine) {
@@ -150,54 +151,7 @@ export class Civ {
     })
   }
 
-  _populations(h) {
-    for (const p of this.e.planets) {
-      if (!p.alive || !p.owner) continue
-      const st = this.stateById(p.owner)
-      if (!st) {
-        p.owner = null
-        continue
-      }
-      const cap = p.baseR * 1.3
-      if (p.pop < 0) p.pop = 0
-      p.pop += p.pop * (st.pirate ? 0.006 : 0.014) * h * (1 - p.pop / cap)
-      // выбитое под ноль население вымирает, а не воскресает
-      if (p.pop <= 0.008) {
-        p.pop = 0
-        p.owner = null
-        p.pvoUnits = 0
-        p.pvoReady = 0
-        this.log(`⚰️ население ${p.name} вымерло — планета опустела`)
-        continue
-      }
-      st.credits += p.pop * 0.12 * h
-      // перезарядка установок ПВО
-      if (p.pvoReload.length) {
-        p.pvoReload = p.pvoReload.filter((t) => {
-          if (t - h <= 0) {
-            p.pvoReady = Math.min(p.pvoReady + 1, p.pvoUnits)
-            return false
-          }
-          return true
-        })
-        p.pvoReload = p.pvoReload.map((t) => t - h)
-      }
-      // стройка новой установки — замирает под осадой
-      if (p.pvoBuildT > 0) {
-        const besieged = this.ships.some(
-          (s) => s.kind === 'dread' && s.hp > 0 && this.hostile(p.owner, s.owner) && dist(s, p) < 260,
-        )
-        if (!besieged) {
-          p.pvoBuildT -= h
-          if (p.pvoBuildT <= 0) {
-            p.pvoUnits++
-            p.pvoReady++
-            this.log(`🛡 ${p.name}: встала в строй установка ПВО (${p.pvoUnits})`)
-          }
-        }
-      }
-    }
-  }
+  _populations(h) { economy.populations(this, h) }
 
   // предел установок ПВО зависит от населения
   pvoCap(p) {
@@ -235,250 +189,137 @@ export class Civ {
   _stateDecide(st) {
     const myPlanets = this.planetsOf(st)
     if (!myPlanets.length) return
-    const myPop = this.popOf(st)
-    const enemies = this.states.filter((o) => o.id !== st.id && !o.pirate && this.isWar(st.id, o.id))
     const myShips = this.ships.filter((s) => s.owner === st.id)
     const myDreads = myShips.filter((s) => s.kind === 'dread')
 
-    // шахтёры; после пиратских грабежей — с эскортом (конвой)
-    if (this.asteroids.some((a) => a.res > 0) && myShips.filter((s) => s.kind === 'miner').length < 2 && st.credits >= SHIP.miner.cost) {
-      const mn = this._spawnShip('miner', st, myPlanets[0])
-      if (mn) {
-        st.credits -= SHIP.miner.cost
-        if (st.pirateLosses >= 80 && st.credits >= SHIP.escort.cost * 2) {
-          for (let i = 0; i < 2; i++) {
-            const es = this._spawnShip('escort', st, myPlanets[0])
-            if (!es) break
-            st.credits -= SHIP.escort.cost
-            es.mission = { type: 'escort', ship: mn.id }
-          }
-          if (Math.random() < 0.5) this.log(`🛡 ${st.name} пускает шахтёров только конвоями`)
-        }
+    economy.minersDecide(this, st, myPlanets, myShips)
+    if (this._warDecide(st, myPlanets, myShips, myDreads)) return
+    economy.peacetimeDecide(this, st, myPlanets, myShips, myDreads)
+  }
+
+  // военная ветка решений; true — государство в войне (мирная ветка не выполняется).
+  // временно здесь — переезжает в warfare.js следующей задачей
+  _warDecide(st, myPlanets, myShips, myDreads) {
+    const myPop = this.popOf(st)
+    const enemies = this.states.filter((o) => o.id !== st.id && !o.pirate && this.isWar(st.id, o.id))
+    if (!enemies.length) return false
+    // воюем с сильнейшим из врагов
+    const enemy = enemies.reduce((b, o) => (this.popOf(o) > this.popOf(b) ? o : b), enemies[0])
+    const ePlanets = this.planetsOf(enemy)
+    if (!ePlanets.length) return true
+    const ePop = this.popOf(enemy)
+    const eDreads = this.ships.filter((s) => s.kind === 'dread' && s.owner === enemy.id).length
+
+    // выбор тактики по соотношению сил (с инерцией)
+    const myStr = myPop + myDreads.length * 4
+    const eStr = ePop + eDreads * 4
+    if (!st.tactic || Math.random() < 0.25) {
+      const next =
+        myStr > eStr * 1.35 ? 'assault' : myStr < eStr * 0.65 ? 'defense' : Math.random() < 0.5 ? 'raid' : 'blockade'
+      if (next !== st.tactic) {
+        st.tactic = next
+        const T = { assault: 'генеральное наступление', defense: 'глухую оборону', raid: 'рейды по тылам', blockade: 'блокаду' }
+        this.log(`🎯 ${st.name} выбирает тактику: ${T[next]}`)
       }
     }
 
-    if (enemies.length) {
-      // воюем с сильнейшим из врагов
-      const enemy = enemies.reduce((b, o) => (this.popOf(o) > this.popOf(b) ? o : b), enemies[0])
-      const ePlanets = this.planetsOf(enemy)
-      if (!ePlanets.length) return
-      const ePop = this.popOf(enemy)
-      const eDreads = this.ships.filter((s) => s.kind === 'dread' && s.owner === enemy.id).length
-
-      // выбор тактики по соотношению сил (с инерцией)
-      const myStr = myPop + myDreads.length * 4
-      const eStr = ePop + eDreads * 4
-      if (!st.tactic || Math.random() < 0.25) {
-        const next =
-          myStr > eStr * 1.35 ? 'assault' : myStr < eStr * 0.65 ? 'defense' : Math.random() < 0.5 ? 'raid' : 'blockade'
-        if (next !== st.tactic) {
-          st.tactic = next
-          const T = { assault: 'генеральное наступление', defense: 'глухую оборону', raid: 'рейды по тылам', blockade: 'блокаду' }
-          this.log(`🎯 ${st.name} выбирает тактику: ${T[next]}`)
-        }
-      }
-
-      // ПВО: установки строятся по одной; в обороне — до предела, иначе минимум 3
-      for (const p of myPlanets) {
-        const want = st.tactic === 'defense' ? this.pvoCap(p) : Math.min(this.pvoCap(p), 3)
-        if (p.pvoUnits < want && p.pvoBuildT <= 0 && st.credits >= 70) {
-          st.credits -= 70
-          p.pvoBuildT = st.tactic === 'defense' ? rand(25, 40) : rand(40, 60)
-          break
-        }
-      }
-
-      // баллистика ЗАЛПОМ: дорого — выгоднее захватывать, чем выжигать
-      if (st.missileT <= 0 && st.credits >= 25) {
-        const volley = clamp(1 + Math.floor(myPop / 3), 1, 4)
-        const target = pick(ePlanets)
-        for (let i = 0; i < volley && st.credits >= 25; i++) {
-          st.credits -= 25
-          this._launchWarhead(pick(myPlanets), target, st)
-        }
-        st.missileT = clamp(30 / Math.max(myPop, 0.4), 6, 40)
-      }
-
-      // разрушитель планет: оружие отчаяния — дорого (по размеру цели), сбивается ПВО
-      if (st.breakerT <= 0) {
-        const target = pick(ePlanets)
-        const cost = Math.round(target.baseR * 14)
-        const warKey = this.relKey(st.id, enemy.id)
-        const desperate = myStr < eStr * 0.75
-        if (st.credits >= cost && this.t - (this.warSince[warKey] ?? this.t) > 60 && (desperate || Math.random() < 0.2)) {
-          st.credits -= cost
-          this._launchWarhead(pick(myPlanets), target, st, 'breaker')
-          st.breakerT = 50
-          this.log(`☄️ ${st.name} запустило РАЗРУШИТЕЛЬ ПЛАНЕТ к ${target.name} (−${cost} кр)`)
-        } else {
-          st.breakerT = 15
-        }
-      }
-
-      // флот
-      if (st.credits >= SHIP.dread.cost && myDreads.length < 3) {
-        const d = this._spawnShip('dread', st, myPlanets[0])
-        if (d) {
-          st.credits -= SHIP.dread.cost
-          this.log(`⚓ ${st.name} спустило на воду дредноут`)
-        }
-      }
-
-      const idle = myDreads.filter((d) => !d.mission)
-      if (st.tactic === 'assault') {
-        if (idle.length >= 2) {
-          const target = ePlanets[0]
-          for (const d of idle) d.mission = { type: 'siege', planet: target.id }
-          this.log(`⚔️ флот ${st.name} идёт на штурм ${target.name}`)
-        }
-        // десант волнами: на одном транспорте максимум 500 человек —
-        // для захвата нужен целый конвой, и его могут перехватить по дороге
-        const broken = ePlanets.find((p) => p.pvoUnits <= 0 && myDreads.some((d) => d.mission?.planet === p.id && dist(d, p) < 260))
-        if (broken && myPop > 0.9) {
-          const enRoute = this.ships
-            .filter((s) => s.owner === st.id && s.mission?.type === 'invade' && s.mission.planet === broken.id)
-            .reduce((s2, t) => s2 + t.mission.troops, 0)
-          let needed = broken.pop / 2.5 + 0.15 - enRoute
-          let sent = 0
-          while (needed > 0 && sent < 3 && st.credits >= SHIP.transport.cost && myPop > 0.8) {
-            const sh = this._spawnShip('transport', st, myPlanets[0])
-            if (!sh) break
-            st.credits -= SHIP.transport.cost
-            // борт берёт от 1 до 10 тысяч — крупный десант, а не сотня лодок
-            const troops = Math.min(clamp(needed, 1, 10), Math.max(myPlanets[0].pop * 0.5, 0.3))
-            myPlanets[0].pop = Math.max(myPlanets[0].pop - troops * 0.4, 0.05)
-            sh.mission = { type: 'invade', planet: broken.id, troops }
-            needed -= troops
-            sent++
-          }
-          if (sent > 0) this.log(`🪖 ${st.name}: десантная волна из ${sent} бортов идёт на ${broken.name}`)
-        }
-      } else if (st.tactic === 'raid') {
-        // дредноуты ходят минимум парами — одиночка ждёт напарника дома
-        if (idle.length >= 2) for (const d of idle) d.mission = { type: 'raid', enemy: enemy.id }
-      } else if (st.tactic === 'blockade') {
-        if (idle.length >= 2) {
-          const tp = pick(ePlanets).id
-          for (const d of idle) d.mission = { type: 'blockade', planet: tp }
-        }
-      } else {
-        // оборона: всех домой
-        for (const d of myDreads) if (d.mission && d.mission.type !== 'escort') d.mission = null
-      }
-
-      // мир — только если война затянулась и идёт плохо
-      const key = this.relKey(st.id, enemy.id)
-      const warDur = this.t - (this.warSince[key] ?? this.t)
-      if (warDur > 50 && myPop < ePop * 0.4 && Math.random() < 0.3) {
-        this.setRel(st.id, enemy.id, -10)
-        delete this.warSince[key]
-        this.log(`🕊 ${st.name} запросило мир с ${enemy.name}`)
-      }
-      return
-    }
-
-    st.tactic = null
-    const allies = this.states.filter((o) => o.id !== st.id && !o.pirate && this.isAlly(st.id, o.id))
-
-    // ПВО в мирное время — хотя бы пара установок на планету
+    // ПВО: установки строятся по одной; в обороне — до предела, иначе минимум 3
     for (const p of myPlanets) {
-      if (p.pvoUnits < Math.min(this.pvoCap(p), 2) && p.pvoBuildT <= 0 && st.credits >= 70) {
+      const want = st.tactic === 'defense' ? this.pvoCap(p) : Math.min(this.pvoCap(p), 3)
+      if (p.pvoUnits < want && p.pvoBuildT <= 0 && st.credits >= 70) {
         st.credits -= 70
-        p.pvoBuildT = rand(40, 60)
+        p.pvoBuildT = st.tactic === 'defense' ? rand(25, 40) : rand(40, 60)
         break
       }
     }
 
-    // мирное время
-    // внутренние караваны между своими планетами
-    if (myPlanets.length >= 2) {
-      const internal = this.ships.find((s) => s.kind === 'transport' && s.mission?.type === 'trade' && s.mission.a === st.id && s.mission.b === st.id)
-      if (!internal && st.credits >= SHIP.transport.cost) {
-        const sh = this._spawnShip('transport', st, myPlanets[0])
-        if (sh) {
-          st.credits -= SHIP.transport.cost
-          sh.mission = { type: 'trade', a: st.id, b: st.id, from: myPlanets[0].id, to: myPlanets[1].id, leg: 0, boost: 1 }
-          this.log(`🚚 ${st.name} запустило внутренний караван`)
-        }
+    // баллистика ЗАЛПОМ: дорого — выгоднее захватывать, чем выжигать
+    if (st.missileT <= 0 && st.credits >= 25) {
+      const volley = clamp(1 + Math.floor(myPop / 3), 1, 4)
+      const target = pick(ePlanets)
+      for (let i = 0; i < volley && st.credits >= 25; i++) {
+        st.credits -= 25
+        this._launchWarhead(pick(myPlanets), target, st)
       }
-    }
-    // внешняя торговля: достаточно дружбы, не обязательно альянс
-    const friends = this.states.filter((o) => o.id !== st.id && !o.pirate && this.getRel(st.id, o.id) > 10)
-    for (const al of friends) {
-      const route = this.ships.find(
-        (s) => s.kind === 'transport' && s.mission?.type === 'trade' && ((s.mission.a === st.id && s.mission.b === al.id) || (s.mission.a === al.id && s.mission.b === st.id)),
-      )
-      if (!route && st.credits >= SHIP.transport.cost) {
-        const alHome = this.planetsOf(al)[0]
-        if (alHome) {
-          const sh = this._spawnShip('transport', st, myPlanets[0])
-          if (sh) {
-            st.credits -= SHIP.transport.cost
-            sh.mission = { type: 'trade', a: st.id, b: al.id, from: myPlanets[0].id, to: alHome.id, leg: 0, boost: 1 }
-            this.log(`🚚 караван ${st.name} ↔ ${al.name} вышел на маршрут`)
-          }
-        }
-        break
-      }
+      st.missileT = clamp(30 / Math.max(myPop, 0.4), 6, 40)
     }
 
-    // колонизация — дорогая экспедиция: сначала обустраиваем свою планету,
-    // и только зрелое государство тянет новую колонию
-    const COLONY_COST = 240
-    const home = this.planetById(st.home) || myPlanets[0]
-    const homeMature = home && home.pop > home.baseR * 1.3 * 0.55 && home.pvoUnits >= 2
-    const free = this.e.planets.filter((p) => p.alive && !p.owner && !p.barren && p.baseR >= 5)
-    if (free.length && homeMature && home && st.credits >= COLONY_COST + SHIP.transport.cost) {
-      free.sort((a, b) => dist(a, home) - dist(b, home))
-      const sh = this._spawnShip('transport', st, home)
-      if (sh) {
-        st.credits -= COLONY_COST + SHIP.transport.cost
-        const settlers = 0.18
-        home.pop = Math.max(home.pop - settlers, 0.05)
-        sh.mission = { type: 'colonize', planet: free[0].id, settlers }
-        this.log(`🚀 ${st.name} снарядило экспедицию к ${free[0].name} (−${COLONY_COST + SHIP.transport.cost} кр)`)
-      }
-    }
-
-    // охота на пиратов — только в мирное время
-    const pirates = this.states.find((s) => s.pirate)
-    if (pirates && myDreads.length && Math.random() < 0.3) {
-      const den = this.planetsOf(pirates)[0]
-      if (den) {
-        const d = myDreads.find((x) => !x.mission || x.mission.type === 'guard')
-        if (d) d.mission = { type: 'siege', planet: den.id }
-      }
-    }
-    if (st.credits >= SHIP.dread.cost && myDreads.length < 1 && this.states.length > 2) {
-      if (this._spawnShip('dread', st, myPlanets[0])) st.credits -= SHIP.dread.cost
-    }
-
-    // сецессия колоний: отделившиеся получают ПВО и казну — у них есть шанс отбиться.
-    // если зрелых колоний две — может полыхнуть революция: уходят обе разом
-    const colonies = myPlanets.filter((p) => p.id !== st.home && p.pop > 0.9)
-    if (colonies.length && Math.random() < 0.05) {
-      colonies.sort((a, b) => a.pop - b.pop)
-      const twin = colonies.length >= 2 && Math.random() < 0.4
-      const rebels = twin ? colonies.slice(0, 2) : [colonies[0]]
-      const newStates = []
-      for (const p of rebels) {
-        const ns = this._makeState(p, p.pop, { credits: 150 })
-        p.pvoUnits = 3
-        p.pvoReady = 3
-        this.setRel(ns.id, st.id, rand(-40, 25))
-        for (const o of this.states) {
-          if (o.id !== ns.id && o.id !== st.id && !o.pirate) this.setRel(ns.id, o.id, rand(-25, 40))
-        }
-        newStates.push(ns)
-      }
-      if (twin) {
-        const friends = Math.random() < 0.5
-        this.setRel(newStates[0].id, newStates[1].id, friends ? 70 : rand(-40, 40))
-        this.log(`📢 революция в ${st.name}! отделились ${rebels.map((p) => p.name).join(' и ')}${friends ? ' — и сразу заключили союз' : ''}`)
+    // разрушитель планет: оружие отчаяния — дорого (по размеру цели), сбивается ПВО
+    if (st.breakerT <= 0) {
+      const target = pick(ePlanets)
+      const cost = Math.round(target.baseR * 14)
+      const warKey = this.relKey(st.id, enemy.id)
+      const desperate = myStr < eStr * 0.75
+      if (st.credits >= cost && this.t - (this.warSince[warKey] ?? this.t) > 60 && (desperate || Math.random() < 0.2)) {
+        st.credits -= cost
+        this._launchWarhead(pick(myPlanets), target, st, 'breaker')
+        st.breakerT = 50
+        this.log(`☄️ ${st.name} запустило РАЗРУШИТЕЛЬ ПЛАНЕТ к ${target.name} (−${cost} кр)`)
       } else {
-        this.log(`🏴 колония ${rebels[0].name} объявила независимость от ${st.name}`)
+        st.breakerT = 15
       }
     }
+
+    // флот
+    if (st.credits >= SHIP.dread.cost && myDreads.length < 3) {
+      const d = this._spawnShip('dread', st, myPlanets[0])
+      if (d) {
+        st.credits -= SHIP.dread.cost
+        this.log(`⚓ ${st.name} спустило на воду дредноут`)
+      }
+    }
+
+    const idle = myDreads.filter((d) => !d.mission)
+    if (st.tactic === 'assault') {
+      if (idle.length >= 2) {
+        const target = ePlanets[0]
+        for (const d of idle) d.mission = { type: 'siege', planet: target.id }
+        this.log(`⚔️ флот ${st.name} идёт на штурм ${target.name}`)
+      }
+      // десант волнами: на одном транспорте максимум 500 человек —
+      // для захвата нужен целый конвой, и его могут перехватить по дороге
+      const broken = ePlanets.find((p) => p.pvoUnits <= 0 && myDreads.some((d) => d.mission?.planet === p.id && dist(d, p) < 260))
+      if (broken && myPop > 0.9) {
+        const enRoute = this.ships
+          .filter((s) => s.owner === st.id && s.mission?.type === 'invade' && s.mission.planet === broken.id)
+          .reduce((s2, t) => s2 + t.mission.troops, 0)
+        let needed = broken.pop / 2.5 + 0.15 - enRoute
+        let sent = 0
+        while (needed > 0 && sent < 3 && st.credits >= SHIP.transport.cost && myPop > 0.8) {
+          const sh = this._spawnShip('transport', st, myPlanets[0])
+          if (!sh) break
+          st.credits -= SHIP.transport.cost
+          // борт берёт от 1 до 10 тысяч — крупный десант, а не сотня лодок
+          const troops = Math.min(clamp(needed, 1, 10), Math.max(myPlanets[0].pop * 0.5, 0.3))
+          myPlanets[0].pop = Math.max(myPlanets[0].pop - troops * 0.4, 0.05)
+          sh.mission = { type: 'invade', planet: broken.id, troops }
+          needed -= troops
+          sent++
+        }
+        if (sent > 0) this.log(`🪖 ${st.name}: десантная волна из ${sent} бортов идёт на ${broken.name}`)
+      }
+    } else if (st.tactic === 'raid') {
+      // дредноуты ходят минимум парами — одиночка ждёт напарника дома
+      if (idle.length >= 2) for (const d of idle) d.mission = { type: 'raid', enemy: enemy.id }
+    } else if (st.tactic === 'blockade') {
+      if (idle.length >= 2) {
+        const tp = pick(ePlanets).id
+        for (const d of idle) d.mission = { type: 'blockade', planet: tp }
+      }
+    } else {
+      // оборона: всех домой
+      for (const d of myDreads) if (d.mission && d.mission.type !== 'escort') d.mission = null
+    }
+
+    // мир — только если война затянулась и идёт плохо
+    const key = this.relKey(st.id, enemy.id)
+    const warDur = this.t - (this.warSince[key] ?? this.t)
+    if (warDur > 50 && myPop < ePop * 0.4 && Math.random() < 0.3) {
+      this.setRel(st.id, enemy.id, -10)
+      delete this.warSince[key]
+      this.log(`🕊 ${st.name} запросило мир с ${enemy.name}`)
+    }
+    return true
   }
 
   _pirateDecide(st) {
@@ -1365,45 +1206,8 @@ export class Civ {
 
   // ---------- пояса астероидов ----------
 
-  _spawnAsteroid(orbitR, ang = Math.random() * TAU, res = Math.round(rand(40, 110))) {
-    const size = rand(2.2, 4.5)
-    this.asteroids.push({
-      id: nextId(),
-      orbitR,
-      ang,
-      // кеплеровская угловая скорость — летят вместе со всеми, не отстают
-      w: Math.sqrt(this.gm) / Math.pow(orbitR, 1.5),
-      size,
-      res,
-      res0: Math.max(res, 110),
-      rot: Math.random() * TAU,
-      spin: rand(-0.6, 0.6),
-      verts: Array.from({ length: 7 }, (_, k) => {
-        const va = (k / 7) * TAU
-        const vr = size * rand(0.65, 1.3)
-        return { x: Math.cos(va) * vr, y: Math.sin(va) * vr }
-      }),
-      x: 0,
-      y: 0,
-    })
-  }
-
-  _asteroidsTick(h) {
-    // редкое пополнение пояса
-    this.astTick -= h
-    if (this.astTick <= 0) {
-      this.astTick = 30
-      if (this.asteroids.length < 50 && this.asteroids.length > 0) {
-        this._spawnAsteroid(pick(this.asteroids).orbitR + rand(-40, 40))
-      }
-    }
-    for (const a of this.asteroids) {
-      a.ang += a.w * h
-      a.rot += a.spin * h
-      a.x = Math.cos(a.ang) * a.orbitR
-      a.y = Math.sin(a.ang) * a.orbitR
-    }
-  }
+  _spawnAsteroid(...args) { economy.spawnAsteroid(this, ...args) }
+  _asteroidsTick(h) { economy.asteroidsTick(this, h) }
 
   // ---------- справки для UI ----------
 
