@@ -375,6 +375,20 @@ button {
   }
 }
 
+/* важные события подсвечены, события с местом — кликабельны */
+.feed-item.imp {
+  color: var(--amber);
+}
+
+.feed-item.has-pos {
+  cursor: pointer;
+}
+
+.feed-item.has-pos:hover {
+  color: var(--ink);
+  background: rgba(89, 214, 255, 0.06);
+}
+
 /* ---------- нижняя панель государств ---------- */
 
 .scorebar {
@@ -783,6 +797,81 @@ button {
   background: rgba(126, 224, 140, 0.08);
   border: 1px solid rgba(126, 224, 140, 0.4);
   color: #8ee8a0;
+}
+
+/* строки отношений: цифра, тренд, счёт войны, причина */
+.diplo-relrows {
+  margin: 2px 0 0 17px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.relrow {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 9.5px;
+  color: var(--ink-dim);
+  line-height: 1.5;
+  flex-wrap: wrap;
+}
+
+.relrow .civ-dot {
+  flex-shrink: 0;
+}
+
+.relrow-name {
+  color: var(--ink);
+}
+
+.relrow-val {
+  font-weight: 700;
+  color: var(--ink-dim);
+}
+
+.relrow.is-war .relrow-val {
+  color: #ff8d8d;
+}
+
+.relrow.is-ally .relrow-val {
+  color: #8ee8a0;
+}
+
+.relrow-trend {
+  color: var(--ink-faint);
+}
+
+.relrow-trend.up {
+  color: #8ee8a0;
+}
+
+.relrow-trend.down {
+  color: #ff8d8d;
+}
+
+.relrow-tag {
+  padding: 0 5px;
+  white-space: nowrap;
+}
+
+.relrow-tag.war {
+  background: rgba(255, 93, 93, 0.1);
+  border: 1px solid rgba(255, 93, 93, 0.45);
+  color: #ff8d8d;
+}
+
+.relrow-tag.ally {
+  border: 1px solid rgba(126, 224, 140, 0.4);
+  color: #8ee8a0;
+}
+
+.relrow-cause {
+  width: 100%;
+  margin-left: 14px;
+  font-size: 8.5px;
+  color: var(--ink-faint);
+  font-style: italic;
 }
 
 /* ---------- интро ---------- */

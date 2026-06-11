@@ -1,6 +1,6 @@
-// Экономика: население, ПВО-стройка, караваны, колонизация, шахтёры, астероиды
+// Экономика: население, руда, ПВО-стройка, караваны, колонизация, шахтёры, астероиды
 
-import { TAU, clamp, rand, pick, dist, SHIP, nextId } from './constants.js'
+import { TAU, clamp, rand, pick, dist, SHIP, PVO_ORE, nextId } from './constants.js'
 
 export function populations(civ, h) {
   for (const p of civ.e.planets) {
@@ -10,7 +10,8 @@ export function populations(civ, h) {
       p.owner = null
       continue
     }
-    const cap = p.baseR * 1.3
+    // на аванпосте живёт лишь вахта горняков, города не растут
+    const cap = p.outpost ? 0.4 : p.baseR * 1.3
     if (p.pop < 0) p.pop = 0
     p.pop += p.pop * (st.pirate ? 0.006 : 0.014) * h * (1 - p.pop / cap)
     // выбитое под ноль население вымирает, а не воскресает
@@ -19,10 +20,18 @@ export function populations(civ, h) {
       p.owner = null
       p.pvoUnits = 0
       p.pvoReady = 0
-      civ.log(`⚰️ население ${p.name} вымерло — планета опустела`)
+      civ.log(`⚰️ население ${p.name} вымерло — планета опустела`, { x: p.x, y: p.y })
       continue
     }
     st.credits += p.pop * 0.12 * h
+    // собственная добыча из недр: аванпост качает на полную, обычная планета — понемногу
+    if (p.oreRes > 0) {
+      const rate = p.outpost ? 0.25 : Math.min(p.pop, 3) * 0.03
+      const got = Math.min(rate * h, p.oreRes)
+      p.oreRes -= got
+      st.ore += got
+      if (p.oreRes <= 0) civ.log(`⛏ недра ${p.name} выработаны до дна`, { x: p.x, y: p.y })
+    }
     // перезарядка установок ПВО
     if (p.pvoReload.length) {
       p.pvoReload = p.pvoReload.filter((t) => {
@@ -57,11 +66,12 @@ export function minersDecide(civ, st, myPlanets, myShips) {
     const mn = civ._spawnShip('miner', st, myPlanets[0])
     if (mn) {
       st.credits -= SHIP.miner.cost
-      if (st.pirateLosses >= 80 && st.credits >= SHIP.escort.cost * 2) {
+      if (st.pirateLosses >= 80 && st.credits >= SHIP.escort.cost * 2 && st.ore >= SHIP.escort.ore * 2) {
         for (let i = 0; i < 2; i++) {
           const es = civ._spawnShip('escort', st, myPlanets[0])
           if (!es) break
           st.credits -= SHIP.escort.cost
+          st.ore -= SHIP.escort.ore
           es.mission = { type: 'escort', ship: mn.id }
         }
         if (Math.random() < 0.5) civ.log(`🛡 ${st.name} пускает шахтёров только конвоями`)
@@ -76,8 +86,9 @@ export function peacetimeDecide(civ, st, myPlanets, myShips, myDreads) {
 
   // ПВО в мирное время — хотя бы пара установок на планету
   for (const p of myPlanets) {
-    if (p.pvoUnits < Math.min(civ.pvoCap(p), 2) && p.pvoBuildT <= 0 && st.credits >= 70) {
+    if (p.pvoUnits < Math.min(civ.pvoCap(p), 2) && p.pvoBuildT <= 0 && st.credits >= 70 && st.ore >= PVO_ORE) {
       st.credits -= 70
+      st.ore -= PVO_ORE
       p.pvoBuildT = rand(40, 60)
       break
     }
@@ -130,7 +141,23 @@ export function peacetimeDecide(civ, st, myPlanets, myShips, myDreads) {
       const settlers = 0.18
       home.pop = Math.max(home.pop - settlers, 0.05)
       sh.mission = { type: 'colonize', planet: free[0].id, settlers }
-      civ.log(`🚀 ${st.name} снарядило экспедицию к ${free[0].name} (−${COLONY_COST + SHIP.transport.cost} кр)`)
+      civ.log(`🚀 ${st.name} снарядило экспедицию к ${free[0].name} (−${COLONY_COST + SHIP.transport.cost} кр)`, { x: free[0].x, y: free[0].y })
+    }
+  }
+
+  // шахтёрский аванпост: руда кончается — пора застолбить богатую глыбу на окраине
+  const OUTPOST_COST = 150
+  const outpostEnRoute = civ.ships.some((s) => s.owner === st.id && s.mission?.type === 'outpost')
+  if (!outpostEnRoute && st.ore < 50 && st.credits >= OUTPOST_COST + SHIP.transport.cost && home) {
+    const rocks = civ.e.planets.filter((p) => p.alive && !p.owner && p.barren && p.oreRes > 200)
+    if (rocks.length) {
+      rocks.sort((a, b) => dist(a, home) - dist(b, home))
+      const sh = civ._spawnShip('transport', st, home)
+      if (sh) {
+        st.credits -= OUTPOST_COST + SHIP.transport.cost
+        sh.mission = { type: 'outpost', planet: rocks[0].id }
+        civ.log(`⛏ ${st.name} снаряжает горняков на ${rocks[0].name}`, { x: rocks[0].x, y: rocks[0].y })
+      }
     }
   }
 
@@ -168,9 +195,9 @@ export function peacetimeDecide(civ, st, myPlanets, myShips, myDreads) {
     if (twin) {
       const friends = Math.random() < 0.5
       civ.setRel(newStates[0].id, newStates[1].id, friends ? 70 : rand(-40, 40))
-      civ.log(`📢 революция в ${st.name}! отделились ${rebels.map((p) => p.name).join(' и ')}${friends ? ' — и сразу заключили союз' : ''}`)
+      civ.log(`📢 революция в ${st.name}! отделились ${rebels.map((p) => p.name).join(' и ')}${friends ? ' — и сразу заключили союз' : ''}`, { x: rebels[0].x, y: rebels[0].y, imp: true })
     } else {
-      civ.log(`🏴 колония ${rebels[0].name} объявила независимость от ${st.name}`)
+      civ.log(`🏴 колония ${rebels[0].name} объявила независимость от ${st.name}`, { x: rebels[0].x, y: rebels[0].y, imp: true })
     }
   }
 }
@@ -199,12 +226,14 @@ export function spawnAsteroid(civ, orbitR, ang = Math.random() * TAU, res = Math
 }
 
 export function asteroidsTick(civ, h) {
-  // редкое пополнение пояса
+  // пополнение пояса: чем сильнее выработан, тем щедрее облако Оорта подкидывает
   civ.astTick -= h
   if (civ.astTick <= 0) {
-    civ.astTick = 30
-    if (civ.asteroids.length < 50 && civ.asteroids.length > 0) {
+    civ.astTick = 20
+    if (civ.asteroids.length < 70 && civ.asteroids.length > 0) {
       civ._spawnAsteroid(pick(civ.asteroids).orbitR + rand(-40, 40))
+      // сильно выгребли — прилетает ещё один
+      if (civ.asteroids.length < 30) civ._spawnAsteroid(pick(civ.asteroids).orbitR + rand(-40, 40))
     }
   }
   for (const a of civ.asteroids) {

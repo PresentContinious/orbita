@@ -69,11 +69,15 @@ export function generateSystem() {
     const look = makeLook(r)
     const name = genName()
     const temp = Math.round(420 - orbit * 0.28 + rand(-30, 30))
+    // недра: каменистые богаче всех, ледяные — поскромнее, газовым копать нечего
+    const oreRes =
+      look.type === 'газовый гигант' ? 0 : look.type === 'ледяной гигант' ? Math.round(rand(80, 180)) : Math.round(rand(150, 300))
 
     planets.push({
       id: 'p' + i,
       name,
       type: look.type,
+      oreRes,
       r,
       orbit: Math.round(orbit),
       colors: look.colors,
@@ -102,6 +106,8 @@ export function generateSystem() {
       name: genName(),
       type: 'глыба',
       barren: true,
+      // глыбы — главные кладовые руды: ради них строят аванпосты и воюют
+      oreRes: Math.round(rand(900, 1600)),
       r,
       orbit: Math.round(orbit),
       colors: [hsl(h, 10, 62), hsl(h, 12, 38), hsl(h, 10, 16)],

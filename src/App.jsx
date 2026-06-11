@@ -84,7 +84,7 @@ export default function App() {
           rocks: engine.planets.filter((p) => p.barren).length,
           asts: engine.civ.asteroids.length,
         })
-        setEvents([...engine.civ.events.slice(-7)])
+        setEvents([...engine.civ.events.slice(-9)])
         setDiplo(engine.civ.summary())
         const id = engine.selectedId
         if (id) {
@@ -103,6 +103,9 @@ export default function App() {
               ownerColor: st?.color || null,
               pirate: st?.pirate || false,
               credits: st ? Math.round(st.credits) : 0,
+              stOre: st ? Math.round(st.ore) : 0,
+              ore: Math.round(p.oreRes || 0),
+              outpost: !!p.outpost,
               tactic: st?.tactic || null,
               pvoUnits: p.pvoUnits || 0,
               pvoReady: p.pvoReady || 0,
@@ -267,7 +270,14 @@ export default function App() {
           <div className="feed-head">ЛЕНТА СОБЫТИЙ</div>
           <div className="feed-list">
             {events.map((ev) => (
-              <p className="feed-item" key={ev.id}>
+              <p
+                className={`feed-item ${ev.imp ? 'imp' : ''} ${ev.x != null ? 'has-pos' : ''}`}
+                key={ev.id}
+                title={ev.x != null ? 'кликни — камера полетит к месту события' : undefined}
+                onClick={() => {
+                  if (ev.x != null) engineRef.current?.flyTo(ev.x, ev.y)
+                }}
+              >
                 {ev.text}
               </p>
             ))}
@@ -283,7 +293,7 @@ export default function App() {
               ✕
             </button>
           </div>
-          <p className="diplo-hint">&gt;55 союз · &lt;−45 война · сильный давит слабого</p>
+          <p className="diplo-hint">&gt;55 союз · &lt;−45 война · стрелка — тренд · серым — причина · ⚔ счёт войны</p>
           <div className="diplo-list">
             {diplo.length === 0 && <p className="diplo-empty">цивилизаций не осталось</p>}
             {diplo.map((st) => (
@@ -294,21 +304,41 @@ export default function App() {
                   {st.name}
                 </p>
                 <p className="diplo-stats">
-                  планет {st.planets} · людей {(st.pop * 1000) | 0} · кораблей {st.ships} · {st.credits} кр
+                  планет {st.planets} · людей {(st.pop * 1000) | 0} · кораблей {st.ships} · {st.credits} кр · ⛏ {st.ore}
                 </p>
-                {(st.wars.length > 0 || st.allies.length > 0) && (
-                  <div className="diplo-rels">
-                    {st.wars.map((n) => (
-                      <span className="rel rel-war" key={'w' + n}>
-                        ⚔ {n}
-                      </span>
-                    ))}
-                    {st.allies.map((n) => (
-                      <span className="rel rel-ally" key={'a' + n}>
-                        🤝 {n}
-                      </span>
+                {st.rels && st.rels.length > 0 ? (
+                  <div className="diplo-relrows">
+                    {st.rels.map((r) => (
+                      <div className={`relrow ${r.war ? 'is-war' : r.ally ? 'is-ally' : ''}`} key={r.id}>
+                        <span className="civ-dot" style={{ background: r.color, color: r.color }} />
+                        <span className="relrow-name">{r.name}</span>
+                        <b className="relrow-val">{r.value > 0 ? `+${r.value}` : r.value}</b>
+                        <span className={`relrow-trend ${r.trend > 0.3 ? 'up' : r.trend < -0.3 ? 'down' : ''}`}>
+                          {r.trend > 0.3 ? '↗' : r.trend < -0.3 ? '↘' : '·'}
+                        </span>
+                        {r.war && <span className="relrow-tag war">⚔ {r.score || ''}</span>}
+                        {r.ally && <span className="relrow-tag ally">🤝</span>}
+                        {(r.war ? r.casus : r.cause) && (
+                          <span className="relrow-cause">{r.war ? r.casus : r.cause}</span>
+                        )}
+                      </div>
                     ))}
                   </div>
+                ) : (
+                  (st.wars.length > 0 || st.allies.length > 0) && (
+                    <div className="diplo-rels">
+                      {st.wars.map((n) => (
+                        <span className="rel rel-war" key={'w' + n}>
+                          ⚔ {n}
+                        </span>
+                      ))}
+                      {st.allies.map((n) => (
+                        <span className="rel rel-ally" key={'a' + n}>
+                          🤝 {n}
+                        </span>
+                      ))}
+                    </div>
+                  )
                 )}
                 {st.tactic && <p className="diplo-tactic">◉ тактика: {TACTIC_RU[st.tactic] || st.tactic}</p>}
               </div>
@@ -324,7 +354,7 @@ export default function App() {
             key={st.id}
             className="score-btn"
             onClick={() => st.home && engineRef.current?._select(st.home)}
-            title={`${st.name}: планет ${st.planets}, кораблей ${st.ships}, ${st.credits} кр`}
+            title={`${st.name}: планет ${st.planets}, кораблей ${st.ships}, ${st.credits} кр, ⛏ ${st.ore} руды`}
           >
             <span className="civ-dot" style={{ background: st.color, color: st.color }} />
             <span className="score-name">
@@ -381,11 +411,27 @@ export default function App() {
               <span>тип</span>
               <b>{sel.type}</b>
             </div>
+            {sel.outpost && (
+              <div className="kv">
+                <span>статус</span>
+                <b className="hot">⛏ шахтёрский аванпост</b>
+              </div>
+            )}
+            {(sel.ore > 0 || sel.barren) && (
+              <div className="kv">
+                <span>руда в недрах</span>
+                <b>{sel.ore}</b>
+              </div>
+            )}
             {sel.ownerName && (
               <>
                 <div className="kv">
                   <span>казна</span>
                   <b className="hot">{sel.credits} кр</b>
+                </div>
+                <div className="kv">
+                  <span>руда государства</span>
+                  <b className="hot">⛏ {sel.stOre}</b>
                 </div>
                 {sel.tactic && (
                   <div className="kv">
