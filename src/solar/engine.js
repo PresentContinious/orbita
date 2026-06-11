@@ -785,28 +785,36 @@ export class Engine {
     }
 
     for (const m of this.meteors) {
+      // боеголовка государств: маршевый двигатель компенсирует гравитацию —
+      // солнце и чужие планеты больше не уводят залп мимо цели. Непрерывное
+      // наведение в упреждённую точку (куда планету унесёт орбита за подлёт)
+      if (m.kind === 'warhead' || m.kind === 'breaker') {
+        const p = m.target ? this.planets.find((q) => q.id === m.target) : null
+        if (p && p.alive) {
+          const sp = Math.hypot(m.vx, m.vy) || 1
+          const d = Math.hypot(p.x - m.x, p.y - m.y)
+          const eta = d / sp
+          const r2 = p.x * p.x + p.y * p.y || 1
+          const w = (p.x * p.vy - p.y * p.vx) / r2
+          const da = clamp(w * eta, -1.2, 1.2)
+          const tx = p.x * Math.cos(da) - p.y * Math.sin(da)
+          const ty = p.x * Math.sin(da) + p.y * Math.cos(da)
+          const want = Math.atan2(ty - m.y, tx - m.x)
+          const cur = Math.atan2(m.vy, m.vx)
+          let diff = want - cur
+          while (diff > Math.PI) diff -= TAU
+          while (diff < -Math.PI) diff += TAU
+          const turn = clamp(diff, -2.6 * hs, 2.6 * hs)
+          m.vx = Math.cos(cur + turn) * sp
+          m.vy = Math.sin(cur + turn) * sp
+        }
+        m.x += m.vx * hs
+        m.y += m.vy * hs
+        continue
+      }
       const a = this._gravityAt(m.x, m.y, null, 'small')
       m.vx += a.x * hs
       m.vy += a.y * hs
-      // боеголовка государств: терминальное наведение — по движущейся планете
-      // ракета больше не мажет (промахи делали залпы бессмысленной тратой)
-      if ((m.kind === 'warhead' || m.kind === 'breaker') && m.target) {
-        const p = this.planets.find((q) => q.id === m.target)
-        if (p && p.alive) {
-          const d = Math.hypot(p.x - m.x, p.y - m.y)
-          if (d < 420) {
-            const sp = Math.hypot(m.vx, m.vy) || 1
-            const want = Math.atan2(p.y - m.y, p.x - m.x)
-            const cur = Math.atan2(m.vy, m.vx)
-            let diff = want - cur
-            while (diff > Math.PI) diff -= TAU
-            while (diff < -Math.PI) diff += TAU
-            const turn = clamp(diff, -2.4 * hs, 2.4 * hs)
-            m.vx = Math.cos(cur + turn) * sp
-            m.vy = Math.sin(cur + turn) * sp
-          }
-        }
-      }
       // ракета доворачивает на ближайшую планету
       if (m.kind === 'rocket' && m.age > 0.25) {
         let best = null
@@ -833,7 +841,7 @@ export class Engine {
       }
       m.x += m.vx * hs
       m.y += m.vy * hs
-      if (m.kind !== 'rocket' && m.kind !== 'warhead' && m.kind !== 'breaker') this._captureAssist(m, hs)
+      if (m.kind !== 'rocket') this._captureAssist(m, hs)
     }
 
     for (const d of this.debris) {
@@ -1015,8 +1023,14 @@ export class Engine {
     this.last = now
     // сглаженный FPS для HUD
     if (dt > 0) this.fps += (1 / dt - this.fps) * 0.08
+    const t0 = performance.now()
     this._update(dt)
+    const t1 = performance.now()
     this._draw()
+    const t2 = performance.now()
+    // сглаженные миллисекунды логики и рендера — в часах видно, кто ест кадр
+    this.msLogic = (this.msLogic ?? 0) + (t1 - t0 - (this.msLogic ?? 0)) * 0.05
+    this.msDraw = (this.msDraw ?? 0) + (t2 - t1 - (this.msDraw ?? 0)) * 0.05
     requestAnimationFrame(this._loop)
   }
 
@@ -1741,7 +1755,9 @@ export class Engine {
     this._planetPath(ctx, pl, x, y)
     ctx.fill()
 
-    if (pl.banded) {
+    // детали ниже субпиксельные на отдалении, а каждая — это дорогой clip():
+    // при общем виде системы они съедали кадр, не меняя картинку
+    if (pl.banded && this.cam.zoom > 0.3) {
       ctx.save()
       this._planetPath(ctx, pl, x, y)
       ctx.clip()
@@ -1756,7 +1772,7 @@ export class Engine {
     }
 
     // кратеры от попаданий
-    if (pl.craters.length) {
+    if (pl.craters.length && this.cam.zoom > 0.35) {
       ctx.save()
       this._planetPath(ctx, pl, x, y)
       ctx.clip()
@@ -1777,7 +1793,7 @@ export class Engine {
     }
 
     // огни городов: чем больше население, тем гуще застройка
-    if (pl.pop > 0.05) {
+    if (pl.pop > 0.05 && this.cam.zoom > 0.45) {
       ctx.save()
       this._planetPath(ctx, pl, x, y)
       ctx.clip()
@@ -1800,7 +1816,7 @@ export class Engine {
     }
 
     // установки ПВО: точки на орбите планеты (яркая — заряжена, тусклая — перезаряжается)
-    if (pl.pvoUnits > 0 && pl.owner) {
+    if (pl.pvoUnits > 0 && pl.owner && (this.cam.zoom > 0.4 || pl.id === this.selectedId)) {
       ctx.save()
       const orbR = r + 11 / Math.sqrt(this.cam.zoom)
       for (let i = 0; i < pl.pvoUnits; i++) {

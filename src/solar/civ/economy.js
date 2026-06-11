@@ -257,12 +257,12 @@ export function peacetimeDecide(civ, st, myPlanets, myShips, myDreads) {
 
   // пираты: с ними воюют, от них откупаются или их терпят — у каждого пути своя цена
   const pirates = civ.states.find((s) => s.pirate)
-  // откуп: дань — и вольница 60 секунд не трогает твои суда
+  // откуп: дань — и вольница 5 минут не трогает твои суда (короткий откуп не стоил денег)
   if (pirates && st.pirateLosses > 120 && st.credits >= 140 && !(pirates.truces && pirates.truces[st.id] > civ.t)) {
     st.credits -= 100
     pirates.credits += 100
     pirates.truces = pirates.truces || {}
-    pirates.truces[st.id] = civ.t + 60
+    pirates.truces[st.id] = civ.t + 300
     st.pirateLosses = 0
     civ.log(`💰 ${st.name} откупилось от вольницы — её корабли пока не трогают купцов`, { imp: true })
   }

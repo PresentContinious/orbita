@@ -175,8 +175,8 @@ export function diplomacyDrift(civ, h) {
       } else {
         // война изматывает — со временем обе стороны ищут выход
         const dur = civ.t - (civ.warSince[key] ?? civ.t)
-        if (dur > 60) causes.push({ text: 'усталость от войны', val: 1.7 })
-        if (dur > 130) causes.push({ text: 'война всем надоела', val: 2.2 })
+        if (dur > 90) causes.push({ text: 'усталость от войны', val: 1.7 })
+        if (dur > 180) causes.push({ text: 'война всем надоела', val: 2.2 })
       }
 
       const drift = causes.reduce((s, c) => s + c.val, 0)
@@ -188,8 +188,8 @@ export function diplomacyDrift(civ, h) {
 
       const wasWar = atWar
       let isWarNow = next < WAR_AT
-      // войну так просто не закончить: минимум 45 секунд
-      if (wasWar && !isWarNow && civ.t - (civ.warSince[key] ?? 0) < 45) {
+      // войну так просто не закончить: минимум 75 секунд
+      if (wasWar && !isWarNow && civ.t - (civ.warSince[key] ?? 0) < 75) {
         next = WAR_AT - 3
         isWarNow = true
       }
@@ -204,7 +204,16 @@ export function diplomacyDrift(civ, h) {
         const def = agg === a ? b : a
         declareWar(civ, agg.id, def.id, casus)
       } else if (wasWar && !isWarNow) {
-        makePeace(civ, a.id, b.id, 'переговоры сторон')
+        // решающий победитель посреди наступления мир не подписывает — добивает:
+        // «мы устали» не работает, пока у планет проигравшего стоит его флот
+        const war = civ.wars[key]
+        const lead = war ? war.scoreA - war.scoreB : 0
+        const loser = Math.abs(lead) >= 25 ? civ.stateById(lead > 0 ? war.b : war.a) : null
+        if (loser && civ.planetsOf(loser).some((p) => p.siegeMark)) {
+          setRel(civ, a.id, b.id, WAR_AT - 3)
+        } else {
+          makePeace(civ, a.id, b.id, 'переговоры сторон')
+        }
       } else if (cur <= ALLY_AT && next > ALLY_AT) {
         civ.log(`🤝 ${a.name} и ${b.name} заключили альянс`, { imp: true })
       }
