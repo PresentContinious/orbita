@@ -57,6 +57,8 @@ export class Civ {
       p.yardBuildT = 0 // таймер стройки верфи
       p.yardDmg = 0 // накопленный урон осады по верфи
       p.ground = null // наземная война: { owner, troops, t }
+      p.unrest = 0 // недовольство колонии (0–100): высокое — отделится
+      p.unrestWhy = null
       p.lightsSeed = Math.random() * 1000
       // у глыб на окраине — богатые россыпи руды рядом
       if (p.barren) {
@@ -125,9 +127,10 @@ export class Civ {
     return this.states.find((s) => s.id === id)
   }
 
-  // радиус экономической зоны планеты — растёт с населением
+  // радиус экономической зоны планеты — растёт с населением (компактный,
+  // чтобы зоны соседей не сливались в кашу)
   zoneRadius(p) {
-    return Math.max(60, 200 + p.pop * 40)
+    return Math.max(50, 120 + p.pop * 22)
   }
 
   // чья экономическая зона в точке (пиратские базы зон не держат)
@@ -1545,6 +1548,7 @@ export class Civ {
     p.owner = conqueror.id
     p.pop = newPop
     p.ground = null
+    p.unrest = 35 // свежезахваченная планета бурлит — без гарнизона может уйти обратно
     p.pvoUnits = 1
     p.pvoReady = 1
     p.pvoReload = []
@@ -1596,9 +1600,10 @@ export class Civ {
       return
     }
     // обычная боеголовка: чисто противонаселенческое оружие,
-    // планету не ломает, ПВО лишь слегка царапает
+    // планету не ломает, ПВО лишь слегка царапает; бомбёжки злят колонию
     const kills = rand(0.18, 0.4)
     p.pop = Math.max(0, p.pop - kills)
+    p.unrest = clamp((p.unrest || 0) + 6, 0, 100)
     if (Math.random() < 0.5) this.damagePvo(p, 1.2)
     this.setRel(m.owner, p.owner, this.getRel(m.owner, p.owner) - 8)
     diplomacy.addWarScore(this, m.owner, p.owner, 2)
@@ -1831,6 +1836,7 @@ export class Civ {
     const kills = Math.min(p.pop, dmg * 0.06)
     if (kills > 0.05) {
       p.pop -= kills
+      p.unrest = clamp((p.unrest || 0) + 4, 0, 100)
       this.log(`💀 катастрофа на ${p.name}: −${(kills * 1000) | 0} населения`, { x: p.x, y: p.y })
       if (p.pop <= 0.01) {
         p.pop = 0
@@ -1854,18 +1860,20 @@ export class Civ {
   // ---------- отрисовка ----------
 
   drawUnder(ctx) {
-    // экономические зоны: внутри — права на добычу, чужим шахтёрам тут не рады
+    // экономические зоны: внутри — права на добычу, чужим шахтёрам тут не рады.
+    // Рисуем еле заметно и только у живых колоний — чтобы не было каши из кругов
     for (const st of this.states) {
       if (st.pirate) continue
       for (const p of this.planetsOf(st)) {
+        if (p.pop < 0.45) continue
         const zone = this.zoneRadius(p)
         ctx.save()
-        ctx.globalAlpha = 0.05
+        ctx.globalAlpha = 0.028
         ctx.fillStyle = st.color
         ctx.beginPath()
         ctx.ellipse(p.x, p.y * SQ, zone, zone * SQ, 0, 0, TAU)
         ctx.fill()
-        ctx.globalAlpha = 0.14
+        ctx.globalAlpha = 0.1
         ctx.strokeStyle = st.color
         ctx.lineWidth = 1 / this.e.cam.zoom
         ctx.setLineDash([3 / this.e.cam.zoom, 8 / this.e.cam.zoom])

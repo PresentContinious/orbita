@@ -32,6 +32,33 @@ export function populations(civ, h) {
       st.ore += got
       if (p.oreRes <= 0) civ.log(`⛏ недра ${p.name} выработаны до дна`, { x: p.x, y: p.y })
     }
+    // недовольство колоний: далёкие, зрелые и уставшие от войны тянутся к свободе;
+    // тяжёлый корабль на орбите (гарнизон) сепаратизм давит. Видно в карточке планеты
+    if (!p.outpost && p.id !== st.home && !st.pirate) {
+      const home = civ.planetById(st.home)
+      let dU = 0
+      let why = null
+      if (home) {
+        const far = Math.min(dist(p, home) / 900, 1.2) * 0.35
+        if (far > 0.12) why = 'столица далеко'
+        dU += far
+      }
+      if (p.pop > p.baseR * 1.3 * 0.55) {
+        dU += 0.3
+        if (!why) why = 'выросла и хочет сама'
+      }
+      if (civ.states.some((o) => o.id !== st.id && !o.pirate && civ.isWar(st.id, o.id))) {
+        dU += 0.25
+        if (!why) why = 'устала от войны метрополии'
+      }
+      if (civ.ships.some((s) => CAP_KINDS.includes(s.kind) && s.owner === st.id && s.hp > 0 && dist(s, p) < 220)) dU -= 0.55
+      dU -= 0.12
+      p.unrest = clamp((p.unrest || 0) + dU * 0.6 * h, 0, 100)
+      p.unrestWhy = p.unrest > 5 ? why : null
+    } else {
+      p.unrest = 0
+      p.unrestWhy = null
+    }
     // перезарядка установок ПВО
     if (p.pvoReload.length) {
       p.pvoReload = p.pvoReload.filter((t) => {
@@ -246,18 +273,21 @@ export function peacetimeDecide(civ, st, myPlanets, myShips, myDreads) {
     }
   }
 
-  // сецессия колоний: отделившиеся получают ПВО и казну — у них есть шанс отбиться.
-  // если зрелых колоний две — может полыхнуть революция: уходят обе разом
-  const colonies = myPlanets.filter((p) => p.id !== st.home && p.pop > 0.9)
-  if (colonies.length && Math.random() < 0.05) {
-    colonies.sort((a, b) => a.pop - b.pop)
+  // сецессия: уходят не случайные, а НАКИПЕВШИЕ колонии (недовольство выше 75 —
+  // смотри карточку планеты). Отделившиеся получают ПВО и казну — есть шанс отбиться
+  const colonies = myPlanets.filter((p) => p.id !== st.home && !p.outpost && p.pop > 0.9 && (p.unrest || 0) > 75)
+  if (colonies.length && Math.random() < 0.25) {
+    colonies.sort((a, b) => (b.unrest || 0) - (a.unrest || 0))
     const twin = colonies.length >= 2 && Math.random() < 0.4
     const rebels = twin ? colonies.slice(0, 2) : [colonies[0]]
+    const why = rebels[0].unrestWhy || 'недовольство'
     const newStates = []
     for (const p of rebels) {
       const ns = civ._makeState(p, p.pop, { credits: 150 })
       p.pvoUnits = 3
       p.pvoReady = 3
+      p.unrest = 0
+      p.unrestWhy = null
       civ.setRel(ns.id, st.id, rand(-40, 25))
       for (const o of civ.states) {
         if (o.id !== ns.id && o.id !== st.id && !o.pirate) civ.setRel(ns.id, o.id, rand(-25, 40))
@@ -267,9 +297,9 @@ export function peacetimeDecide(civ, st, myPlanets, myShips, myDreads) {
     if (twin) {
       const friends = Math.random() < 0.5
       civ.setRel(newStates[0].id, newStates[1].id, friends ? 70 : rand(-40, 40))
-      civ.log(`📢 революция в ${st.name}! отделились ${rebels.map((p) => p.name).join(' и ')}${friends ? ' — и сразу заключили союз' : ''}`, { x: rebels[0].x, y: rebels[0].y, imp: true })
+      civ.log(`📢 революция в ${st.name} (${why})! отделились ${rebels.map((p) => p.name).join(' и ')}${friends ? ' — и сразу заключили союз' : ''}`, { x: rebels[0].x, y: rebels[0].y, imp: true })
     } else {
-      civ.log(`🏴 колония ${rebels[0].name} объявила независимость от ${st.name}`, { x: rebels[0].x, y: rebels[0].y, imp: true })
+      civ.log(`🏴 колония ${rebels[0].name} объявила независимость от ${st.name} — ${why}`, { x: rebels[0].x, y: rebels[0].y, imp: true })
     }
   }
 }
