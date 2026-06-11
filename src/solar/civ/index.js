@@ -295,15 +295,22 @@ export class Civ {
       }
     }
 
-    // баллистика ЗАЛПОМ: дорого — выгоднее захватывать, чем выжигать
+    // баллистика — артподготовка, а не самоцель: в наступлении бьём по цели будущего
+    // штурма, пока у неё стоит ПВО (тратим её заряды и режем оборону); голую планету
+    // с малым населением ракетами не добиваем — её берёт десант, космос нужен целым.
+    // В глухой обороне ракетами не разбрасываемся — деньги уходят на ПВО и флот
     if (st.missileT <= 0 && st.credits >= 25) {
-      const volley = clamp(1 + Math.floor(myPop / 3), 1, 4)
-      const target = pick(ePlanets)
-      for (let i = 0; i < volley && st.credits >= 25; i++) {
-        st.credits -= 25
-        this._launchWarhead(pick(myPlanets), target, st)
+      const defensive = st.tactic === 'defense'
+      const target = st.tactic === 'assault' ? ePlanets[0] : pick(ePlanets)
+      const worthIt = target.pvoUnits > 0 || target.pop > 1.5
+      if (worthIt && (!defensive || Math.random() < 0.35)) {
+        const volley = defensive ? 1 : clamp(1 + Math.floor(myPop / 3), 1, 4)
+        for (let i = 0; i < volley && st.credits >= 25; i++) {
+          st.credits -= 25
+          this._launchWarhead(pick(myPlanets), target, st)
+        }
       }
-      st.missileT = clamp(30 / Math.max(myPop, 0.4), 6, 40)
+      st.missileT = clamp(30 / Math.max(myPop, 0.4), 6, 40) * (defensive ? 2.5 : 1)
     }
 
     // разрушитель планет: оружие отчаяния — дорого (по размеру цели), сбивается ПВО
