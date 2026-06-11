@@ -397,8 +397,39 @@ export class Civ {
         for (const d of idle) d.mission = { type: 'blockade', planet: tp }
       }
     } else {
-      // оборона: всех домой
-      for (const d of myCaps) if (d.mission && d.mission.type !== 'escort') d.mission = null
+      // оборона: эскадра стягивается к самой угрожаемой планете, а не сидит по домам
+      const hot = myPlanets
+        .map((p) => ({
+          p,
+          threat:
+            this.ships.filter((s) => CAP_KINDS.includes(s.kind) && s.hp > 0 && this.hostile(st.id, s.owner) && dist(s, p) < 420).length +
+            (p.ground ? 2 : 0),
+        }))
+        .sort((a, b) => b.threat - a.threat)[0]
+      if (hot && hot.threat > 0) {
+        for (const d of myCaps) if (!d.mission || d.mission.type === 'guard') d.mission = { type: 'guard', planet: hot.p.id }
+      } else {
+        for (const d of myCaps) if (d.mission && d.mission.type !== 'escort') d.mission = null
+      }
+    }
+
+    // подкрепления своим планетам, где идёт наземная война — оборону можно усилить
+    const invaded = myPlanets.find((p) => p.ground)
+    if (invaded) {
+      const enRoute2 = this.ships.filter((s) => s.owner === st.id && s.mission?.type === 'reinforce' && s.mission.planet === invaded.id).length
+      if (enRoute2 < 2 && st.credits >= SHIP.transport.cost) {
+        const src = myPlanets.filter((p) => p !== invaded && p.pop > 1).sort((a, b) => b.pop - a.pop)[0]
+        if (src) {
+          const sh = this._spawnShip('transport', st, src)
+          if (sh) {
+            st.credits -= SHIP.transport.cost
+            const troops = Math.min(Math.max(src.pop * 0.3, 0.5), 6)
+            src.pop = Math.max(src.pop - troops * 0.4, 0.05)
+            sh.mission = { type: 'reinforce', planet: invaded.id, troops }
+            this.log(`🛡 ${st.name} шлёт подкрепление на ${invaded.name}`, { x: invaded.x, y: invaded.y })
+          }
+        }
+      }
     }
 
     // мир — только если война затянулась и идёт плохо; условия диктует счёт войны
@@ -884,6 +915,18 @@ export class Civ {
           }
         }
 
+        // караул: держим орбиту угрожаемой планеты, дуэльная логика выше сама втянет в бой
+        if (m?.type === 'guard') {
+          const p = this.planetById(m.planet)
+          if (!p || !p.alive || p.owner !== sh.owner) {
+            sh.mission = null
+          } else {
+            this._holdOrbit(sh, p, 120, h)
+            if (sh.hp < sh.maxHp && dist(sh, p) < 200) sh.hp = Math.min(sh.maxHp, sh.hp + 4 * h)
+            continue
+          }
+        }
+
         if (m?.type === 'siege') {
           const p = this.planetById(m.planet)
           if (!p || !p.alive || !p.owner || !this.hostile(sh.owner, p.owner)) {
@@ -1044,6 +1087,23 @@ export class Civ {
             this.log(`🏙 ${st.name} основало колонию на ${p.name}`, { x: p.x, y: p.y, imp: true })
             // корабль разбирают на стройматериалы — колонисты остаются жить
             sh.gone = true
+          }
+          continue
+        }
+
+        // подкрепление своей планете: бойцы вливаются в наземную оборону
+        if (m?.type === 'reinforce') {
+          const p = this.planetById(m.planet)
+          if (!p || !p.alive || p.owner !== sh.owner) {
+            sh.mission = null
+            continue
+          }
+          this._steerPlanet(sh, p, h)
+          if (dist(sh, p) < p.r + 10) {
+            p.pop = Math.min(p.pop + m.troops, p.baseR * 1.3)
+            this.log(`🛡 подкрепление на ${p.name}: +${(m.troops * 1000) | 0} бойцов в оборону`, { x: p.x, y: p.y })
+            sh.mission = null
+            sh.hp = 0 // транспорт расходуется при высадке под огнём
           }
           continue
         }
@@ -1506,6 +1566,10 @@ export class Civ {
         return `везёт горняков → ${pName(m.planet)}`
       case 'invade':
         return `десант → ${pName(m.planet)} (${(m.troops * 1000) | 0} чел)`
+      case 'reinforce':
+        return `подкрепление → ${pName(m.planet)} (${(m.troops * 1000) | 0} чел)`
+      case 'guard':
+        return `караул у ${pName(m.planet)}`
       case 'siege':
         return `осада ${pName(m.planet)}`
       case 'hunt':
@@ -1711,7 +1775,7 @@ export class Civ {
         w = 12
         hgt = 17
       } else if (sh.kind === 'transport') {
-        key = sh.mission?.type === 'invade' ? 'troop' : 'cargo'
+        key = sh.mission?.type === 'invade' || sh.mission?.type === 'reinforce' ? 'troop' : 'cargo'
         w = 13
         hgt = 13
       } else if (sh.kind === 'miner') {
