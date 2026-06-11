@@ -1034,13 +1034,12 @@ export class Engine {
     this.moonAngle += h * (TAU / 2.4)
     // затухание визуальных эффектов — каждый кадр, даже на паузе
     this.civ?.updateVisual(dt)
-    // логика — фиксированными тиками; потолок = бюджет максимальной скорости,
+    // логика — фиксированными тиками; потолок 10 тиков = бюджет максимальной скорости (×10),
     // излишек сбрасывается (защита от спирали смерти на слабом железе)
     this.civAcc = Math.min(this.civAcc + h, CIV_TICK * 10)
-    while (this.civAcc >= CIV_TICK) {
-      this.civ?.tick(CIV_TICK)
-      this.civAcc -= CIV_TICK
-    }
+    const civTicks = Math.floor(this.civAcc / CIV_TICK)
+    this.civAcc -= civTicks * CIV_TICK
+    for (let i = 0; i < civTicks; i++) this.civ?.tick(CIV_TICK)
 
     const pdt = this.paused ? 0 : dt * Math.min(this.timeScale, 2.5)
 
