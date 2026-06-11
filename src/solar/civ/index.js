@@ -6,6 +6,29 @@ import { TAU, SQ, clamp, rand, pick, dist, STATE_COLORS, PIRATE_COLOR, SHIP, CAP
 import * as diplomacy from './diplomacy.js'
 import * as economy from './economy.js'
 
+// свечение под кораблём: запечённый офскрин-спрайт по цвету — две дуги
+// с 'lighter' на каждый корабль на каждом кадре давили FPS сильнее самих спрайтов
+const glowCache = new Map()
+function getGlow(color) {
+  let c = glowCache.get(color)
+  if (!c) {
+    c = document.createElement('canvas')
+    c.width = c.height = 64
+    const g = c.getContext('2d')
+    g.fillStyle = color
+    g.globalAlpha = 0.14
+    g.beginPath()
+    g.arc(32, 32, 32, 0, TAU)
+    g.fill()
+    g.globalAlpha = 0.22
+    g.beginPath()
+    g.arc(32, 32, 14.4, 0, TAU)
+    g.fill()
+    glowCache.set(color, c)
+  }
+  return c
+}
+
 export class Civ {
   constructor(engine) {
     this.e = engine
@@ -14,6 +37,10 @@ export class Civ {
 
   reset() {
     this.t = 0
+    // кеши прошлой партии не должны пережить рестарт
+    this._stMap = null
+    this._byOwner = null
+    this._hostileMemo = null
     this.states = []
     this.ships = []
     this.asteroids = []
@@ -105,6 +132,7 @@ export class Civ {
       home: planet.id,
     }
     this.states.push(st)
+    this._stMap?.set(st.id, st)
     planet.owner = st.id
     planet.pop = pop
     planet.pvoUnits = opts.pirate ? 1 : 2
@@ -124,7 +152,57 @@ export class Civ {
   _maybeSpawnPirates() { diplomacy.maybeSpawnPirates(this) }
 
   stateById(id) {
-    return this.states.find((s) => s.id === id)
+    const c = this._stMap?.get(id)
+    return c !== undefined ? c : this.states.find((s) => s.id === id)
+  }
+
+  // корабли владельца (кеш на тик) — вместо фильтра по всем кораблям
+  shipsOf(ownerId) {
+    return this._byOwner?.get(ownerId) ?? []
+  }
+
+  // все корабли, враждебные владельцу: боевые циклы бегут по списку врагов,
+  // а не по всем кораблям с проверкой hostile() (два линейных поиска) на каждом
+  hostileShipsOf(ownerId) {
+    let arr = this._hostileMemo?.get(ownerId)
+    if (arr) return arr
+    arr = []
+    if (this._byOwner) {
+      for (const [oid, list] of this._byOwner) {
+        if (oid !== ownerId && this.isWar(ownerId, oid)) arr.push(...list)
+      }
+    }
+    this._hostileMemo?.set(ownerId, arr)
+    return arr
+  }
+
+  // кеши на один тик: без них поиски целей были O(кораблей²) с линейным
+  // поиском государства внутри — главный пожиратель FPS в разгар войн
+  _rebuildCaches() {
+    this._stMap = new Map()
+    for (const s of this.states) this._stMap.set(s.id, s)
+    this._byOwner = new Map()
+    for (const s of this.ships) {
+      let arr = this._byOwner.get(s.owner)
+      if (!arr) this._byOwner.set(s.owner, (arr = []))
+      arr.push(s)
+    }
+    this._hostileMemo = new Map()
+  }
+
+  // единый флаг осады (вражеский тяжёлый вымпел в 260): им пользуются заморозка
+  // стройки и маркер на карте — считается раз в тик логики, а не на каждый кадр
+  _updateSiegeMarks() {
+    for (const p of this.e.planets) {
+      p.siegeMark = false
+      if (!p.alive || !p.owner) continue
+      for (const s of this.hostileShipsOf(p.owner)) {
+        if (s.hp > 0 && CAP_KINDS.includes(s.kind) && dist(s, p) < 260) {
+          p.siegeMark = true
+          break
+        }
+      }
+    }
   }
 
   // радиус экономической зоны планеты — растёт с населением (компактный,
@@ -137,6 +215,8 @@ export class Civ {
   zoneOwnerAt(x, y) {
     for (const p of this.e.planets) {
       if (!p.alive || !p.owner) continue
+      // права на добычу — только у заметных колоний: ровно там, где зона видна на карте
+      if (p.pop < 0.45) continue
       const os = this.stateById(p.owner)
       if (!os || os.pirate) continue
       if (Math.hypot(x - p.x, y - p.y) < this.zoneRadius(p)) return p.owner
@@ -193,20 +273,25 @@ export class Civ {
       a.py = a.y
     }
 
+    this._rebuildCaches()
     this._populations(h)
     this._decisions(h)
     this._diplomacyDrift(h)
+    // дипломатия могла объявить войну или заключить мир — списки врагов заново
+    this._hostileMemo = new Map()
     this._ships(h)
     this._interceptConvoys()
     this._groundWars(h)
     this._planetDefense(h)
     this._pvoIntercept()
     this._asteroidsTick(h)
+    this._updateSiegeMarks()
 
     this.states = this.states.filter((s) => {
       if (this.planetsOf(s).length === 0 && !this.ships.some((sh) => sh.owner === s.id)) {
         this.log(`☠️ ${s.name} прекратило существование`, { imp: true })
         this._purgeRelations(s.id)
+        this._stMap?.delete(s.id)
         return false
       }
       return true
@@ -251,7 +336,7 @@ export class Civ {
   _stateDecide(st) {
     const myPlanets = this.planetsOf(st)
     if (!myPlanets.length) return
-    const myShips = this.ships.filter((s) => s.owner === st.id)
+    const myShips = this.shipsOf(st.id)
     const myDreads = myShips.filter((s) => s.kind === 'dread')
 
     // рудный рынок: излишки казны меняются на руду у вольных старателей (4 кр за единицу) —
@@ -282,7 +367,7 @@ export class Civ {
     if (!ePlanets.length) return true
     const ePop = this.popOf(enemy)
     const myCaps = myShips.filter((s) => CAP_KINDS.includes(s.kind))
-    const eCaps = this.ships.filter((s) => CAP_KINDS.includes(s.kind) && s.owner === enemy.id)
+    const eCaps = this.shipsOf(enemy.id).filter((s) => CAP_KINDS.includes(s.kind))
     // вес вымпела в силе: дредноут тяжелее крейсера, крейсер — эсминца
     const capStr = (list) => list.reduce((s, c) => s + (c.kind === 'dread' ? 4 : c.kind === 'cruiser' ? 2 : 1.2), 0)
 
@@ -360,7 +445,7 @@ export class Civ {
       if (saboteurs < 3 && st.credits >= SHIP.raider.cost && st.ore >= SHIP.raider.ore) {
         const rear =
           myPlanets
-            .filter((p) => !p.ground && !this.ships.some((s) => CAP_KINDS.includes(s.kind) && s.hp > 0 && this.hostile(st.id, s.owner) && dist(s, p) < 420))
+            .filter((p) => !p.ground && !this.hostileShipsOf(st.id).some((s) => CAP_KINDS.includes(s.kind) && s.hp > 0 && dist(s, p) < 420))
             .sort((a, b) => b.pop - a.pop)[0] || myPlanets[0]
         const r = this._spawnShip('raider', st, rear)
         if (r) {
@@ -431,8 +516,8 @@ export class Civ {
       // для захвата нужен целый конвой, и его могут перехватить по дороге
       const broken = ePlanets.find((p) => p.pvoUnits <= 0 && myCaps.some((d) => d.mission?.planet === p.id && dist(d, p) < 260))
       if (broken && myPop > 0.9) {
-        const enRoute = this.ships
-          .filter((s) => s.owner === st.id && s.mission?.type === 'invade' && s.mission.planet === broken.id)
+        const enRoute = this.shipsOf(st.id)
+          .filter((s) => s.mission?.type === 'invade' && s.mission.planet === broken.id)
           .reduce((s2, t) => s2 + t.mission.troops, 0)
         const own = broken.ground?.owner === st.id ? broken.ground.troops : 0
         let needed = broken.pop * 1.2 + 0.4 - enRoute - own
@@ -450,7 +535,7 @@ export class Civ {
         }
         if (sent > 0) {
           // волну прикрывает эскорт — голый конвой слишком легко перехватить
-          const wave = this.ships.filter((s) => s.owner === st.id && s.mission?.type === 'invade' && s.mission.planet === broken.id)
+          const wave = this.shipsOf(st.id).filter((s) => s.mission?.type === 'invade' && s.mission.planet === broken.id)
           let guards = 0
           for (const t of wave) {
             if (guards >= 2 || st.credits < SHIP.escort.cost || st.ore < SHIP.escort.ore) break
@@ -478,7 +563,7 @@ export class Civ {
         .map((p) => ({
           p,
           threat:
-            this.ships.filter((s) => CAP_KINDS.includes(s.kind) && s.hp > 0 && this.hostile(st.id, s.owner) && dist(s, p) < 420).length +
+            this.hostileShipsOf(st.id).filter((s) => CAP_KINDS.includes(s.kind) && s.hp > 0 && dist(s, p) < 420).length +
             (p.ground ? 2 : 0),
         }))
         .sort((a, b) => b.threat - a.threat)[0]
@@ -492,7 +577,7 @@ export class Civ {
     // подкрепления своим планетам, где идёт наземная война — оборону можно усилить
     const invaded = myPlanets.find((p) => p.ground)
     if (invaded) {
-      const enRoute2 = this.ships.filter((s) => s.owner === st.id && s.mission?.type === 'reinforce' && s.mission.planet === invaded.id).length
+      const enRoute2 = this.shipsOf(st.id).filter((s) => s.mission?.type === 'reinforce' && s.mission.planet === invaded.id).length
       if (enRoute2 < 2 && st.credits >= SHIP.transport.cost) {
         const src = myPlanets.filter((p) => p !== invaded && p.pop > 1).sort((a, b) => b.pop - a.pop)[0]
         if (src) {
@@ -523,7 +608,7 @@ export class Civ {
 
     // на базу напали — пираты выжидают момент и эвакуируются на новую скалу.
     // дредноуты прилетят добивать пустые камни
-    const threat = this.ships.some((s) => s.kind === 'dread' && s.hp > 0 && s.owner !== st.id && dist(s, den) < 320)
+    const threat = this.hostileShipsOf(st.id).some((s) => s.kind === 'dread' && s.hp > 0 && dist(s, den) < 320)
     if (threat) {
       if (!st.evacAt) st.evacAt = this.t + rand(7, 14)
       if (this.t >= st.evacAt) {
@@ -549,7 +634,7 @@ export class Civ {
       st.evacAt = null
     }
 
-    const raiders = this.ships.filter((s) => s.owner === st.id && s.kind === 'raider')
+    const raiders = this.shipsOf(st.id).filter((s) => s.kind === 'raider')
     // строят стаю рейдеров — побольше и позлее; руду берут грабежом и со своих скал
     if (raiders.length < 10 && st.credits >= SHIP.raider.cost && st.ore >= SHIP.raider.ore) {
       if (this._spawnShip('raider', st, den)) {
@@ -558,7 +643,7 @@ export class Civ {
       }
     }
     // разжились — со стапелей сходит корсар: гроза конвоев, которого так просто не сбить
-    const corsairs = this.ships.filter((s) => s.owner === st.id && s.kind === 'corsair')
+    const corsairs = this.shipsOf(st.id).filter((s) => s.kind === 'corsair')
     if (raiders.length >= 5 && corsairs.length < 2 && st.credits >= SHIP.corsair.cost && st.ore >= SHIP.corsair.ore) {
       if (this._spawnShip('corsair', st, den)) {
         st.credits -= SHIP.corsair.cost
@@ -571,8 +656,8 @@ export class Civ {
 
     // цель — грабёж транспортов и шахтёров; корсары охотятся наравне со стаей.
     // по контракту бьём врага нанимателя, нанимателя не трогаем; откупившихся — тоже
-    let prey = this.ships.filter(
-      (s) => (s.kind === 'transport' || s.kind === 'miner') && s.owner !== st.id && !(st.truces && st.truces[s.owner] > this.t),
+    let prey = this.hostileShipsOf(st.id).filter(
+      (s) => (s.kind === 'transport' || s.kind === 'miner') && !(st.truces && st.truces[s.owner] > this.t),
     )
     if (st.contract) {
       const hired = prey.filter((s) => s.owner === st.contract.enemy)
@@ -627,6 +712,12 @@ export class Civ {
       sh.strike = false
     }
     this.ships.push(sh)
+    // свежий корабль сразу попадает в кеш владельца — его видно в этом же тике
+    if (this._byOwner) {
+      const arr = this._byOwner.get(st.id)
+      if (arr) arr.push(sh)
+      else this._byOwner.set(st.id, [sh])
+    }
     return sh
   }
 
@@ -743,8 +834,8 @@ export class Civ {
           } else {
             let foe = null
             let bd = 220
-            for (const o of this.ships) {
-              if (o.hp <= 0 || !this.hostile(sh.owner, o.owner)) continue
+            for (const o of this.hostileShipsOf(sh.owner)) {
+              if (o.hp <= 0) continue
               const d = dist(ward, o)
               if (d < bd) {
                 bd = d
@@ -769,8 +860,8 @@ export class Civ {
           }
           let target = null
           let bd = Infinity
-          for (const o of this.ships) {
-            if (o.hp <= 0 || o.kind === 'miner' || !this.hostile(sh.owner, o.owner)) continue
+          for (const o of this.hostileShipsOf(sh.owner)) {
+            if (o.hp <= 0 || o.kind === 'miner') continue
             if (dist(homeP, o) > 330) continue
             const d = dist(sh, o)
             if (d < bd) {
@@ -800,8 +891,8 @@ export class Civ {
           } else {
             let prey = null
             let bd = Infinity
-            for (const o of this.ships) {
-              if (o.hp <= 0 || o.owner !== m.enemy || (o.kind !== 'miner' && o.kind !== 'transport')) continue
+            for (const o of this.shipsOf(m.enemy)) {
+              if (o.hp <= 0 || (o.kind !== 'miner' && o.kind !== 'transport')) continue
               const d = dist(sh, o)
               if (d < bd) {
                 bd = d
@@ -830,8 +921,8 @@ export class Civ {
             // прикрытие: бьём только тех, кто лезет к носителю
             let target = null
             let bd = 175
-            for (const o of this.ships) {
-              if (o.hp <= 0 || !this.hostile(sh.owner, o.owner)) continue
+            for (const o of this.hostileShipsOf(sh.owner)) {
+              if (o.hp <= 0) continue
               const d = dist(car, o)
               if (d < bd) {
                 bd = d
@@ -848,8 +939,8 @@ export class Civ {
         if (!target || target.hp <= 0) {
           target = null
           let bd = 300
-          for (const o of this.ships) {
-            if (o.hp <= 0 || !this.hostile(sh.owner, o.owner)) continue
+          for (const o of this.hostileShipsOf(sh.owner)) {
+            if (o.hp <= 0) continue
             const d = dist(sh, o)
             if (d < bd) {
               bd = d
@@ -866,7 +957,7 @@ export class Civ {
         if (carrier) {
           this._steer(sh, carrier.x, carrier.y, h)
           if (dist(sh, carrier) < 20) {
-            const danger = this.ships.some((o) => o.hp > 0 && this.hostile(sh.owner, o.owner) && dist(carrier, o) < 340)
+            const danger = this.hostileShipsOf(sh.owner).some((o) => o.hp > 0 && dist(carrier, o) < 340)
             if (!danger) sh.gone = true
           }
         } else {
@@ -891,18 +982,18 @@ export class Civ {
           const homeP = this.planetById(sh.home)
           if (homeP) this._steerPlanet(sh, homeP, h)
           let nearestFoe = Infinity
-          for (const o of this.ships) {
-            if (CAP_KINDS.includes(o.kind) && o.hp > 0 && this.hostile(sh.owner, o.owner)) nearestFoe = Math.min(nearestFoe, dist(sh, o))
+          for (const o of this.hostileShipsOf(sh.owner)) {
+            if (CAP_KINDS.includes(o.kind) && o.hp > 0) nearestFoe = Math.min(nearestFoe, dist(sh, o))
           }
           if (nearestFoe > 620 || (homeP && dist(sh, homeP) < 160)) sh.retreating = false
           continue
         }
 
         // авиакрыло (только дредноут-носитель)
-        const wing = sh.kind === 'dread' ? this.ships.filter((s) => s.carrier === sh.id && s.hp > 0) : []
+        const wing = sh.kind === 'dread' ? this.shipsOf(sh.owner).filter((s) => s.carrier === sh.id && s.hp > 0) : []
         // сбор ударного крыла: считаем все свои истребители рядом (включая крылья соседей по флоту)
         if (sh.airTactic === 'massed') {
-          const near = this.ships.filter((s) => s.kind === 'fighter' && s.owner === sh.owner && s.hp > 0 && dist(s, sh) < 150).length
+          const near = this.shipsOf(sh.owner).filter((s) => s.kind === 'fighter' && s.hp > 0 && dist(s, sh) < 150).length
           if (!sh.strike && near >= 5) sh.strike = true
           else if (sh.strike && near < 2) sh.strike = false
         }
@@ -910,8 +1001,8 @@ export class Civ {
         let foe = null
         let foeRank = 0
         let foeD = 300
-        for (const o of this.ships) {
-          if (o.hp <= 0 || !this.hostile(sh.owner, o.owner)) continue
+        for (const o of this.hostileShipsOf(sh.owner)) {
+          if (o.hp <= 0) continue
           const d2 = dist(sh, o)
           if (d2 > 300) continue
           const light = o.kind === 'fighter' || o.kind === 'raider' || o.kind === 'escort' || o.kind === 'corsair'
@@ -946,8 +1037,8 @@ export class Civ {
         // ГЕНЕРАЛЬНОЕ СРАЖЕНИЕ: вражеский тяжёлый вымпел в радиусе — манёвр, строй и шквальный огонь
         let duel = null
         let duelD = 520
-        for (const o of this.ships) {
-          if (!CAP_KINDS.includes(o.kind) || o.hp <= 0 || !this.hostile(sh.owner, o.owner)) continue
+        for (const o of this.hostileShipsOf(sh.owner)) {
+          if (!CAP_KINDS.includes(o.kind) || o.hp <= 0) continue
           const d2 = dist(sh, o)
           if (d2 < duelD) {
             duelD = d2
@@ -999,8 +1090,8 @@ export class Civ {
           } else {
             let prey = null
             let bd = Infinity
-            for (const o of this.ships) {
-              if (o.hp <= 0 || o.owner !== m.enemy || (o.kind !== 'transport' && o.kind !== 'miner')) continue
+            for (const o of this.shipsOf(m.enemy)) {
+              if (o.hp <= 0 || (o.kind !== 'transport' && o.kind !== 'miner')) continue
               const d = dist(sh, o)
               if (d < bd) {
                 bd = d
@@ -1132,7 +1223,7 @@ export class Civ {
 
       if (sh.kind === 'transport') {
         // ПВО транспорта: отстреливает истребители и рейдеров поодиночке
-        const attackers = this.ships.filter((s) => s.hp > 0 && (s.kind === 'fighter' || s.kind === 'raider') && this.hostile(sh.owner, s.owner) && dist(sh, s) < 55)
+        const attackers = this.hostileShipsOf(sh.owner).filter((s) => s.hp > 0 && (s.kind === 'fighter' || s.kind === 'raider') && dist(sh, s) < 55)
         if (attackers.length) {
           const dps = 16 / Math.max(attackers.length - 1, 1) // стаю уже не сдержать
           this._fire(sh, attackers[0], dps * h)
@@ -1490,7 +1581,7 @@ export class Civ {
             p.pop > 1 &&
             !p.ground &&
             dist(p, t) < 900 &&
-            !this.ships.some((s) => CAP_KINDS.includes(s.kind) && s.hp > 0 && this.hostile(defSt.id, s.owner) && dist(s, p) < 340),
+            !this.hostileShipsOf(defSt.id).some((s) => CAP_KINDS.includes(s.kind) && s.hp > 0 && dist(s, p) < 340),
         )
         .sort((a, b) => dist(a, t) - dist(b, t))[0]
       if (!base) continue
@@ -1624,12 +1715,12 @@ export class Civ {
       if (!p.alive || !p.owner || p.pop <= 0) continue
       p.defT = (p.defT || 0) - h
       if (p.defT > 0) continue
-      const militia = this.ships.filter((s) => s.militia && s.home === p.id && s.hp > 0).length
+      const militia = this.shipsOf(p.owner).filter((s) => s.militia && s.home === p.id && s.hp > 0).length
       const cap = clamp(2 + Math.round(p.pop * 0.7), 2, 8)
       if (militia >= cap) continue
       let threat = false
-      for (const o of this.ships) {
-        if (o.hp > 0 && o.kind !== 'miner' && this.hostile(p.owner, o.owner) && dist(o, p) < 320) {
+      for (const o of this.hostileShipsOf(p.owner)) {
+        if (o.hp > 0 && o.kind !== 'miner' && dist(o, p) < 320) {
           threat = true
           break
         }
@@ -1768,7 +1859,7 @@ export class Civ {
       case 'pirateMove':
         return 'перевозит пиратское логово'
       case 'mine':
-        return m.phase === 0 ? 'летит к астероиду' : `везёт руду домой (+${m.haul} кр)`
+        return m.phase === 0 ? 'летит к астероиду' : `везёт домой ${m.haul} руды`
       default:
         return 'патрулирует'
     }
@@ -1938,7 +2029,7 @@ export class Civ {
     const pulse = 0.5 + 0.5 * Math.sin(this.e.visT * 5)
     for (const p of this.e.planets) {
       if (!p.alive || !p.owner) continue
-      const besieged = this.ships.some((s) => CAP_KINDS.includes(s.kind) && s.hp > 0 && this.hostile(p.owner, s.owner) && dist(s, p) < 260)
+      const besieged = !!p.siegeMark // флаг считается раз в тик логики, не на каждый кадр
       if (!besieged && !p.ground) continue
       ctx.save()
       if (besieged) {
@@ -1968,14 +2059,14 @@ export class Civ {
     }
 
     // корабли: SVG-спрайты в цвете владельца (нос вверх → +90°).
-    // При отдалении не растворяются: масштаб компенсирует зум + подсветка-свечение
+    // При отдалении не растворяются: масштаб компенсирует зум + подсветка-свечение.
+    // Рисуем в три прохода (свечения → корпуса → полоски hp): один запечённый
+    // спрайт свечения вместо двух дуг и без смены composite-режима на каждый корабль
     const mul = clamp(0.55 / z, 1, 3.4)
+    const drawList = []
     for (const sh of this.ships) {
       const st = this.stateById(sh.owner)
       const color = st?.color || '#59d6ff'
-      const x = ix(sh)
-      const y = iy(sh) * SQ
-      const ang = Math.atan2(sh.vy * SQ, sh.vx) + Math.PI / 2
 
       let key = sh.kind
       let w = 10
@@ -2007,28 +2098,26 @@ export class Civ {
       }
       w *= mul
       hgt *= mul
+      drawList.push({ sh, color, key, w, hgt, x: ix(sh), y: iy(sh) * SQ })
+    }
 
-      // подсветка под корпусом — без градиента: на сотне кораблей это десятки FPS
-      const glowR = Math.max(w, hgt) * 0.75
-      ctx.save()
-      ctx.globalCompositeOperation = 'lighter'
-      ctx.fillStyle = color
-      ctx.globalAlpha = 0.14
-      ctx.beginPath()
-      ctx.arc(x, y, glowR, 0, TAU)
-      ctx.fill()
-      ctx.globalAlpha = 0.22
-      ctx.beginPath()
-      ctx.arc(x, y, glowR * 0.45, 0, TAU)
-      ctx.fill()
-      ctx.restore()
+    ctx.save()
+    ctx.globalCompositeOperation = 'lighter'
+    for (const it of drawList) {
+      const glowR = Math.max(it.w, it.hgt) * 0.75
+      ctx.drawImage(getGlow(it.color), it.x - glowR, it.y - glowR, glowR * 2, glowR * 2)
+    }
+    ctx.restore()
 
-      const img = getSprite(key, color)
+    for (const it of drawList) {
+      const { sh, color } = it
+      const ang = Math.atan2(sh.vy * SQ, sh.vx) + Math.PI / 2
+      const img = getSprite(it.key, color)
       ctx.save()
-      ctx.translate(x, y)
+      ctx.translate(it.x, it.y)
       ctx.rotate(ang)
       if (img.complete && img.naturalWidth) {
-        ctx.drawImage(img, -w / 2, -hgt / 2, w, hgt)
+        ctx.drawImage(img, -it.w / 2, -it.hgt / 2, it.w, it.hgt)
       } else {
         ctx.fillStyle = color
         ctx.beginPath()
@@ -2036,15 +2125,17 @@ export class Civ {
         ctx.fill()
       }
       ctx.restore()
+    }
 
-      if (sh.hp < sh.maxHp) {
-        const bw = (sh.kind === 'dread' ? 22 : 12) * mul
-        const by = y - 12 * mul
-        ctx.fillStyle = 'rgba(0,0,0,0.5)'
-        ctx.fillRect(x - bw / 2, by, bw, 2.4 * mul)
-        ctx.fillStyle = sh.hp / sh.maxHp > 0.4 ? '#7dd87d' : '#ff6b5c'
-        ctx.fillRect(x - bw / 2, by, (bw * sh.hp) / sh.maxHp, 2.4 * mul)
-      }
+    for (const it of drawList) {
+      const { sh } = it
+      if (sh.hp >= sh.maxHp) continue
+      const bw = (sh.kind === 'dread' ? 22 : 12) * mul
+      const by = it.y - 12 * mul
+      ctx.fillStyle = 'rgba(0,0,0,0.5)'
+      ctx.fillRect(it.x - bw / 2, by, bw, 2.4 * mul)
+      ctx.fillStyle = sh.hp / sh.maxHp > 0.4 ? '#7dd87d' : '#ff6b5c'
+      ctx.fillRect(it.x - bw / 2, by, (bw * sh.hp) / sh.maxHp, 2.4 * mul)
     }
 
     // лучи ПВО / орудий

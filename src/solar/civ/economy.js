@@ -51,7 +51,7 @@ export function populations(civ, h) {
         dU += 0.25
         if (!why) why = 'устала от войны метрополии'
       }
-      if (civ.ships.some((s) => CAP_KINDS.includes(s.kind) && s.owner === st.id && s.hp > 0 && dist(s, p) < 220)) dU -= 0.55
+      if (civ.shipsOf(st.id).some((s) => CAP_KINDS.includes(s.kind) && s.hp > 0 && dist(s, p) < 220)) dU -= 0.55
       dU -= 0.12
       p.unrest = clamp((p.unrest || 0) + dU * 0.6 * h, 0, 100)
       p.unrestWhy = p.unrest > 5 ? why : null
@@ -70,12 +70,10 @@ export function populations(civ, h) {
       })
       p.pvoReload = p.pvoReload.map((t) => t - h)
     }
-    // стройка ПВО и верфи — замирает под осадой
+    // стройка ПВО и верфи — замирает под осадой ЛЮБОГО тяжёлого вымпела
+    // (раньше только дредноут; единый флаг считается раз в тик в _updateSiegeMarks)
     if (p.pvoBuildT > 0 || p.yardBuildT > 0) {
-      const besieged = civ.ships.some(
-        (s) => s.kind === 'dread' && s.hp > 0 && civ.hostile(p.owner, s.owner) && dist(s, p) < 260,
-      )
-      if (!besieged) {
+      if (!p.siegeMark) {
         if (p.pvoBuildT > 0) {
           p.pvoBuildT -= h
           if (p.pvoBuildT <= 0) {
@@ -137,7 +135,7 @@ export function peacetimeDecide(civ, st, myPlanets, myShips, myDreads) {
     // и донесения (ошибка до ±40%): точного состава врага бот не знает
     const foe = threats.reduce((b, o) => (civ.popOf(o) > civ.popOf(b) ? o : b), threats[0])
     if (!st.mobIntel) st.mobIntel = rand(0.7, 1.4)
-    const foeCaps = civ.ships.filter((s) => CAP_KINDS.includes(s.kind) && s.owner === foe.id)
+    const foeCaps = civ.shipsOf(foe.id).filter((s) => CAP_KINDS.includes(s.kind))
     const est = (civ.popOf(foe) + foeCaps.reduce((s, c) => s + (c.kind === 'dread' ? 4 : c.kind === 'cruiser' ? 2 : 1.2), 0)) * st.mobIntel
     const wantCaps = clamp(Math.round(est / 3.5), 2, 6)
     const count = (k) => myShips.filter((s) => s.kind === k).length

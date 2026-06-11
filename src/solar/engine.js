@@ -290,7 +290,8 @@ export class Engine {
   // ---------- размеры / координаты ----------
 
   resize() {
-    const dpr = Math.min(window.devicePixelRatio || 1, 2)
+    // DPR ограничен 1.5: на 2K/4K-мониторах рендер в полные ×2 съедал половину FPS
+    const dpr = Math.min(window.devicePixelRatio || 1, 1.5)
     this.dpr = dpr
     this.w = this.canvas.clientWidth
     this.h = this.canvas.clientHeight
@@ -1334,10 +1335,10 @@ export class Engine {
       const px = (((st.x - cam.x * cam.zoom * 0.04 * st.depth - mouse.x * 14 * st.depth) % w) + w) % w
       const py = (((st.y - cam.y * cam.zoom * 0.04 * st.depth - mouse.y * 10 * st.depth) % h) + h) % h
       const a = st.base + Math.sin(visT * st.speed + st.phase) * st.amp
+      const r = st.size * st.depth
+      // звёзды — квадратики субпиксельного размера: сотни arc() на кадр не нужны
       ctx.fillStyle = `rgba(${st.tint},${Math.max(0, a)})`
-      ctx.beginPath()
-      ctx.arc(px, py, st.size * st.depth, 0, TAU)
-      ctx.fill()
+      ctx.fillRect(px - r, py - r, r * 2, r * 2)
     }
   }
 
@@ -1486,13 +1487,20 @@ export class Engine {
   _drawTrail(ctx, pl) {
     const tr = pl.trail
     if (tr.length < 2) return
-    for (let i = 1; i < tr.length; i++) {
-      const a = 0.28 * (i / tr.length)
-      ctx.strokeStyle = `rgba(170, 200, 255, ${a})`
-      ctx.lineWidth = Math.max(0.6, (pl.r * 0.2 * (i / tr.length)) / Math.sqrt(this.cam.zoom))
+    // хвост тремя пачками вместо штриха на сегмент: 18 планет × 120 точек
+    // давали ~2000 stroke() на кадр — ступенчатое затухание глазу не видно
+    const B = 3
+    const n = tr.length
+    for (let b = 0; b < B; b++) {
+      const i0 = Math.max(1, Math.floor((b * n) / B))
+      const i1 = Math.floor(((b + 1) * n) / B)
+      if (i1 <= i0) continue
+      const f = (b + 0.7) / B
+      ctx.strokeStyle = `rgba(170, 200, 255, ${0.28 * f})`
+      ctx.lineWidth = Math.max(0.6, (pl.r * 0.2 * f) / Math.sqrt(this.cam.zoom))
       ctx.beginPath()
-      ctx.moveTo(tr[i - 1].x, tr[i - 1].y * SQ)
-      ctx.lineTo(tr[i].x, tr[i].y * SQ)
+      ctx.moveTo(tr[i0 - 1].x, tr[i0 - 1].y * SQ)
+      for (let i = i0; i < i1; i++) ctx.lineTo(tr[i].x, tr[i].y * SQ)
       ctx.stroke()
     }
   }
@@ -1527,13 +1535,20 @@ export class Engine {
     if (tr.length > 1) {
       ctx.save()
       ctx.globalCompositeOperation = 'lighter'
-      for (let i = 1; i < tr.length; i++) {
-        const a = (m.kind === 'rock' ? 0.3 : 0.55) * (i / tr.length)
-        ctx.strokeStyle = `rgba(${trailColor}, ${a})`
-        ctx.lineWidth = Math.max(0.6, 3 * (i / tr.length))
+      // хвост тремя пачками — как у планетных трейлов
+      const B = 3
+      const n = tr.length
+      const aMax = m.kind === 'rock' ? 0.3 : 0.55
+      for (let b = 0; b < B; b++) {
+        const i0 = Math.max(1, Math.floor((b * n) / B))
+        const i1 = Math.floor(((b + 1) * n) / B)
+        if (i1 <= i0) continue
+        const f = (b + 0.7) / B
+        ctx.strokeStyle = `rgba(${trailColor}, ${aMax * f})`
+        ctx.lineWidth = Math.max(0.6, 3 * f)
         ctx.beginPath()
-        ctx.moveTo(tr[i - 1].x, tr[i - 1].y * SQ)
-        ctx.lineTo(tr[i].x, tr[i].y * SQ)
+        ctx.moveTo(tr[i0 - 1].x, tr[i0 - 1].y * SQ)
+        for (let i = i0; i < i1; i++) ctx.lineTo(tr[i].x, tr[i].y * SQ)
         ctx.stroke()
       }
       ctx.restore()
@@ -1776,10 +1791,9 @@ export class Engine {
         const a = rng() * TAU
         const rr = Math.sqrt(rng()) * r * 0.85
         const tw = 0.55 + Math.sin(this.visT * 2 + i * 2.4) * 0.25
+        const lr = Math.max(0.5, r * 0.045)
         ctx.fillStyle = `rgba(255, 214, 130, ${tw})`
-        ctx.beginPath()
-        ctx.arc(x + Math.cos(a) * rr, y + Math.sin(a) * rr * 0.9, Math.max(0.5, r * 0.045), 0, TAU)
-        ctx.fill()
+        ctx.fillRect(x + Math.cos(a) * rr - lr, y + Math.sin(a) * rr * 0.9 - lr, lr * 2, lr * 2)
       }
       ctx.restore()
     }
@@ -1881,13 +1895,19 @@ export class Engine {
 
   _drawComets(ctx) {
     for (const cm of this.comets) {
-      for (let i = 1; i < cm.tail.length; i++) {
-        const a = (1 - i / cm.tail.length) * 0.5
-        ctx.strokeStyle = `rgba(155, 232, 255, ${a})`
-        ctx.lineWidth = Math.max(0.4, 2.6 * (1 - i / cm.tail.length))
+      const tl = cm.tail
+      const B = 3
+      const n = tl.length
+      for (let b = 0; b < B && n > 1; b++) {
+        const i0 = Math.max(1, Math.floor((b * n) / B))
+        const i1 = Math.floor(((b + 1) * n) / B)
+        if (i1 <= i0) continue
+        const f = 1 - (b + 0.7) / B
+        ctx.strokeStyle = `rgba(155, 232, 255, ${f * 0.5})`
+        ctx.lineWidth = Math.max(0.4, 2.6 * f)
         ctx.beginPath()
-        ctx.moveTo(cm.tail[i - 1].x, cm.tail[i - 1].y)
-        ctx.lineTo(cm.tail[i].x, cm.tail[i].y)
+        ctx.moveTo(tl[i0 - 1].x, tl[i0 - 1].y)
+        for (let i = i0; i < i1; i++) ctx.lineTo(tl[i].x, tl[i].y)
         ctx.stroke()
       }
       const g = ctx.createRadialGradient(cm.x, cm.y, 0, cm.x, cm.y, 9)
@@ -1905,13 +1925,12 @@ export class Engine {
     ctx.save()
     ctx.globalCompositeOperation = 'lighter'
 
+    // искры — квадратики: на сотнях частиц fillRect в разы дешевле arc()+fill()
     for (const s of this.sparks) {
       const a = clamp(s.life / s.max, 0, 1)
       ctx.globalAlpha = a
       ctx.fillStyle = s.color
-      ctx.beginPath()
-      ctx.arc(s.x, s.y * SQ, s.size, 0, TAU)
-      ctx.fill()
+      ctx.fillRect(s.x - s.size, s.y * SQ - s.size, s.size * 2, s.size * 2)
     }
     ctx.globalAlpha = 1
 
