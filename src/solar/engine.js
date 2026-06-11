@@ -226,6 +226,14 @@ export class Engine {
     this.cb.onSelect?.(null)
   }
 
+  // перелёт камеры к точке мира (клик по событию в ленте)
+  flyTo(x, y, zoom = 1.1) {
+    this.followId = null
+    this.target.x = x
+    this.target.y = y * SQ
+    this.target.zoom = Math.max(this.target.zoom, zoom)
+  }
+
   spawnRain() {
     const alive = this.planets.filter((p) => p.alive)
     const n = 14

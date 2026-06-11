@@ -15,14 +15,19 @@ export const PIRATE_COLOR = '#ff5555'
 export const WAR_AT = -45
 export const ALLY_AT = 55
 
+// ore — руда на постройку: боевые корпуса без руды не собрать,
+// шахтёры и транспорты руды не требуют (иначе рудный голод не разорвать)
 export const SHIP = {
-  transport: { hp: 60, speed: 60, cost: 60, label: 'транспорт' },
-  dread: { hp: 420, speed: 30, cost: 320, label: 'дредноут' },
-  fighter: { hp: 14, speed: 115, cost: 0, label: 'истребитель' },
-  raider: { hp: 16, speed: 100, cost: 28, label: 'рейдер' },
-  miner: { hp: 30, speed: 52, cost: 45, label: 'шахтёр' },
-  escort: { hp: 24, speed: 108, cost: 22, label: 'эскорт' },
+  transport: { hp: 60, speed: 60, cost: 60, ore: 0, label: 'транспорт' },
+  dread: { hp: 420, speed: 30, cost: 320, ore: 60, label: 'дредноут' },
+  fighter: { hp: 14, speed: 115, cost: 0, ore: 0, label: 'истребитель' },
+  raider: { hp: 16, speed: 100, cost: 28, ore: 4, label: 'рейдер' },
+  miner: { hp: 30, speed: 52, cost: 45, ore: 0, label: 'шахтёр' },
+  escort: { hp: 24, speed: 108, cost: 22, ore: 5, label: 'эскорт' },
 }
+
+// установка ПВО тоже ест руду
+export const PVO_ORE = 15
 
 // сквозной счётчик id — единый для всех модулей
 let uid = 1
