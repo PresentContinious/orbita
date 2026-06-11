@@ -30,8 +30,9 @@ export class Boundary extends Component {
 
 const SPEEDS = [
   { label: '×1', value: 1 },
+  { label: '×2', value: 2 },
+  { label: '×5', value: 5 },
   { label: '×10', value: 10 },
-  { label: '×50', value: 50 },
 ]
 
 const TOOLS = [
