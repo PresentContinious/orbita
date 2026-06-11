@@ -6,6 +6,9 @@ import raiderRaw from '../assets/sprites/raider.svg?raw'
 import escortRaw from '../assets/sprites/escort.svg?raw'
 import minerRaw from '../assets/sprites/miner.svg?raw'
 import dreadRaw from '../assets/sprites/dreadnought.svg?raw'
+import cruiserRaw from '../assets/sprites/cruiser.svg?raw'
+import destroyerRaw from '../assets/sprites/destroyer.svg?raw'
+import corsairRaw from '../assets/sprites/corsair.svg?raw'
 import cargoRaw from '../assets/sprites/cargo-transport.svg?raw'
 import troopRaw from '../assets/sprites/troop-transport.svg?raw'
 import missileRaw from '../assets/sprites/missile-ballistic.svg?raw'
@@ -16,6 +19,9 @@ const RAW = {
   escort: escortRaw,
   miner: minerRaw,
   dread: dreadRaw,
+  cruiser: cruiserRaw,
+  destroyer: destroyerRaw,
+  corsair: corsairRaw,
   cargo: cargoRaw,
   troop: troopRaw,
   missile: missileRaw,

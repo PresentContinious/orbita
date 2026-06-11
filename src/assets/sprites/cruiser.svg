@@ -1,0 +1,52 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 112" width="64" height="112">
+  <defs>
+    <linearGradient id="cr-hull" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#48567a"></stop>
+      <stop offset="0.5" stop-color="#2b3346"></stop>
+      <stop offset="1" stop-color="#151a25"></stop>
+    </linearGradient>
+    <linearGradient id="cr-pod" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#323c52"></stop>
+      <stop offset="1" stop-color="#141923"></stop>
+    </linearGradient>
+    <radialGradient id="cr-eng" cx="0.5" cy="0.35" r="0.65">
+      <stop offset="0" stop-color="#ffffff"></stop>
+      <stop offset="0.3" style="stop-color:var(--accent,#59d6ff)"></stop>
+      <stop offset="1" style="stop-color:var(--accent,#59d6ff)" stop-opacity="0"></stop>
+    </radialGradient>
+  </defs>
+
+  <!-- боковые орудийные спонсоны -->
+  <polygon points="14,40 22,36 22,72 14,68" fill="url(#cr-pod)" stroke="#0a0e15" stroke-width="1"></polygon>
+  <polygon points="50,40 42,36 42,72 50,68" fill="url(#cr-pod)" stroke="#0a0e15" stroke-width="1"></polygon>
+  <rect x="15.4" y="44" width="2" height="8" fill="#3a4660"></rect>
+  <rect x="46.6" y="44" width="2" height="8" fill="#3a4660"></rect>
+
+  <!-- корпус: вытянутый клин с насечкой миделя -->
+  <polygon points="32,3 38,16 41,34 42,52 42,82 38,98 34,105 30,105 26,98 22,82 22,52 23,34 26,16" fill="url(#cr-hull)" stroke="#0a0e15" stroke-width="1.2"></polygon>
+  <polygon points="32,3 35.5,12 32,18 28.5,12" style="fill:var(--accent,#59d6ff)" opacity="0.9"></polygon>
+
+  <!-- ходовая рубка -->
+  <polygon points="32,24 36,30 36,40 28,40 28,30" fill="#0d1420" stroke="#0a0e15" stroke-width="0.8"></polygon>
+  <polygon points="32,25.5 34.6,30 34.6,35 29.4,35 29.4,30" style="fill:var(--accent,#59d6ff)" opacity="0.5"></polygon>
+
+  <!-- две орудийные палубы -->
+  <rect x="26" y="46" width="12" height="10" style="fill:var(--accent,#59d6ff)" opacity="0.13"></rect>
+  <rect x="26" y="46" width="12" height="10" fill="none" style="stroke:var(--accent,#59d6ff)" stroke-width="0.8" opacity="0.6"></rect>
+  <polygon points="32,47.5 34.8,53.5 29.2,53.5" style="fill:var(--accent,#59d6ff)" opacity="0.85"></polygon>
+  <rect x="26" y="60" width="12" height="10" style="fill:var(--accent,#59d6ff)" opacity="0.13"></rect>
+  <rect x="26" y="60" width="12" height="10" fill="none" style="stroke:var(--accent,#59d6ff)" stroke-width="0.8" opacity="0.6"></rect>
+  <polygon points="32,61.5 34.8,67.5 29.2,67.5" style="fill:var(--accent,#59d6ff)" opacity="0.85"></polygon>
+
+  <!-- машинное отделение -->
+  <rect x="27" y="86" width="10" height="9" fill="#3a4660" stroke="#0a0e15" stroke-width="0.9"></rect>
+  <rect x="29" y="88" width="6" height="2" style="fill:var(--accent,#59d6ff)" opacity="0.7"></rect>
+
+  <line x1="24.5" y1="44" x2="24.5" y2="82" stroke="#0a0e15" stroke-width="0.7" opacity="0.5"></line>
+  <line x1="39.5" y1="44" x2="39.5" y2="82" stroke="#0a0e15" stroke-width="0.7" opacity="0.5"></line>
+
+  <rect x="25.5" y="104" width="5" height="4" fill="#0d1118"></rect>
+  <rect x="33.5" y="104" width="5" height="4" fill="#0d1118"></rect>
+  <ellipse cx="28" cy="109" rx="3.8" ry="6.5" fill="url(#cr-eng)"></ellipse>
+  <ellipse cx="36" cy="109" rx="3.8" ry="6.5" fill="url(#cr-eng)"></ellipse>
+</svg>

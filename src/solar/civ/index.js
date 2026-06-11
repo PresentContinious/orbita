@@ -2,7 +2,7 @@
 // Боты принимают решения по utility-оценке своего положения, не по таймеру-пустышке.
 
 import { getSprite } from '../sprites.js'
-import { TAU, SQ, clamp, rand, pick, dist, STATE_COLORS, PIRATE_COLOR, SHIP, PVO_ORE, nextId } from './constants.js'
+import { TAU, SQ, clamp, rand, pick, dist, STATE_COLORS, PIRATE_COLOR, SHIP, CAP_KINDS, PVO_ORE, nextId } from './constants.js'
 import * as diplomacy from './diplomacy.js'
 import * as economy from './economy.js'
 
@@ -53,6 +53,10 @@ export class Civ {
       p.pvoBuildT = 0 // строится ли новая установка
       p.pvoDmg = 0 // накопленный урон осады по ПВО
       p.outpost = false // шахтёрский аванпост (глыба с горняками, а не колония)
+      p.shipyard = false // орбитальная верфь — без неё тяжёлый флот не построить
+      p.yardBuildT = 0 // таймер стройки верфи
+      p.yardDmg = 0 // накопленный урон осады по верфи
+      p.ground = null // наземная война: { owner, troops, t }
       p.lightsSeed = Math.random() * 1000
       // у глыб на окраине — богатые россыпи руды рядом
       if (p.barren) {
@@ -142,6 +146,20 @@ export class Civ {
     this.incidents[this.relKey(aId, bId)] = { text, val, until: this.t + dur }
   }
 
+  // закладка орбитальной верфи (одна на государство): у столицы, 200 кр + 40 руды
+  _buildYard(st, myPlanets) {
+    if (myPlanets.some((p) => p.shipyard || p.yardBuildT > 0)) return false
+    if (st.credits < 200 || st.ore < 40) return false
+    const homeP = this.planetById(st.home)
+    const site = homeP && homeP.alive && homeP.owner === st.id ? homeP : myPlanets[0]
+    if (!site) return false
+    st.credits -= 200
+    st.ore -= 40
+    site.yardBuildT = 30
+    this.log(`🏗 ${st.name} закладывает орбитальную верфь у ${site.name}`, { x: site.x, y: site.y })
+    return true
+  }
+
   planetsOf(st) {
     return this.e.planets.filter((p) => p.alive && p.owner === st.id)
   }
@@ -162,10 +180,21 @@ export class Civ {
     this.t += h
     if (this.battleLogT > 0) this.battleLogT -= h
 
+    // прошлые позиции для интерполяции отрисовки между тиками — движение плавное при любом FPS
+    for (const sh of this.ships) {
+      sh.px = sh.x
+      sh.py = sh.y
+    }
+    for (const a of this.asteroids) {
+      a.px = a.x
+      a.py = a.y
+    }
+
     this._populations(h)
     this._decisions(h)
     this._diplomacyDrift(h)
     this._ships(h)
+    this._groundWars(h)
     this._planetDefense(h)
     this._pvoIntercept()
     this._asteroidsTick(h)
@@ -237,11 +266,14 @@ export class Civ {
     const ePlanets = this.planetsOf(enemy)
     if (!ePlanets.length) return true
     const ePop = this.popOf(enemy)
-    const eDreads = this.ships.filter((s) => s.kind === 'dread' && s.owner === enemy.id).length
+    const myCaps = myShips.filter((s) => CAP_KINDS.includes(s.kind))
+    const eCaps = this.ships.filter((s) => CAP_KINDS.includes(s.kind) && s.owner === enemy.id)
+    // вес вымпела в силе: дредноут тяжелее крейсера, крейсер — эсминца
+    const capStr = (list) => list.reduce((s, c) => s + (c.kind === 'dread' ? 4 : c.kind === 'cruiser' ? 2 : 1.2), 0)
 
     // выбор тактики по соотношению сил (с инерцией)
-    const myStr = myPop + myDreads.length * 4
-    const eStr = ePop + eDreads * 4
+    const myStr = myPop + capStr(myCaps)
+    const eStr = ePop + capStr(eCaps)
     if (!st.tactic || Math.random() < 0.25) {
       const next =
         myStr > eStr * 1.35 ? 'assault' : myStr < eStr * 0.65 ? 'defense' : Math.random() < 0.5 ? 'raid' : 'blockade'
@@ -290,8 +322,12 @@ export class Civ {
       }
     }
 
-    // флот: корпус дредноута требует руду — без рудников войну не потянуть
-    if (st.credits >= SHIP.dread.cost && st.ore >= SHIP.dread.ore && myDreads.length < 3) {
+    // верфь — сердце военной промышленности: без неё тяжёлые корпуса не собрать
+    this._buildYard(st, myPlanets)
+    const hasYard = myPlanets.some((p) => p.shipyard)
+
+    // флот: тяжёлые корпуса требуют руду и верфь
+    if (hasYard && st.credits >= SHIP.dread.cost && st.ore >= SHIP.dread.ore && myDreads.length < 3) {
       const d = this._spawnShip('dread', st, myPlanets[0])
       if (d) {
         st.credits -= SHIP.dread.cost
@@ -299,8 +335,23 @@ export class Civ {
         this.log(`⚓ ${st.name} спустило на воду дредноут`)
       }
     }
+    // линия флота: крейсера и эсминцы — рабочие лошадки войны
+    if (hasYard && st.credits >= SHIP.cruiser.cost && st.ore >= SHIP.cruiser.ore && myShips.filter((s) => s.kind === 'cruiser').length < 3) {
+      const c = this._spawnShip('cruiser', st, myPlanets[0])
+      if (c) {
+        st.credits -= SHIP.cruiser.cost
+        st.ore -= SHIP.cruiser.ore
+      }
+    }
+    if (st.credits >= SHIP.destroyer.cost && st.ore >= SHIP.destroyer.ore && myShips.filter((s) => s.kind === 'destroyer').length < 3) {
+      const ds = this._spawnShip('destroyer', st, myPlanets[0])
+      if (ds) {
+        st.credits -= SHIP.destroyer.cost
+        st.ore -= SHIP.destroyer.ore
+      }
+    }
 
-    const idle = myDreads.filter((d) => !d.mission)
+    const idle = myCaps.filter((d) => !d.mission)
     if (st.tactic === 'assault') {
       if (idle.length >= 2) {
         const target = ePlanets[0]
@@ -309,12 +360,13 @@ export class Civ {
       }
       // десант волнами: на одном транспорте максимум 500 человек —
       // для захвата нужен целый конвой, и его могут перехватить по дороге
-      const broken = ePlanets.find((p) => p.pvoUnits <= 0 && myDreads.some((d) => d.mission?.planet === p.id && dist(d, p) < 260))
+      const broken = ePlanets.find((p) => p.pvoUnits <= 0 && myCaps.some((d) => d.mission?.planet === p.id && dist(d, p) < 260))
       if (broken && myPop > 0.9) {
         const enRoute = this.ships
           .filter((s) => s.owner === st.id && s.mission?.type === 'invade' && s.mission.planet === broken.id)
           .reduce((s2, t) => s2 + t.mission.troops, 0)
-        let needed = broken.pop / 2.5 + 0.15 - enRoute
+        const own = broken.ground?.owner === st.id ? broken.ground.troops : 0
+        let needed = broken.pop * 1.2 + 0.4 - enRoute - own
         let sent = 0
         while (needed > 0 && sent < 3 && st.credits >= SHIP.transport.cost && myPop > 0.8) {
           const sh = this._spawnShip('transport', st, myPlanets[0])
@@ -330,7 +382,7 @@ export class Civ {
         if (sent > 0) this.log(`🪖 ${st.name}: десантная волна из ${sent} бортов идёт на ${broken.name}`, { x: broken.x, y: broken.y })
       }
     } else if (st.tactic === 'raid') {
-      // дредноуты ходят минимум парами — одиночка ждёт напарника дома
+      // тяжёлые корабли ходят минимум парами — одиночка ждёт напарника дома
       if (idle.length >= 2) for (const d of idle) d.mission = { type: 'raid', enemy: enemy.id }
     } else if (st.tactic === 'blockade') {
       if (idle.length >= 2) {
@@ -339,7 +391,7 @@ export class Civ {
       }
     } else {
       // оборона: всех домой
-      for (const d of myDreads) if (d.mission && d.mission.type !== 'escort') d.mission = null
+      for (const d of myCaps) if (d.mission && d.mission.type !== 'escort') d.mission = null
     }
 
     // мир — только если война затянулась и идёт плохо; условия диктует счёт войны
@@ -391,10 +443,19 @@ export class Civ {
         st.ore -= SHIP.raider.ore
       }
     }
-    // цель — грабёж транспортов и шахтёров
+    // разжились — со стапелей сходит корсар: гроза конвоев, которого так просто не сбить
+    const corsairs = this.ships.filter((s) => s.owner === st.id && s.kind === 'corsair')
+    if (raiders.length >= 5 && corsairs.length < 2 && st.credits >= SHIP.corsair.cost && st.ore >= SHIP.corsair.ore) {
+      if (this._spawnShip('corsair', st, den)) {
+        st.credits -= SHIP.corsair.cost
+        st.ore -= SHIP.corsair.ore
+        this.log(`🏴‍☠️ со стапелей вольницы сошёл корсар`, { x: den.x, y: den.y, imp: true })
+      }
+    }
+    // цель — грабёж транспортов и шахтёров; корсары охотятся наравне со стаей
     const prey = this.ships.filter((s) => (s.kind === 'transport' || s.kind === 'miner') && s.owner !== st.id)
     if (prey.length) {
-      for (const r of raiders) {
+      for (const r of [...raiders, ...corsairs]) {
         if (!r.mission || r.mission.type !== 'hunt') {
           const target = prey.reduce((b, p) => (dist(r, p) < dist(r, b) ? p : b), prey[0])
           r.mission = { type: 'hunt', ship: target.id }
@@ -540,6 +601,7 @@ export class Civ {
   _ships(h) {
     for (const sh of this.ships) {
       sh.cd -= h
+      if (sh.pvoCd > 0) sh.pvoCd -= h
       const st = this.stateById(sh.owner)
       if (!st) {
         sh.hp = 0
@@ -548,7 +610,7 @@ export class Civ {
       const m = sh.mission
 
       // боевая цель рядом важнее миссии (лёгкие корабли)
-      if (sh.kind === 'fighter' || sh.kind === 'raider' || sh.kind === 'escort') {
+      if (sh.kind === 'fighter' || sh.kind === 'raider' || sh.kind === 'escort' || sh.kind === 'corsair') {
         // эскорт держится возле подопечного
         if (sh.kind === 'escort' && m?.type === 'escort') {
           const ward = this.shipById(m.ship)
@@ -646,7 +708,7 @@ export class Civ {
           }
         }
         if (target) {
-          this._attackRun(sh, target, h, sh.kind === 'raider' ? 8 : 6)
+          this._attackRun(sh, target, h, sh.kind === 'corsair' ? 14 : sh.kind === 'raider' ? 8 : 6)
           continue
         }
         // нет целей — к носителю (и в ангар, если вокруг спокойно), рейдеры патрулируют
@@ -660,7 +722,7 @@ export class Civ {
         } else {
           const homePl = this.planetById(sh.home)
           if (homePl) {
-            if (sh.kind === 'raider') this._holdOrbit(sh, homePl, 60, h)
+            if (sh.kind === 'raider' || sh.kind === 'corsair') this._holdOrbit(sh, homePl, 60, h)
             else {
               this._steerPlanet(sh, homePl, h)
               if (dist(sh, homePl) < homePl.r + 10) sh.gone = true
@@ -670,28 +732,31 @@ export class Civ {
         continue
       }
 
-      if (sh.kind === 'dread') {
+      if (CAP_KINDS.includes(sh.kind)) {
+        // огневая мощь по классу: дредноут — молот, крейсер — рабочая лошадка, эсминец — лёгкие пушки
+        const gunDmg = sh.kind === 'dread' ? 18 : sh.kind === 'cruiser' ? 10 : 6
+        const pointDmg = sh.kind === 'dread' ? 22 : sh.kind === 'cruiser' ? 12 : 7
         // отступление: уходим из боя домой на ремонт
         if (sh.retreating) {
           const homeP = this.planetById(sh.home)
           if (homeP) this._steerPlanet(sh, homeP, h)
           let nearestFoe = Infinity
           for (const o of this.ships) {
-            if (o.kind === 'dread' && o.hp > 0 && this.hostile(sh.owner, o.owner)) nearestFoe = Math.min(nearestFoe, dist(sh, o))
+            if (CAP_KINDS.includes(o.kind) && o.hp > 0 && this.hostile(sh.owner, o.owner)) nearestFoe = Math.min(nearestFoe, dist(sh, o))
           }
           if (nearestFoe > 620 || (homeP && dist(sh, homeP) < 160)) sh.retreating = false
           continue
         }
 
-        // авиакрыло
-        const wing = this.ships.filter((s) => s.carrier === sh.id && s.hp > 0)
+        // авиакрыло (только дредноут-носитель)
+        const wing = sh.kind === 'dread' ? this.ships.filter((s) => s.carrier === sh.id && s.hp > 0) : []
         // сбор ударного крыла: считаем все свои истребители рядом (включая крылья соседей по флоту)
         if (sh.airTactic === 'massed') {
           const near = this.ships.filter((s) => s.kind === 'fighter' && s.owner === sh.owner && s.hp > 0 && dist(s, sh) < 150).length
           if (!sh.strike && near >= 5) sh.strike = true
           else if (sh.strike && near < 2) sh.strike = false
         }
-        // приоритет целей: дредноуты > транспорты > мелочь (по самолётам бьёт крыло)
+        // приоритет целей: тяжёлые > транспорты > мелочь; эсминец наоборот рвёт мелочь
         let foe = null
         let foeRank = 0
         let foeD = 300
@@ -699,14 +764,26 @@ export class Civ {
           if (o.hp <= 0 || !this.hostile(sh.owner, o.owner)) continue
           const d2 = dist(sh, o)
           if (d2 > 300) continue
-          const rank = o.kind === 'dread' ? 3 : o.kind === 'transport' ? 2 : 1
+          const light = o.kind === 'fighter' || o.kind === 'raider' || o.kind === 'escort' || o.kind === 'corsair'
+          const rank =
+            sh.kind === 'destroyer'
+              ? light
+                ? 3
+                : o.kind === 'transport'
+                  ? 2
+                  : 1.5
+              : CAP_KINDS.includes(o.kind)
+                ? 3
+                : o.kind === 'transport'
+                  ? 2
+                  : 1
           if (rank > foeRank || (rank === foeRank && d2 < foeD)) {
             foeRank = rank
             foeD = d2
             foe = o
           }
         }
-        if (wing.length < 3 && (foe || (m && m.type !== 'escort')) && sh.cd <= 0) {
+        if (sh.kind === 'dread' && wing.length < 3 && (foe || (m && m.type !== 'escort')) && sh.cd <= 0) {
           sh.cd = 5
           const f = this._spawnShip('fighter', st, { x: sh.x, y: sh.y, r: 4, id: sh.home })
           if (f) {
@@ -714,13 +791,13 @@ export class Civ {
             f.home = sh.home
           }
         }
-        if (foe && dist(sh, foe) < 90) this._fire(sh, foe, 22 * h, true)
+        if (foe && dist(sh, foe) < 90) this._fire(sh, foe, pointDmg * h, true)
 
-        // ГЕНЕРАЛЬНОЕ СРАЖЕНИЕ: вражеский дредноут в радиусе — манёвр, строй и шквальный огонь
+        // ГЕНЕРАЛЬНОЕ СРАЖЕНИЕ: вражеский тяжёлый вымпел в радиусе — манёвр, строй и шквальный огонь
         let duel = null
         let duelD = 520
         for (const o of this.ships) {
-          if (o.kind !== 'dread' || o.hp <= 0 || !this.hostile(sh.owner, o.owner)) continue
+          if (!CAP_KINDS.includes(o.kind) || o.hp <= 0 || !this.hostile(sh.owner, o.owner)) continue
           const d2 = dist(sh, o)
           if (d2 < duelD) {
             duelD = d2
@@ -735,16 +812,16 @@ export class Civ {
               this.log(`⚔️ флоты ${st.name} и ${this.stateById(duel.owner)?.name || '?'} сошлись в генеральном сражении!`, { x: sh.x, y: sh.y, imp: true })
             }
           }
-          // побитый дредноут против здорового может дрогнуть и выйти из боя
+          // побитый корабль против здорового может дрогнуть и выйти из боя
           if (sh.hp < sh.maxHp * 0.35 && duel.hp > sh.hp * 1.6 && Math.random() < h * 0.18) {
             sh.retreating = true
             sh.battle = false
             sh.mission = null
-            this.log(`🏳️ повреждённый дредноут ${st.name} выходит из боя`)
+            this.log(`🏳️ повреждённый ${SHIP[sh.kind].label} ${st.name} выходит из боя`)
             continue
           }
-          // в бою поднимаем полное авиакрыло
-          if (wing.length < 5 && sh.cd <= 0) {
+          // в бою носитель поднимает полное авиакрыло
+          if (sh.kind === 'dread' && wing.length < 5 && sh.cd <= 0) {
             sh.cd = 2.5
             const f = this._spawnShip('fighter', st, { x: sh.x, y: sh.y, r: 4, id: sh.home })
             if (f) {
@@ -759,7 +836,7 @@ export class Civ {
             const ang = Math.atan2(sh.y - duel.y, sh.x - duel.x) + 0.18 * h
             this._steer(sh, duel.x + Math.cos(ang) * 150, duel.y + Math.sin(ang) * 150, h)
           }
-          if (duelD < 230) this._fire(sh, duel, 18 * h, true)
+          if (duelD < 230) this._fire(sh, duel, gunDmg * h, true)
           continue
         }
         sh.battle = false
@@ -809,7 +886,7 @@ export class Civ {
             // на марше держим строй клином за флагманом
             if (dNow > 420) {
               const group = this.ships.filter(
-                (s) => s.kind === 'dread' && s.owner === sh.owner && s.hp > 0 && s.mission?.type === 'siege' && s.mission.planet === m.planet,
+                (s) => CAP_KINDS.includes(s.kind) && s.owner === sh.owner && s.hp > 0 && s.mission?.type === 'siege' && s.mission.planet === m.planet,
               )
               const slot = this._formationSlot(sh, group)
               if (slot) {
@@ -826,12 +903,14 @@ export class Civ {
             }
             const d = dist(sh, p)
             if (d < 220) {
+              // осадный урон по классу корабля
+              const siegeDmg = sh.kind === 'dread' ? 9 : sh.kind === 'cruiser' ? 5 : 2.5
               if (p.pvoUnits > 0) {
                 // сначала выбиваем ПВО — по людям не бьём, планета нужна целой
-                this.damagePvo(p, 9 * h)
+                this.damagePvo(p, siegeDmg * h)
                 if (Math.random() < h * 2) this.beams.push({ x1: sh.x, y1: sh.y, x2: p.x, y2: p.y, life: 1, color: st.color })
                 // ПВО лютое: фокусирует ближайший корабль, 1 установка ≈ 1 корабль
-                const siegers = this.ships.filter((s) => s.kind === 'dread' && s.hp > 0 && s.mission?.planet === p.id && dist(s, p) < 240)
+                const siegers = this.ships.filter((s) => CAP_KINDS.includes(s.kind) && s.hp > 0 && s.mission?.planet === p.id && dist(s, p) < 240)
                 let nearest = sh
                 let nd = dist(sh, p)
                 for (const s2 of siegers) {
@@ -844,6 +923,18 @@ export class Civ {
                 this._damageShip(nearest, p.pvoUnits * 14 * h, null)
                 if (nearest !== sh) this._damageShip(sh, p.pvoUnits * 2.5 * h, null)
                 if (Math.random() < h * 2.2) this.beams.push({ x1: p.x, y1: p.y, x2: nearest.x, y2: nearest.y, life: 0.8, color: '#7df0ff' })
+              } else if (p.shipyard || p.yardBuildT > 0) {
+                // ПВО подавлено — рушим верфь: инфраструктура ценнее погромов
+                p.yardDmg = (p.yardDmg || 0) + siegeDmg * h
+                if (Math.random() < h * 1.5) this.beams.push({ x1: sh.x, y1: sh.y, x2: p.x, y2: p.y, life: 0.8, color: st.color })
+                if (p.yardDmg >= 25) {
+                  p.shipyard = false
+                  p.yardBuildT = 0
+                  p.yardDmg = 0
+                  this.e._burst(p.x, p.y, 30, ['#ffd9a0', st.color, '#ffffff'], 50, 220)
+                  if (p.owner) diplomacy.addWarScore(this, sh.owner, p.owner, 8)
+                  this.log(`🏗💥 верфь ${p.name} разрушена осадой`, { x: p.x, y: p.y, imp: true })
+                }
               } else {
                 // бомбардировка беззащитной планеты: выжигаем, но не захватываем
                 p.pop -= 0.12 * h
@@ -984,10 +1075,12 @@ export class Civ {
           }
           this._steerPlanet(sh, p, h)
           if (dist(sh, p) < p.r + 10) {
-            const kills = m.troops * 2.5
-            p.pop -= kills
-            this.log(`🪖 десант ${st.name} на ${p.name}: −${(kills * 1000) | 0} населения`, { x: p.x, y: p.y })
-            if (p.pop <= 0) this._planetFalls(p, st, Math.max(m.troops, 1))
+            // высадка: десант не убивает планету мгновенно, а открывает наземную войну
+            if (!p.ground || !this.stateById(p.ground.owner)) p.ground = { owner: sh.owner, troops: 0, t: 0 }
+            if (p.ground.owner === sh.owner) {
+              p.ground.troops += m.troops
+              this.log(`🪖 десант ${st.name} высадился на ${p.name} (${(m.troops * 1000) | 0} чел) — бои на поверхности`, { x: p.x, y: p.y })
+            }
             sh.mission = null
             sh.hp = 0 // транспорт расходуется в десанте
           }
@@ -1083,7 +1176,8 @@ export class Civ {
       if (killer && !killer.pirate) {
         const victim = this.stateById(sh.owner)
         if (victim && !victim.pirate && this.isWar(killer.id, victim.id)) {
-          const pts = sh.kind === 'dread' ? 10 : sh.kind === 'transport' ? 4 : sh.kind === 'miner' ? 3 : 1
+          const pts =
+            sh.kind === 'dread' ? 10 : sh.kind === 'cruiser' ? 6 : sh.kind === 'destroyer' ? 4 : sh.kind === 'transport' ? 4 : sh.kind === 'miner' ? 3 : 1
           diplomacy.addWarScore(this, killer.id, victim.id, pts)
         }
       }
@@ -1117,11 +1211,12 @@ export class Civ {
           }
         }
       }
-      if (sh.kind === 'dread') {
-        // гибель дредноута — событие
-        this.e._burst(sh.x, sh.y, 70, ['#ffd9a0', '#ffffff', this.stateById(sh.owner)?.color || '#fff'], 60, 320)
-        this.e.waves.push({ x: sh.x, y: sh.y, r: 4, vr: 240, life: 0.9, max: 0.9, color: '255,210,160', width: 3 })
-        this.log(`💥 дредноут ${this.stateById(sh.owner)?.name || '?'} уничтожен в бою`, { x: sh.x, y: sh.y })
+      if (CAP_KINDS.includes(sh.kind)) {
+        // гибель тяжёлого вымпела — событие; чем крупнее, тем громче
+        const big = sh.kind === 'dread'
+        this.e._burst(sh.x, sh.y, big ? 70 : 40, ['#ffd9a0', '#ffffff', this.stateById(sh.owner)?.color || '#fff'], 60, big ? 320 : 240)
+        this.e.waves.push({ x: sh.x, y: sh.y, r: 4, vr: big ? 240 : 180, life: 0.9, max: 0.9, color: '255,210,160', width: big ? 3 : 2 })
+        this.log(`💥 ${SHIP[sh.kind].label} ${this.stateById(sh.owner)?.name || '?'} уничтожен в бою`, { x: sh.x, y: sh.y })
       } else {
         this.e._burst(sh.x, sh.y, 14, ['#ffd9a0', '#ffffff', this.stateById(sh.owner)?.color || '#fff'], 40, 160)
       }
@@ -1167,12 +1262,45 @@ export class Civ {
     }
   }
 
+  // наземные войны: десант и ополчение перемалывают друг друга, пока кто-то не сломается
+  _groundWars(h) {
+    for (const p of this.e.planets) {
+      const g = p.ground
+      if (!g) continue
+      const att = this.stateById(g.owner)
+      if (!p.alive || !p.owner || !att || !this.hostile(g.owner, p.owner)) {
+        p.ground = null
+        continue
+      }
+      // обороняющиеся давят десант, десант выбивает население
+      const defPower = (0.06 + p.pop * 0.04) * h
+      const attPower = g.troops * 0.06 * h
+      p.pop = Math.max(0, p.pop - attPower)
+      g.troops = Math.max(0, g.troops - defPower)
+      g.t += h
+      // очаги боёв видны с орбиты
+      if (Math.random() < h * 6) {
+        this.e._burst(p.x + rand(-p.r * 0.7, p.r * 0.7), p.y + rand(-p.r * 0.7, p.r * 0.7), 3, ['#ff9d42', '#ffffff'], 10, 60)
+      }
+      if (g.troops <= 0.01) {
+        p.ground = null
+        diplomacy.addWarScore(this, p.owner, g.owner, 12)
+        this.log(`🛡 ${p.name}: десант ${att.name} разбит обороной`, { x: p.x, y: p.y, imp: true })
+      } else if (p.pop <= 0.02) {
+        const left = g.troops
+        p.ground = null
+        this._planetFalls(p, att, Math.max(left, 0.5))
+      }
+    }
+  }
+
   _planetFalls(p, conqueror, newPop) {
     const old = this.stateById(p.owner)
     // захват планеты — крупный перевес в счёте войны
     if (old && !old.pirate && !conqueror.pirate) diplomacy.addWarScore(this, conqueror.id, old.id, 30)
     p.owner = conqueror.id
     p.pop = newPop
+    p.ground = null
     p.pvoUnits = 1
     p.pvoReady = 1
     p.pvoReload = []
@@ -1273,6 +1401,7 @@ export class Civ {
 
   // ПВО: каждая заряженная установка сбивает одну ракету и уходит на перезарядку 3 с.
   // 5 установок = 5 одновременных перехватов; залп больше — лишние проходят.
+  // Эсминцы — мобильное ПВО: сбивают боеголовки рядом с собой (перезарядка 4 с).
   _pvoIntercept() {
     for (const m of this.e.meteors) {
       if ((m.kind !== 'warhead' && m.kind !== 'breaker') || m.dead) continue
@@ -1285,6 +1414,18 @@ export class Civ {
           p.pvoReload.push(3)
           this.beams.push({ x1: p.x, y1: p.y, x2: m.x, y2: m.y, life: 1, color: '#7df0ff' })
           this.e._burst(m.x, m.y, 12, ['#7df0ff', '#ffffff'], 40, 160)
+          break
+        }
+      }
+      if (m.dead) continue
+      for (const sh of this.ships) {
+        if (sh.kind !== 'destroyer' || sh.hp <= 0 || (sh.pvoCd || 0) > 0) continue
+        if (!this.hostile(sh.owner, m.owner)) continue
+        if (dist(sh, m) < 130) {
+          m.dead = true
+          sh.pvoCd = 4
+          this.beams.push({ x1: sh.x, y1: sh.y, x2: m.x, y2: m.y, life: 0.8, color: '#7df0ff' })
+          this.e._burst(m.x, m.y, 10, ['#7df0ff', '#ffffff'], 40, 150)
           break
         }
       }
@@ -1344,6 +1485,8 @@ export class Civ {
         const T = { free: 'свободная охота', massed: 'собранный налёт', cap: 'прикрытие' }
         return `дежурит на орбите · авиакрыло: ${T[sh.airTactic] || '—'}`
       }
+      if (sh.kind === 'cruiser' || sh.kind === 'destroyer') return 'дежурит в строю эскадры'
+      if (sh.kind === 'corsair') return 'рыщет в поисках добычи'
       if (sh.kind === 'raider') return 'патрулирует базу'
       return 'возвращается в док'
     }
@@ -1422,6 +1565,7 @@ export class Civ {
         ships: this.ships.filter((s) => s.owner === st.id).length,
         credits: Math.round(st.credits),
         ore: Math.round(st.ore),
+        mobilized: !!st.mobilized,
         wars,
         allies,
         rels,
@@ -1451,6 +1595,9 @@ export class Civ {
     p.owner = null
     p.pvoUnits = 0
     p.pvoReady = 0
+    p.shipyard = false
+    p.yardBuildT = 0
+    p.ground = null
   }
 
   // ---------- отрисовка ----------
@@ -1479,11 +1626,16 @@ export class Civ {
 
   drawOver(ctx) {
     const z = this.e.cam.zoom
+    // доля пути к следующему тику логики — для плавной отрисовки между тиками
+    const ia = clamp((this.e.civAcc ?? 0) / (this.e.civTickSize || 0.05), 0, 1)
+    const ix = (o) => (o.px ?? o.x) + (o.x - (o.px ?? o.x)) * ia
+    const iy = (o) => (o.py ?? o.y) + (o.y - (o.py ?? o.y)) * ia
+
     // астероиды: усыхают по мере выработки
     for (const a of this.asteroids) {
       const k = 0.55 + 0.45 * Math.min(1, a.res / a.res0)
       ctx.save()
-      ctx.translate(a.x, a.y * SQ)
+      ctx.translate(ix(a), iy(a) * SQ)
       ctx.rotate(a.rot)
       ctx.scale(k, k)
       ctx.fillStyle = '#7e7468'
@@ -1498,14 +1650,38 @@ export class Civ {
       ctx.restore()
     }
 
+    // орбитальные верфи: док медленно ползёт по орбите планеты
+    for (const p of this.e.planets) {
+      if (!p.alive || (!p.shipyard && !(p.yardBuildT > 0))) continue
+      const stY = p.owner ? this.stateById(p.owner) : null
+      const colorY = stY?.color || '#8fa7c9'
+      const aY = this.e.visT * 0.22 + (p.lightsSeed || 0)
+      const RY = p.r + 14 / Math.sqrt(z)
+      const yx = p.x + Math.cos(aY) * RY
+      const yy = p.y * SQ + Math.sin(aY) * RY * 0.85
+      const sY = Math.max(1, 0.8 / Math.sqrt(z))
+      ctx.save()
+      ctx.translate(yx, yy)
+      ctx.rotate(aY + Math.PI / 2)
+      ctx.globalAlpha = p.shipyard ? 0.95 : 0.45 + 0.25 * Math.sin(this.e.visT * 5)
+      ctx.strokeStyle = colorY
+      ctx.lineWidth = 1.2 / Math.sqrt(z)
+      ctx.strokeRect(-3.5 * sY, -2 * sY, 7 * sY, 4 * sY)
+      ctx.beginPath()
+      ctx.moveTo(-3.5 * sY, 0)
+      ctx.lineTo(3.5 * sY, 0)
+      ctx.stroke()
+      ctx.restore()
+    }
+
     // корабли: SVG-спрайты в цвете владельца (нос вверх → +90°).
     // При отдалении не растворяются: масштаб компенсирует зум + подсветка-свечение
     const mul = clamp(0.55 / z, 1, 3.4)
     for (const sh of this.ships) {
       const st = this.stateById(sh.owner)
       const color = st?.color || '#59d6ff'
-      const x = sh.x
-      const y = sh.y * SQ
+      const x = ix(sh)
+      const y = iy(sh) * SQ
       const ang = Math.atan2(sh.vy * SQ, sh.vx) + Math.PI / 2
 
       let key = sh.kind
@@ -1515,6 +1691,18 @@ export class Civ {
         key = 'dread'
         w = 14
         hgt = 28
+      } else if (sh.kind === 'cruiser') {
+        key = 'cruiser'
+        w = 12
+        hgt = 21
+      } else if (sh.kind === 'destroyer') {
+        key = 'destroyer'
+        w = 10
+        hgt = 15
+      } else if (sh.kind === 'corsair') {
+        key = 'corsair'
+        w = 12
+        hgt = 17
       } else if (sh.kind === 'transport') {
         key = sh.mission?.type === 'invade' ? 'troop' : 'cargo'
         w = 13
