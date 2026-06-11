@@ -194,6 +194,7 @@ export class Civ {
     this._decisions(h)
     this._diplomacyDrift(h)
     this._ships(h)
+    this._interceptConvoys()
     this._groundWars(h)
     this._planetDefense(h)
     this._pvoIntercept()
@@ -386,7 +387,21 @@ export class Civ {
           needed -= troops
           sent++
         }
-        if (sent > 0) this.log(`🪖 ${st.name}: десантная волна из ${sent} бортов идёт на ${broken.name}`, { x: broken.x, y: broken.y })
+        if (sent > 0) {
+          // волну прикрывает эскорт — голый конвой слишком легко перехватить
+          const wave = this.ships.filter((s) => s.owner === st.id && s.mission?.type === 'invade' && s.mission.planet === broken.id)
+          let guards = 0
+          for (const t of wave) {
+            if (guards >= 2 || st.credits < SHIP.escort.cost || st.ore < SHIP.escort.ore) break
+            const es = this._spawnShip('escort', st, myPlanets[0])
+            if (!es) break
+            st.credits -= SHIP.escort.cost
+            st.ore -= SHIP.escort.ore
+            es.mission = { type: 'escort', ship: t.id }
+            guards++
+          }
+          this.log(`🪖 ${st.name}: десантная волна из ${sent} бортов${guards ? ` под эскортом (${guards})` : ''} идёт на ${broken.name}`, { x: broken.x, y: broken.y })
+        }
       }
     } else if (st.tactic === 'raid') {
       // тяжёлые корабли ходят минимум парами — одиночка ждёт напарника дома
@@ -1141,6 +1156,24 @@ export class Civ {
             continue
           }
           this._steerPlanet(sh, p, h)
+          // последний рубеж на подлёте: уцелевший заряд ПВО или наземные батареи
+          // защитников — один бросок на каждый борт
+          if (!sh.flakRolled && dist(sh, p) < p.r + 70) {
+            sh.flakRolled = true
+            const usePvo = p.pvoReady > 0
+            const chance = usePvo ? 0.65 : clamp(0.1 + p.pop * 0.05, 0.1, 0.45)
+            if (Math.random() < chance) {
+              if (usePvo) {
+                p.pvoReady--
+                p.pvoReload.push(3)
+              }
+              this.beams.push({ x1: p.x, y1: p.y, x2: sh.x, y2: sh.y, life: 1, color: '#7df0ff' })
+              this.e._burst(sh.x, sh.y, 20, ['#7df0ff', '#ffd9a0', '#ffffff'], 50, 200)
+              this.log(`🎯 ${usePvo ? 'ПВО' : 'наземные батареи'} ${p.name} сбили десантный борт ${st.name}`, { x: sh.x, y: sh.y })
+              sh.hp = 0
+              continue
+            }
+          }
           if (dist(sh, p) < p.r + 10) {
             // высадка: десант не убивает планету мгновенно, а открывает наземную войну
             if (!p.ground || !this.stateById(p.ground.owner)) p.ground = { owner: sh.owner, troops: 0, t: 0 }
@@ -1326,6 +1359,36 @@ export class Civ {
       const st = this.stateById(from.owner)
       this.beams.push({ x1: from.x, y1: from.y, x2: to.x, y2: to.y, life: heavy ? 0.9 : 0.6, color: st?.color || '#fff' })
       this.e._burst(to.x, to.y, 3, ['#ffd9a0', '#ffffff'], 20, 90)
+    }
+  }
+
+  // перехват десантных конвоев: свободная планета защитника поднимает перехватчиков
+  // навстречу транспортам врага — одна попытка на каждый борт
+  _interceptConvoys() {
+    for (const t of this.ships) {
+      if (t.kind !== 'transport' || t.hp <= 0 || t.mission?.type !== 'invade' || t.intCalled) continue
+      const target = this.planetById(t.mission.planet)
+      if (!target || !target.alive || !target.owner) continue
+      if (dist(t, target) > 600) continue
+      const defSt = this.stateById(target.owner)
+      if (!defSt || !this.hostile(defSt.id, t.owner)) continue
+      t.intCalled = true
+      const base = this.e.planets
+        .filter((p) => p.alive && p.owner === defSt.id && p.id !== target.id && p.pop > 1 && !p.ground && dist(p, t) < 900)
+        .sort((a, b) => dist(a, t) - dist(b, t))[0]
+      if (!base) continue
+      let raised = 0
+      for (let i = 0; i < 2; i++) {
+        if (base.pop < 0.1) break
+        const f = this._spawnShip('fighter', defSt, base)
+        if (!f) break
+        base.pop = Math.max(base.pop - 0.004, 0.01)
+        f.hp = f.maxHp = 12
+        f.interceptor = true
+        f.mission = { type: 'hunt', ship: t.id }
+        raised++
+      }
+      if (raised) this.log(`🛰 ${base.name} поднимает перехватчиков — десантный конвой ${this.stateById(t.owner)?.name || '?'} под ударом!`, { x: t.x, y: t.y, imp: true })
     }
   }
 
@@ -1573,7 +1636,7 @@ export class Civ {
       case 'siege':
         return `осада ${pName(m.planet)}`
       case 'hunt':
-        return 'охотится на добычу'
+        return sh.interceptor ? 'перехватывает десантный конвой' : 'охотится на добычу'
       case 'raid':
         return `рейд по тылам ${this.stateById(m.enemy)?.name || '?'}`
       case 'blockade':
