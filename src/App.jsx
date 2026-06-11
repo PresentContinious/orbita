@@ -63,6 +63,7 @@ export default function App() {
   const [tool, setTool] = useState('hand')
   const [years, setYears] = useState(0)
   const [fps, setFps] = useState(60)
+  const [ms, setMs] = useState({ l: 0, d: 0 })
   const [sunAlive, setSunAlive] = useState(true)
   const [deadCount, setDeadCount] = useState(0)
   const [mapInfo, setMapInfo] = useState({ planets: 0, rocks: 0, asts: 0 })
@@ -79,6 +80,7 @@ export default function App() {
       try {
         setYears(engine.simYears)
         setFps(Math.round(engine.fps))
+        setMs({ l: engine.msLogic || 0, d: engine.msDraw || 0 })
         setSunAlive(engine.sunAlive)
         setDeadCount(engine.planets.filter((p) => !p.alive).length)
         setMapInfo({
@@ -219,6 +221,10 @@ export default function App() {
           <div>
             <span className="clock-label">fps</span>
             <span className={`clock-value fps-value ${fps < 40 ? 'low' : ''}`}>{fps}</span>
+          </div>
+          <div title="миллисекунды на кадр: логика / отрисовка">
+            <span className="clock-label">лог/рнд</span>
+            <span className="clock-value">{ms.l.toFixed(1)}/{ms.d.toFixed(1)}</span>
           </div>
           <div className="clock-sep" />
           <div className="controls">

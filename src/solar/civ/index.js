@@ -393,7 +393,20 @@ export class Civ {
     const intel = (war0 ? (st.id === war0.a ? war0.intelA : war0.intelB) : null) ?? 1
     const myStr = myPop + capStr(myCaps)
     const eStr = (ePop + capStr(eCaps)) * intel * rand(0.92, 1.08)
-    if (!st.tactic || Math.random() < 0.25) {
+    // идущий штурм не бросают из-за смены настроения: пока эскадра стоит у цели
+    // или десант в пути, тактику не перебирают (если силы не рухнули вдвое) —
+    // иначе флот метался «прилетели — постреляли — улетели домой через всю систему»
+    let committed = false
+    if (st.tactic === 'assault' && myStr > eStr * 0.5) {
+      committed =
+        myShips.some((s) => s.mission?.type === 'invade') ||
+        myCaps.some((d) => {
+          if (d.mission?.type !== 'siege') return false
+          const pl = this.planetById(d.mission.planet)
+          return pl && dist(d, pl) < 320
+        })
+    }
+    if (!st.tactic || (!committed && Math.random() < 0.25)) {
       const next =
         myStr > eStr * 1.35 ? 'assault' : myStr < eStr * 0.65 ? 'defense' : Math.random() < 0.5 ? 'raid' : 'blockade'
       if (next !== st.tactic) {
@@ -540,9 +553,10 @@ export class Civ {
         if (spare > 0) this.log(`♟ ${st.name} обкладывает тылы ${enemy.name} — поддержка с других планет глушится блокадой`)
         this.log(`⚔️ флот ${st.name} идёт на штурм ${target.name}`, { x: target.x, y: target.y, imp: true })
       }
-      // десант волнами: на одном транспорте максимум 500 человек —
-      // для захвата нужен целый конвой, и его могут перехватить по дороге
-      const broken = ePlanets.find((p) => p.pvoUnits <= 0 && myCaps.some((d) => d.mission?.planet === p.id && dist(d, p) < 260))
+      // десант собирается ЗАРАНЕЕ: как только эскадра встала в осаду, конвой
+      // выходит и ждёт у поля боя на безопасной орбите — ПВО пало, высадка сразу,
+      // а не «слетали домой за десантом через всю систему»
+      const broken = ePlanets.find((p) => myCaps.some((d) => d.mission?.type === 'siege' && d.mission.planet === p.id && dist(d, p) < 500))
       if (broken && myPop > 0.9) {
         const enRoute = this.shipsOf(st.id)
           .filter((s) => s.mission?.type === 'invade' && s.mission.planet === broken.id)
@@ -621,11 +635,19 @@ export class Civ {
       }
     }
 
-    // мир — только если война затянулась и идёт плохо; условия диктует счёт войны
+    // мир — только если война затянулась и идёт плохо; условия диктует счёт войны.
+    // Победитель оценивает запрос: с решающим перевесом посреди штурма — добивает
     const key = this.relKey(st.id, enemy.id)
     const warDur = this.t - (this.warSince[key] ?? this.t)
-    if (warDur > 50 && myPop < ePop * 0.4 && Math.random() < 0.3) {
-      diplomacy.makePeace(this, st.id, enemy.id, `${st.name} запросило мир`)
+    if (warDur > 60 && myPop < ePop * 0.4 && Math.random() < 0.3) {
+      const war = this.wars[key]
+      const myLead = war ? (st.id === war.a ? war.scoreA - war.scoreB : war.scoreB - war.scoreA) : 0
+      const closing = myPlanets.some((p) => p.siegeMark)
+      if (myLead <= -20 && closing) {
+        if (Math.random() < 0.5) this.log(`🚫 ${enemy.name} отклоняет мирное предложение ${st.name} — хочет закончить начатое`)
+      } else {
+        diplomacy.makePeace(this, st.id, enemy.id, `${st.name} запросило мир`)
+      }
     }
     return true
   }
@@ -646,7 +668,8 @@ export class Civ {
         if (dest) {
           const sh = this._spawnShip('transport', st, den)
           if (sh) {
-            sh.hp = sh.maxHp = 110 // боевой транспорт с усиленным корпусом
+            sh.hp = sh.maxHp = 140 // бронированный войсковой борт: догнать можно, добить трудно
+            sh.speed = 85
             sh.mission = { type: 'pirateMove', planet: dest.id, popLoad: Math.max(den.pop, 0.2) }
             den.owner = null
             den.pop = 0
@@ -1373,9 +1396,15 @@ export class Civ {
             continue
           }
           if (p.pvoUnits > 0) {
-            // ждём на безопасном расстоянии, пока дредноуты не пробьют ПВО
+            // осада сорвалась — десант не болтается у вражьей планеты без прикрытия
+            const cover = this.shipsOf(sh.owner).some((c) => CAP_KINDS.includes(c.kind) && c.hp > 0 && c.mission?.planet === p.id && dist(c, p) < 600)
+            if (!cover) {
+              sh.mission = null
+              continue
+            }
+            // штаб у поля боя: кружим вне ПВО (195) и ополчения (330) — высадка мгновенно после пробития
             const ang = Math.atan2(sh.y - p.y, sh.x - p.x) + 0.5 * h
-            this._steer(sh, p.x + Math.cos(ang) * 300, p.y + Math.sin(ang) * 300, h)
+            this._steer(sh, p.x + Math.cos(ang) * 380, p.y + Math.sin(ang) * 380, h)
             continue
           }
           this._steerPlanet(sh, p, h)
@@ -2117,7 +2146,7 @@ export class Civ {
         w = 12
         hgt = 17
       } else if (sh.kind === 'transport') {
-        key = sh.mission?.type === 'invade' || sh.mission?.type === 'reinforce' ? 'troop' : 'cargo'
+        key = sh.mission?.type === 'invade' || sh.mission?.type === 'reinforce' || sh.mission?.type === 'pirateMove' ? 'troop' : 'cargo'
         w = 13
         hgt = 13
       } else if (sh.kind === 'miner') {
