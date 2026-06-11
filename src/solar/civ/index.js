@@ -1,9 +1,9 @@
 // Цивилизация: государства, население, дипломатия, флоты, пираты, экономика.
 // Боты принимают решения по utility-оценке своего положения, не по таймеру-пустышке.
 
-import { genName } from '../gen.js'
 import { getSprite } from '../sprites.js'
-import { TAU, SQ, clamp, rand, pick, dist, STATE_COLORS, PIRATE_COLOR, WAR_AT, ALLY_AT, SHIP, nextId } from './constants.js'
+import { TAU, SQ, clamp, rand, pick, dist, STATE_COLORS, PIRATE_COLOR, SHIP, nextId } from './constants.js'
+import * as diplomacy from './diplomacy.js'
 
 export class Civ {
   constructor(engine) {
@@ -98,42 +98,15 @@ export class Civ {
     return st
   }
 
-  relKey(a, b) {
-    return a < b ? `${a}:${b}` : `${b}:${a}`
-  }
-
-  getRel(a, b) {
-    if (a === b) return 100
-    return this.rel[this.relKey(a, b)] ?? 0
-  }
-
-  setRel(a, b, v) {
-    this.rel[this.relKey(a, b)] = clamp(v, -100, 100)
-  }
-
+  relKey(a, b) { return diplomacy.relKey(a, b) }
+  getRel(a, b) { return diplomacy.getRel(this, a, b) }
+  setRel(a, b, v) { diplomacy.setRel(this, a, b, v) }
   // при смерти государства вычищаем его дипломатические следы
-  _purgeRelations(id) {
-    for (const key of Object.keys(this.rel)) {
-      const [a, b] = key.split(':')
-      if (+a === id || +b === id) delete this.rel[key]
-    }
-    for (const key of Object.keys(this.warSince)) {
-      const [a, b] = key.split(':')
-      if (+a === id || +b === id) delete this.warSince[key]
-    }
-  }
-
-  isWar(a, b) {
-    const sa = this.stateById(a)
-    const sb = this.stateById(b)
-    if (!sa || !sb) return false
-    if (sa.pirate !== sb.pirate) return true // пираты вне закона всегда
-    return this.getRel(a, b) < WAR_AT
-  }
-
-  isAlly(a, b) {
-    return a !== b && this.getRel(a, b) > ALLY_AT
-  }
+  _purgeRelations(id) { diplomacy.purgeRelations(this, id) }
+  isWar(a, b) { return diplomacy.isWar(this, a, b) }
+  isAlly(a, b) { return diplomacy.isAlly(this, a, b) }
+  _diplomacyDrift(h) { diplomacy.diplomacyDrift(this, h) }
+  _maybeSpawnPirates() { diplomacy.maybeSpawnPirates(this) }
 
   stateById(id) {
     return this.states.find((s) => s.id === id)
@@ -566,81 +539,6 @@ export class Civ {
       free[0].pvoReady = 1
       this.log(`🏴‍☠️ пираты выкупили базу на ${free[0].name}`)
     }
-  }
-
-  _diplomacyDrift(h) {
-    this.relTick -= h
-    if (this.relTick > 0) return
-    this.relTick = 6
-    const civs = this.states.filter((s) => !s.pirate)
-    for (let i = 0; i < civs.length; i++) {
-      for (let j = i + 1; j < civs.length; j++) {
-        const a = civs[i]
-        const b = civs[j]
-        const key = this.relKey(a.id, b.id)
-        const cur = this.getRel(a.id, b.id)
-        const atWar = cur < WAR_AT
-        let drift = atWar ? rand(-1.5, 1.5) : rand(-4, 4)
-        // активная торговля сближает
-        if (this.ships.some((s) => s.mission?.type === 'trade' && ((s.mission.a === a.id && s.mission.b === b.id) || (s.mission.a === b.id && s.mission.b === a.id)))) drift += 2
-        // дипломатический иммунитет новорождённых: 60 секунд их не трогают
-        const young = this.t - (a.bornT ?? 0) < 60 || this.t - (b.bornT ?? 0) < 60
-        // сильный смотрит на слабого как на обед
-        const pa = this.popOf(a)
-        const pb = this.popOf(b)
-        if (!atWar && !young && Math.max(pa, pb) > Math.min(pa, pb) * 2.3 + 0.5) drift -= 2.5
-        let next = clamp(cur + drift, -100, 100)
-        if (!atWar && young) next = Math.max(next, WAR_AT + 4)
-
-        const wasWar = atWar
-        let isWarNow = next < WAR_AT
-        // войну так просто не закончить: минимум 45 секунд
-        if (wasWar && !isWarNow && this.t - (this.warSince[key] ?? 0) < 45) {
-          next = WAR_AT - 3
-          isWarNow = true
-        }
-        this.setRel(a.id, b.id, next)
-
-        if (!wasWar && isWarNow) {
-          // объявление войны — это всерьёз
-          this.setRel(a.id, b.id, Math.min(next, -65))
-          this.warSince[key] = this.t
-          this.log(`⚔️ ${a.name} и ${b.name} объявили войну!`)
-          this._maybeSpawnPirates()
-          // оборонительные союзы: за союзника вступаются
-          for (const c of civs) {
-            if (c.id === a.id || c.id === b.id) continue
-            if (this.isAlly(c.id, b.id) && !this.isWar(c.id, a.id)) {
-              this.setRel(c.id, a.id, -60)
-              this.warSince[this.relKey(c.id, a.id)] = this.t
-              this.log(`🛡 ${c.name} вступается за союзника ${b.name}!`)
-            }
-            if (this.isAlly(c.id, a.id) && !this.isWar(c.id, b.id)) {
-              this.setRel(c.id, b.id, -60)
-              this.warSince[this.relKey(c.id, b.id)] = this.t
-              this.log(`🛡 ${c.name} вступается за союзника ${a.name}!`)
-            }
-          }
-        } else if (wasWar && !isWarNow) {
-          delete this.warSince[key]
-          this.log(`🕊 ${a.name} и ${b.name} заключили мир`)
-        } else if (cur <= ALLY_AT && next > ALLY_AT) {
-          this.log(`🤝 ${a.name} и ${b.name} заключили альянс`)
-        }
-      }
-    }
-  }
-
-  _maybeSpawnPirates() {
-    if (this.states.some((s) => s.pirate)) return
-    if (Math.random() > 0.4) return
-    // гнездо — на глыбе на окраине; если глыб нет, сойдёт мелкая планета
-    const rocks = this.e.planets.filter((p) => p.alive && !p.owner && p.barren)
-    const small = rocks.length ? rocks : this.e.planets.filter((p) => p.alive && !p.owner && p.baseR <= 8)
-    if (!small.length) return
-    const den = pick(small)
-    this._makeState(den, 0.3, { pirate: true, name: 'Вольница ' + genName(), credits: 50 })
-    this.log(`🏴‍☠️ на ${den.name} завелись пираты!`)
   }
 
   // ---------- корабли ----------
