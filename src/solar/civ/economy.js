@@ -1,6 +1,6 @@
 // Экономика: население, руда, ПВО-стройка, караваны, колонизация, шахтёры, астероиды
 
-import { TAU, clamp, rand, pick, dist, SHIP, PVO_ORE, nextId } from './constants.js'
+import { TAU, clamp, rand, pick, dist, SHIP, CAP_KINDS, PVO_ORE, nextId } from './constants.js'
 
 export function populations(civ, h) {
   for (const p of civ.e.planets) {
@@ -94,30 +94,48 @@ export function peacetimeDecide(civ, st, myPlanets, myShips, myDreads) {
   const allies = civ.states.filter((o) => o.id !== st.id && !o.pirate && civ.isAlly(st.id, o.id))
 
   // мобилизация: на горизонте война — флот и верфи готовятся заранее, грозу видно издалека
-  const looming = civ.states.some((o) => o.id !== st.id && !o.pirate && civ.getRel(st.id, o.id) < -25)
-  if (looming && !st.mobilized) {
+  const threats = civ.states.filter((o) => o.id !== st.id && !o.pirate && civ.getRel(st.id, o.id) < -25)
+  if (threats.length && !st.mobilized) {
     st.mobilized = true
     civ.log(`🪖 ${st.name} объявляет мобилизацию — в воздухе пахнет войной`, { imp: true })
-  } else if (!looming && st.mobilized) {
+  } else if (!threats.length && st.mobilized) {
     st.mobilized = false
+    st.mobIntel = null
     civ.log(`🕊 ${st.name} сворачивает мобилизацию`)
   }
   if (st.mobilized) {
     civ._buildYard(st, myPlanets)
     const hasYard = myPlanets.some((p) => p.shipyard)
+    // сколько строить — прикидка по силе самого опасного соседа, но через слухи
+    // и донесения (ошибка до ±40%): точного состава врага бот не знает
+    const foe = threats.reduce((b, o) => (civ.popOf(o) > civ.popOf(b) ? o : b), threats[0])
+    if (!st.mobIntel) st.mobIntel = rand(0.7, 1.4)
+    const foeCaps = civ.ships.filter((s) => CAP_KINDS.includes(s.kind) && s.owner === foe.id)
+    const est = (civ.popOf(foe) + foeCaps.reduce((s, c) => s + (c.kind === 'dread' ? 4 : c.kind === 'cruiser' ? 2 : 1.2), 0)) * st.mobIntel
+    const wantCaps = clamp(Math.round(est / 3.5), 2, 6)
     const count = (k) => myShips.filter((s) => s.kind === k).length
-    if (st.credits >= SHIP.destroyer.cost && st.ore >= SHIP.destroyer.ore && count('destroyer') < 2) {
-      const ds = civ._spawnShip('destroyer', st, myPlanets[0])
-      if (ds) {
-        st.credits -= SHIP.destroyer.cost
-        st.ore -= SHIP.destroyer.ore
-      }
-    }
-    if (hasYard && st.credits >= SHIP.cruiser.cost && st.ore >= SHIP.cruiser.ore && count('cruiser') < 2) {
-      const c = civ._spawnShip('cruiser', st, myPlanets[0])
-      if (c) {
-        st.credits -= SHIP.cruiser.cost
-        st.ore -= SHIP.cruiser.ore
+    const myCapsN = myShips.filter((s) => CAP_KINDS.includes(s.kind)).length
+    if (myCapsN < wantCaps) {
+      // по одному корпусу за решение: сперва эсминцы, потом крейсера, при большой угрозе — дредноут
+      if (count('destroyer') < Math.ceil(wantCaps / 3) && st.credits >= SHIP.destroyer.cost && st.ore >= SHIP.destroyer.ore) {
+        const ds = civ._spawnShip('destroyer', st, myPlanets[0])
+        if (ds) {
+          st.credits -= SHIP.destroyer.cost
+          st.ore -= SHIP.destroyer.ore
+        }
+      } else if (hasYard && count('cruiser') < Math.ceil(wantCaps / 2) && st.credits >= SHIP.cruiser.cost && st.ore >= SHIP.cruiser.ore) {
+        const c = civ._spawnShip('cruiser', st, myPlanets[0])
+        if (c) {
+          st.credits -= SHIP.cruiser.cost
+          st.ore -= SHIP.cruiser.ore
+        }
+      } else if (hasYard && wantCaps >= 4 && count('dread') < 2 && st.credits >= SHIP.dread.cost && st.ore >= SHIP.dread.ore) {
+        const d = civ._spawnShip('dread', st, myPlanets[0])
+        if (d) {
+          st.credits -= SHIP.dread.cost
+          st.ore -= SHIP.dread.ore
+          civ.log(`⚓ ${st.name} спустило на воду дредноут`)
+        }
       }
     }
   } else if (st.credits > 380 && st.ore > 60) {
@@ -202,8 +220,18 @@ export function peacetimeDecide(civ, st, myPlanets, myShips, myDreads) {
     }
   }
 
-  // охота на пиратов — только в мирное время
+  // пираты: с ними воюют, от них откупаются или их терпят — у каждого пути своя цена
   const pirates = civ.states.find((s) => s.pirate)
+  // откуп: дань — и вольница 60 секунд не трогает твои суда
+  if (pirates && st.pirateLosses > 120 && st.credits >= 140 && !(pirates.truces && pirates.truces[st.id] > civ.t)) {
+    st.credits -= 100
+    pirates.credits += 100
+    pirates.truces = pirates.truces || {}
+    pirates.truces[st.id] = civ.t + 60
+    st.pirateLosses = 0
+    civ.log(`💰 ${st.name} откупилось от вольницы — её корабли пока не трогают купцов`, { imp: true })
+  }
+  // охота на пиратов — только в мирное время
   if (pirates && myDreads.length && Math.random() < 0.3) {
     const den = civ.planetsOf(pirates)[0]
     if (den) {
