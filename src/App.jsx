@@ -110,6 +110,8 @@ export default function App() {
               outpost: !!p.outpost,
               yard: !!p.shipyard,
               yardB: p.yardBuildT > 0,
+              unrest: Math.round(p.unrest || 0),
+              unrestWhy: p.unrestWhy || null,
               ground: p.ground ? { name: engine.civ.stateById(p.ground.owner)?.name || '?', troops: p.ground.troops } : null,
               tactic: st?.tactic || null,
               pvoUnits: p.pvoUnits || 0,
@@ -437,6 +439,14 @@ export default function App() {
               <div className="kv">
                 <span>наземные бои</span>
                 <b style={{ color: 'var(--red)' }}>🪖 десант {sel.ground.name}: {(sel.ground.troops * 1000) | 0} чел</b>
+              </div>
+            )}
+            {sel.unrest > 5 && (
+              <div className="kv">
+                <span>недовольство</span>
+                <b style={{ color: sel.unrest > 60 ? 'var(--red)' : 'var(--amber)' }}>
+                  {sel.unrest}%{sel.unrestWhy ? ` · ${sel.unrestWhy}` : ''}
+                </b>
               </div>
             )}
             {(sel.ore > 0 || sel.barren) && (

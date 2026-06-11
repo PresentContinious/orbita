@@ -159,11 +159,11 @@ export function diplomacyDrift(civ, h) {
         // гегемона боятся все, и коалиции зреют сами
         if (civs.length >= 3 && (pa > totalPop * 0.45 || pb > totalPop * 0.45))
           causes.push({ text: 'страх перед гегемоном', val: -1.6 })
-        // тесные орбиты — вечный пограничный спор
+        // тесные орбиты — пограничный спор, но не вечная вендетта
         const ha = civ.planetById(a.home)
         const hb = civ.planetById(b.home)
-        if (ha && hb && Math.abs(ha.orbit - hb.orbit) < 240)
-          causes.push({ text: 'спор за приграничные орбиты', val: -1.1 })
+        if (ha && hb && Math.abs(ha.orbit - hb.orbit) < 170)
+          causes.push({ text: 'спор за приграничные орбиты', val: -0.8 })
         // друг моего врага — мой враг
         if (civs.some((c) => c.id !== a.id && c.id !== b.id && ((isWar(civ, a.id, c.id) && isAlly(civ, b.id, c.id)) || (isWar(civ, b.id, c.id) && isAlly(civ, a.id, c.id)))))
           causes.push({ text: 'союз с врагом', val: -1.7 })
