@@ -62,6 +62,7 @@ export default function App() {
   const [paused, setPaused] = useState(false)
   const [tool, setTool] = useState('hand')
   const [years, setYears] = useState(0)
+  const [fps, setFps] = useState(60)
   const [sunAlive, setSunAlive] = useState(true)
   const [deadCount, setDeadCount] = useState(0)
   const [mapInfo, setMapInfo] = useState({ planets: 0, rocks: 0, asts: 0 })
@@ -77,6 +78,7 @@ export default function App() {
     const timer = setInterval(() => {
       try {
         setYears(engine.simYears)
+        setFps(Math.round(engine.fps))
         setSunAlive(engine.sunAlive)
         setDeadCount(engine.planets.filter((p) => !p.alive).length)
         setMapInfo({
@@ -106,6 +108,9 @@ export default function App() {
               stOre: st ? Math.round(st.ore) : 0,
               ore: Math.round(p.oreRes || 0),
               outpost: !!p.outpost,
+              yard: !!p.shipyard,
+              yardB: p.yardBuildT > 0,
+              ground: p.ground ? { name: engine.civ.stateById(p.ground.owner)?.name || '?', troops: p.ground.troops } : null,
               tactic: st?.tactic || null,
               pvoUnits: p.pvoUnits || 0,
               pvoReady: p.pvoReady || 0,
@@ -208,6 +213,10 @@ export default function App() {
           <div>
             <span className="clock-label">прошло лет</span>
             <span className="clock-value">{years.toFixed(1)}</span>
+          </div>
+          <div>
+            <span className="clock-label">fps</span>
+            <span className={`clock-value fps-value ${fps < 40 ? 'low' : ''}`}>{fps}</span>
           </div>
           <div className="clock-sep" />
           <div className="controls">
@@ -341,6 +350,7 @@ export default function App() {
                   )
                 )}
                 {st.tactic && <p className="diplo-tactic">◉ тактика: {TACTIC_RU[st.tactic] || st.tactic}</p>}
+                {st.mobilized && !st.tactic && <p className="diplo-tactic">🪖 мобилизация</p>}
               </div>
             ))}
           </div>
@@ -415,6 +425,18 @@ export default function App() {
               <div className="kv">
                 <span>статус</span>
                 <b className="hot">⛏ шахтёрский аванпост</b>
+              </div>
+            )}
+            {(sel.yard || sel.yardB) && (
+              <div className="kv">
+                <span>верфь</span>
+                <b className="hot">{sel.yard ? '🏗 действует' : '🏗 строится…'}</b>
+              </div>
+            )}
+            {sel.ground && (
+              <div className="kv">
+                <span>наземные бои</span>
+                <b style={{ color: 'var(--red)' }}>🪖 десант {sel.ground.name}: {(sel.ground.troops * 1000) | 0} чел</b>
               </div>
             )}
             {(sel.ore > 0 || sel.barren) && (

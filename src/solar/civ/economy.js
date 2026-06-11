@@ -43,17 +43,26 @@ export function populations(civ, h) {
       })
       p.pvoReload = p.pvoReload.map((t) => t - h)
     }
-    // стройка новой установки — замирает под осадой
-    if (p.pvoBuildT > 0) {
+    // стройка ПВО и верфи — замирает под осадой
+    if (p.pvoBuildT > 0 || p.yardBuildT > 0) {
       const besieged = civ.ships.some(
         (s) => s.kind === 'dread' && s.hp > 0 && civ.hostile(p.owner, s.owner) && dist(s, p) < 260,
       )
       if (!besieged) {
-        p.pvoBuildT -= h
-        if (p.pvoBuildT <= 0) {
-          p.pvoUnits++
-          p.pvoReady++
-          civ.log(`🛡 ${p.name}: встала в строй установка ПВО (${p.pvoUnits})`)
+        if (p.pvoBuildT > 0) {
+          p.pvoBuildT -= h
+          if (p.pvoBuildT <= 0) {
+            p.pvoUnits++
+            p.pvoReady++
+            civ.log(`🛡 ${p.name}: встала в строй установка ПВО (${p.pvoUnits})`)
+          }
+        }
+        if (p.yardBuildT > 0) {
+          p.yardBuildT -= h
+          if (p.yardBuildT <= 0) {
+            p.shipyard = true
+            civ.log(`🏗 ${p.name}: орбитальная верфь вступила в строй`, { x: p.x, y: p.y, imp: true })
+          }
         }
       }
     }
@@ -83,6 +92,38 @@ export function minersDecide(civ, st, myPlanets, myShips) {
 export function peacetimeDecide(civ, st, myPlanets, myShips, myDreads) {
   st.tactic = null
   const allies = civ.states.filter((o) => o.id !== st.id && !o.pirate && civ.isAlly(st.id, o.id))
+
+  // мобилизация: на горизонте война — флот и верфи готовятся заранее, грозу видно издалека
+  const looming = civ.states.some((o) => o.id !== st.id && !o.pirate && civ.getRel(st.id, o.id) < -25)
+  if (looming && !st.mobilized) {
+    st.mobilized = true
+    civ.log(`🪖 ${st.name} объявляет мобилизацию — в воздухе пахнет войной`, { imp: true })
+  } else if (!looming && st.mobilized) {
+    st.mobilized = false
+    civ.log(`🕊 ${st.name} сворачивает мобилизацию`)
+  }
+  if (st.mobilized) {
+    civ._buildYard(st, myPlanets)
+    const hasYard = myPlanets.some((p) => p.shipyard)
+    const count = (k) => myShips.filter((s) => s.kind === k).length
+    if (st.credits >= SHIP.destroyer.cost && st.ore >= SHIP.destroyer.ore && count('destroyer') < 2) {
+      const ds = civ._spawnShip('destroyer', st, myPlanets[0])
+      if (ds) {
+        st.credits -= SHIP.destroyer.cost
+        st.ore -= SHIP.destroyer.ore
+      }
+    }
+    if (hasYard && st.credits >= SHIP.cruiser.cost && st.ore >= SHIP.cruiser.ore && count('cruiser') < 2) {
+      const c = civ._spawnShip('cruiser', st, myPlanets[0])
+      if (c) {
+        st.credits -= SHIP.cruiser.cost
+        st.ore -= SHIP.cruiser.ore
+      }
+    }
+  } else if (st.credits > 380 && st.ore > 60) {
+    // богатый мир лениво обзаводится верфью впрок
+    civ._buildYard(st, myPlanets)
+  }
 
   // ПВО в мирное время — хотя бы пара установок на планету
   for (const p of myPlanets) {
@@ -170,8 +211,11 @@ export function peacetimeDecide(civ, st, myPlanets, myShips, myDreads) {
       if (d) d.mission = { type: 'siege', planet: den.id }
     }
   }
-  if (st.credits >= SHIP.dread.cost && myDreads.length < 1 && civ.states.length > 2) {
-    if (civ._spawnShip('dread', st, myPlanets[0])) st.credits -= SHIP.dread.cost
+  if (myPlanets.some((p) => p.shipyard) && st.credits >= SHIP.dread.cost && st.ore >= SHIP.dread.ore && myDreads.length < 1 && civ.states.length > 2) {
+    if (civ._spawnShip('dread', st, myPlanets[0])) {
+      st.credits -= SHIP.dread.cost
+      st.ore -= SHIP.dread.ore
+    }
   }
 
   // сецессия колоний: отделившиеся получают ПВО и казну — у них есть шанс отбиться.

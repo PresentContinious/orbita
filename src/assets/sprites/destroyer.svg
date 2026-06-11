@@ -1,0 +1,48 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 96" width="64" height="96">
+  <defs>
+    <linearGradient id="ds-hull" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#46547a"></stop>
+      <stop offset="0.5" stop-color="#2a3245"></stop>
+      <stop offset="1" stop-color="#141923"></stop>
+    </linearGradient>
+    <radialGradient id="ds-eng" cx="0.5" cy="0.35" r="0.65">
+      <stop offset="0" stop-color="#ffffff"></stop>
+      <stop offset="0.3" style="stop-color:var(--accent,#59d6ff)"></stop>
+      <stop offset="1" style="stop-color:var(--accent,#59d6ff)" stop-opacity="0"></stop>
+    </radialGradient>
+  </defs>
+
+  <!-- решётка радара ПВО: поперечная антенна -->
+  <line x1="14" y1="34" x2="50" y2="34" style="stroke:var(--accent,#59d6ff)" stroke-width="1.6" opacity="0.75"></line>
+  <line x1="18" y1="30" x2="46" y2="30" style="stroke:var(--accent,#59d6ff)" stroke-width="1" opacity="0.45"></line>
+  <circle cx="14" cy="34" r="1.6" style="fill:var(--accent,#59d6ff)" opacity="0.8"></circle>
+  <circle cx="50" cy="34" r="1.6" style="fill:var(--accent,#59d6ff)" opacity="0.8"></circle>
+
+  <!-- узкий стремительный корпус -->
+  <polygon points="32,2 36,14 38,30 38,52 37,72 34,86 30,86 27,72 26,52 26,30 28,14" fill="url(#ds-hull)" stroke="#0a0e15" stroke-width="1.2"></polygon>
+  <polygon points="32,2 34.6,10 32,15 29.4,10" style="fill:var(--accent,#59d6ff)" opacity="0.9"></polygon>
+
+  <!-- рубка -->
+  <polygon points="32,20 34.8,25 34.8,33 29.2,33 29.2,25" fill="#0d1420" stroke="#0a0e15" stroke-width="0.8"></polygon>
+  <polygon points="32,21.5 34,25 34,29 30,29 30,25" style="fill:var(--accent,#59d6ff)" opacity="0.5"></polygon>
+
+  <!-- вертикальные пусковые ячейки противоракет -->
+  <rect x="28" y="38" width="8" height="22" fill="#0c111a" stroke="#2a3346" stroke-width="0.9"></rect>
+  <circle cx="30.3" cy="41.5" r="1.2" style="fill:var(--accent,#59d6ff)" opacity="0.85"></circle>
+  <circle cx="33.7" cy="41.5" r="1.2" style="fill:var(--accent,#59d6ff)" opacity="0.85"></circle>
+  <circle cx="30.3" cy="46.5" r="1.2" style="fill:var(--accent,#59d6ff)" opacity="0.85"></circle>
+  <circle cx="33.7" cy="46.5" r="1.2" style="fill:var(--accent,#59d6ff)" opacity="0.85"></circle>
+  <circle cx="30.3" cy="51.5" r="1.2" style="fill:var(--accent,#59d6ff)" opacity="0.85"></circle>
+  <circle cx="33.7" cy="51.5" r="1.2" style="fill:var(--accent,#59d6ff)" opacity="0.85"></circle>
+  <circle cx="30.3" cy="56.5" r="1.2" style="fill:var(--accent,#59d6ff)" opacity="0.45"></circle>
+  <circle cx="33.7" cy="56.5" r="1.2" style="fill:var(--accent,#59d6ff)" opacity="0.45"></circle>
+
+  <!-- стабилизаторы -->
+  <polygon points="26,62 18,74 20,78 26,72" fill="#222a3a" stroke="#0a0e15" stroke-width="1"></polygon>
+  <polygon points="38,62 46,74 44,78 38,72" fill="#222a3a" stroke="#0a0e15" stroke-width="1"></polygon>
+  <polygon points="25,68 20,74 21,76 25,72" style="fill:var(--accent,#59d6ff)" opacity="0.7"></polygon>
+  <polygon points="39,68 44,74 43,76 39,72" style="fill:var(--accent,#59d6ff)" opacity="0.7"></polygon>
+
+  <rect x="29" y="85" width="6" height="4" fill="#0d1118"></rect>
+  <ellipse cx="32" cy="91" rx="4.2" ry="7" fill="url(#ds-eng)"></ellipse>
+</svg>

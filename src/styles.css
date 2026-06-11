@@ -196,6 +196,14 @@ button {
   text-transform: uppercase;
 }
 
+.fps-value {
+  color: var(--green);
+}
+
+.fps-value.low {
+  color: var(--red);
+}
+
 .clock-value {
   font-size: 22px;
   font-weight: 700;

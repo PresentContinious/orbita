@@ -67,6 +67,8 @@ export class Engine {
     this.paused = false
     this.simT = 0
     this.civAcc = 0
+    this.civTickSize = CIV_TICK
+    this.fps = 60
     this.visT = 0
     this.followId = null
     this.hoverId = null
@@ -1009,6 +1011,8 @@ export class Engine {
     if (!this.running) return
     const dt = Math.min((now - this.last) / 1000, 0.05)
     this.last = now
+    // сглаженный FPS для HUD
+    if (dt > 0) this.fps += (1 / dt - this.fps) * 0.08
     this._update(dt)
     this._draw()
     requestAnimationFrame(this._loop)
