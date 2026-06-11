@@ -1,0 +1,41 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">
+  <defs>
+    <linearGradient id="mn-hull" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#465372"></stop>
+      <stop offset="0.5" stop-color="#2c3447"></stop>
+      <stop offset="1" stop-color="#171c27"></stop>
+    </linearGradient>
+    <linearGradient id="mn-prong" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#4a5878"></stop>
+      <stop offset="1" stop-color="#222a3a"></stop>
+    </linearGradient>
+    <radialGradient id="mn-eng" cx="0.5" cy="0.35" r="0.65">
+      <stop offset="0" stop-color="#ffffff"></stop>
+      <stop offset="0.3" style="stop-color:var(--accent,#59d6ff)"></stop>
+      <stop offset="1" style="stop-color:var(--accent,#59d6ff)" stop-opacity="0"></stop>
+    </radialGradient>
+  </defs>
+  
+  <polygon points="25,18 17,4 22,2 29,15" fill="url(#mn-prong)" stroke="#0a0e15" stroke-width="1"></polygon>
+  <polygon points="39,18 47,4 42,2 35,15" fill="url(#mn-prong)" stroke="#0a0e15" stroke-width="1"></polygon>
+  <circle cx="19.5" cy="4" r="2" style="fill:var(--accent,#59d6ff)" opacity="0.9"></circle>
+  <circle cx="44.5" cy="4" r="2" style="fill:var(--accent,#59d6ff)" opacity="0.9"></circle>
+  
+  <polygon points="30,4 34,4 33,14 31,14" style="fill:var(--accent,#59d6ff)" opacity="0.45"></polygon>
+  
+  <polygon points="32,12 42,20 45,38 39,52 25,52 19,38 22,20" fill="url(#mn-hull)" stroke="#0a0e15" stroke-width="1.2"></polygon>
+  <polygon points="32,16 36,22 28,22" style="fill:var(--accent,#59d6ff)" opacity="0.6"></polygon>
+  
+  <ellipse cx="32" cy="37" rx="10.5" ry="8.5" fill="#222a3a" stroke="#0a0e15" stroke-width="1"></ellipse>
+  <circle cx="28" cy="35" r="2" fill="#d29a4a"></circle>
+  <circle cx="34.5" cy="38.5" r="2.5" fill="#d29a4a"></circle>
+  <circle cx="30.5" cy="40.5" r="1.6" fill="#b8813a"></circle>
+  
+  <polygon points="20,28 24,26 24,29 20,31" fill="#d29a4a" opacity="0.85"></polygon>
+  <polygon points="44,28 40,26 40,29 44,31" fill="#d29a4a" opacity="0.85"></polygon>
+  
+  <rect x="25" y="51" width="5" height="4" fill="#0d1118"></rect>
+  <rect x="34" y="51" width="5" height="4" fill="#0d1118"></rect>
+  <ellipse cx="27.5" cy="58" rx="3.5" ry="6" fill="url(#mn-eng)"></ellipse>
+  <ellipse cx="36.5" cy="58" rx="3.5" ry="6" fill="url(#mn-eng)"></ellipse>
+</svg>

@@ -1,0 +1,28 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 64" width="24" height="64">
+  <defs>
+    <linearGradient id="ms-body" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#465372"></stop>
+      <stop offset="1" stop-color="#1c2330"></stop>
+    </linearGradient>
+    <radialGradient id="ms-eng" cx="0.5" cy="0.3" r="0.7">
+      <stop offset="0" stop-color="#ffffff"></stop>
+      <stop offset="0.3" style="stop-color:var(--accent,#ffb454)"></stop>
+      <stop offset="1" style="stop-color:var(--accent,#ffb454)" stop-opacity="0"></stop>
+    </radialGradient>
+  </defs>
+  
+  <polygon points="8.5,42 3,56 8.5,51" fill="#2c3447" stroke="#0a0e15" stroke-width="0.8"></polygon>
+  <polygon points="15.5,42 21,56 15.5,51" fill="#2c3447" stroke="#0a0e15" stroke-width="0.8"></polygon>
+  
+  <rect x="8.5" y="13" width="7" height="32" rx="2" fill="url(#ms-body)" stroke="#0a0e15" stroke-width="0.9"></rect>
+  
+  <circle cx="12" cy="6" r="4.5" fill="url(#ms-eng)" opacity="0.35"></circle>
+  <polygon points="12,2 15.5,14 8.5,14" style="fill:var(--accent,#ffb454)" opacity="0.95"></polygon>
+  
+  <rect x="8.5" y="22" width="7" height="2.5" style="fill:var(--accent,#ffb454)" opacity="0.55"></rect>
+  
+  <rect x="9.5" y="45" width="5" height="4" fill="#0d1118"></rect>
+  
+  <ellipse cx="12" cy="54" rx="4.5" ry="8.5" fill="url(#ms-eng)"></ellipse>
+  <ellipse cx="12" cy="50.5" rx="1.8" ry="3.5" fill="#ffffff" opacity="0.9"></ellipse>
+</svg>

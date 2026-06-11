@@ -1,0 +1,37 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">
+  <defs>
+    <linearGradient id="rd-hull" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#4a4150"></stop>
+      <stop offset="0.55" stop-color="#2e2834"></stop>
+      <stop offset="1" stop-color="#181520"></stop>
+    </linearGradient>
+    <linearGradient id="rd-wing" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#3a3342"></stop>
+      <stop offset="1" stop-color="#161220"></stop>
+    </linearGradient>
+    <radialGradient id="rd-eng" cx="0.5" cy="0.35" r="0.65">
+      <stop offset="0" stop-color="#ffffff"></stop>
+      <stop offset="0.3" style="stop-color:var(--accent,#ff5d7e)"></stop>
+      <stop offset="1" style="stop-color:var(--accent,#ff5d7e)" stop-opacity="0"></stop>
+    </radialGradient>
+  </defs>
+  
+  <polygon points="28,32 6,18 13,38 28,46" fill="url(#rd-wing)" stroke="#0a0e15" stroke-width="1"></polygon>
+  <polygon points="36,32 58,18 51,38 36,46" fill="url(#rd-wing)" stroke="#0a0e15" stroke-width="1"></polygon>
+  
+  <polygon points="11,24 22,32 22,36 9,28" style="fill:var(--accent,#ff5d7e)" opacity="0.7"></polygon>
+  <polygon points="53,24 42,32 42,36 55,28" style="fill:var(--accent,#ff5d7e)" opacity="0.7"></polygon>
+  
+  <polygon points="32,4 36,16 37,44 32,54 27,44 28,16" fill="url(#rd-hull)" stroke="#0a0e15" stroke-width="1.2"></polygon>
+  
+  <polygon points="32,4 34,10 32,13 30,10" style="fill:var(--accent,#ff5d7e)" opacity="0.9"></polygon>
+  
+  <polygon points="32,14 34,20 34,28 30,28 30,20" fill="#0c111a" stroke="#0a0e15" stroke-width="0.7"></polygon>
+  <polygon points="32,16 33,20 33,25 31,25 31,20" style="fill:var(--accent,#ff5d7e)" opacity="0.7"></polygon>
+  
+  <polygon points="29,46 24,60 28,55" fill="#221d2a" stroke="#0a0e15" stroke-width="0.8"></polygon>
+  <polygon points="35,46 40,60 36,55" fill="#221d2a" stroke="#0a0e15" stroke-width="0.8"></polygon>
+  
+  <rect x="29.5" y="52" width="5" height="4" fill="#0d1118"></rect>
+  <ellipse cx="32" cy="58" rx="4" ry="6.5" fill="url(#rd-eng)"></ellipse>
+</svg>

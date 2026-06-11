@@ -1,0 +1,57 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 128" width="64" height="128">
+  <defs>
+    <linearGradient id="dn-hull" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#4a5878"></stop>
+      <stop offset="0.45" stop-color="#2c3447"></stop>
+      <stop offset="1" stop-color="#161b26"></stop>
+    </linearGradient>
+    <linearGradient id="dn-pod" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#333d52"></stop>
+      <stop offset="1" stop-color="#141923"></stop>
+    </linearGradient>
+    <radialGradient id="dn-eng" cx="0.5" cy="0.35" r="0.65">
+      <stop offset="0" stop-color="#ffffff"></stop>
+      <stop offset="0.3" style="stop-color:var(--accent,#59d6ff)"></stop>
+      <stop offset="1" style="stop-color:var(--accent,#59d6ff)" stop-opacity="0"></stop>
+    </radialGradient>
+  </defs>
+  
+  <rect x="12" y="34" width="2.2" height="10" fill="#3a4660"></rect>
+  <rect x="16" y="31" width="2.2" height="13" fill="#3a4660"></rect>
+  <polygon points="10,44 20,40 20,84 10,80" fill="url(#dn-pod)" stroke="#0a0e15" stroke-width="1"></polygon>
+  <rect x="49.8" y="34" width="2.2" height="10" fill="#3a4660"></rect>
+  <rect x="45.8" y="31" width="2.2" height="13" fill="#3a4660"></rect>
+  <polygon points="54,44 44,40 44,84 54,80" fill="url(#dn-pod)" stroke="#0a0e15" stroke-width="1"></polygon>
+  
+  <polygon points="32,3 39,14 43,32 45,48 45,92 41,110 36,119 28,119 23,110 19,92 19,48 21,32 25,14" fill="url(#dn-hull)" stroke="#0a0e15" stroke-width="1.2"></polygon>
+  <circle cx="32" cy="8" r="6" fill="url(#dn-eng)" opacity="0.35"></circle>
+  <polygon points="32,3 36,13 32,20 28,13" style="fill:var(--accent,#59d6ff)" opacity="0.9"></polygon>
+  
+  <circle cx="32" cy="27" r="1" style="fill:var(--accent,#59d6ff)" opacity="0.8"></circle>
+  <circle cx="32" cy="36" r="1" style="fill:var(--accent,#59d6ff)" opacity="0.8"></circle>
+  <circle cx="32" cy="44" r="1" style="fill:var(--accent,#59d6ff)" opacity="0.8"></circle>
+  
+  <rect x="25" y="50" width="14" height="38" fill="#0c111a" stroke="#2a3346" stroke-width="1"></rect>
+  <rect x="27" y="53" width="10" height="9" style="fill:var(--accent,#59d6ff)" opacity="0.14"></rect>
+  <rect x="27" y="53" width="10" height="9" fill="none" style="stroke:var(--accent,#59d6ff)" stroke-width="0.8" opacity="0.65"></rect>
+  <polygon points="32,54.5 34.5,60 29.5,60" style="fill:var(--accent,#59d6ff)" opacity="0.85"></polygon>
+  <rect x="27" y="64.5" width="10" height="9" style="fill:var(--accent,#59d6ff)" opacity="0.14"></rect>
+  <rect x="27" y="64.5" width="10" height="9" fill="none" style="stroke:var(--accent,#59d6ff)" stroke-width="0.8" opacity="0.65"></rect>
+  <polygon points="32,66 34.5,71.5 29.5,71.5" style="fill:var(--accent,#59d6ff)" opacity="0.85"></polygon>
+  <rect x="27" y="76" width="10" height="9" style="fill:var(--accent,#59d6ff)" opacity="0.14"></rect>
+  <rect x="27" y="76" width="10" height="9" fill="none" style="stroke:var(--accent,#59d6ff)" stroke-width="0.8" opacity="0.65"></rect>
+  <polygon points="32,77.5 34.5,83 29.5,83" style="fill:var(--accent,#59d6ff)" opacity="0.85"></polygon>
+  
+  <rect x="27" y="94" width="10" height="11" fill="#3a4660" stroke="#0a0e15" stroke-width="0.9"></rect>
+  <rect x="29" y="96.5" width="6" height="2" style="fill:var(--accent,#59d6ff)" opacity="0.7"></rect>
+  
+  <line x1="22" y1="48" x2="22" y2="92" stroke="#0a0e15" stroke-width="0.7" opacity="0.55"></line>
+  <line x1="42" y1="48" x2="42" y2="92" stroke="#0a0e15" stroke-width="0.7" opacity="0.55"></line>
+  
+  <rect x="21.5" y="118" width="5" height="5" fill="#0d1118"></rect>
+  <rect x="29.5" y="118" width="5" height="5" fill="#0d1118"></rect>
+  <rect x="37.5" y="118" width="5" height="5" fill="#0d1118"></rect>
+  <ellipse cx="24" cy="125" rx="4" ry="7" fill="url(#dn-eng)"></ellipse>
+  <ellipse cx="32" cy="126" rx="4.5" ry="8" fill="url(#dn-eng)"></ellipse>
+  <ellipse cx="40" cy="125" rx="4" ry="7" fill="url(#dn-eng)"></ellipse>
+</svg>

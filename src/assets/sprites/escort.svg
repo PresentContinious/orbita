@@ -1,0 +1,37 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">
+  <defs>
+    <linearGradient id="es-hull" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#465372"></stop>
+      <stop offset="0.55" stop-color="#2c3447"></stop>
+      <stop offset="1" stop-color="#181d29"></stop>
+    </linearGradient>
+    <radialGradient id="es-eng" cx="0.5" cy="0.35" r="0.65">
+      <stop offset="0" stop-color="#ffffff"></stop>
+      <stop offset="0.3" style="stop-color:var(--accent,#59d6ff)"></stop>
+      <stop offset="1" style="stop-color:var(--accent,#59d6ff)" stop-opacity="0"></stop>
+    </radialGradient>
+  </defs>
+  
+  <rect x="21.5" y="12" width="3" height="3" style="fill:var(--accent,#59d6ff)" opacity="0.9"></rect>
+  <rect x="21.5" y="15" width="3" height="27" fill="#333d52" stroke="#0a0e15" stroke-width="0.8"></rect>
+  <rect x="39.5" y="12" width="3" height="3" style="fill:var(--accent,#59d6ff)" opacity="0.9"></rect>
+  <rect x="39.5" y="15" width="3" height="27" fill="#333d52" stroke="#0a0e15" stroke-width="0.8"></rect>
+  
+  <rect x="24" y="22" width="5" height="3" fill="#1c2330"></rect>
+  <rect x="35" y="22" width="5" height="3" fill="#1c2330"></rect>
+  <rect x="24" y="36" width="5" height="3" fill="#1c2330"></rect>
+  <rect x="35" y="36" width="5" height="3" fill="#1c2330"></rect>
+  
+  <polygon points="32,3 36.5,13 38,42 34.5,55 29.5,55 26,42 27.5,13" fill="url(#es-hull)" stroke="#0a0e15" stroke-width="1.2"></polygon>
+  
+  <polygon points="32,15 34.5,19.5 32,24 29.5,19.5" style="fill:var(--accent,#59d6ff)" opacity="0.85"></polygon>
+  
+  <rect x="30" y="28" width="4" height="8" rx="1" fill="#0c111a" stroke="#0a0e15" stroke-width="0.7"></rect>
+  <rect x="31" y="29" width="2" height="6" style="fill:var(--accent,#59d6ff)" opacity="0.5"></rect>
+  
+  <polygon points="27,44 22,56 26,53" fill="#222a3a" stroke="#0a0e15" stroke-width="0.8"></polygon>
+  <polygon points="37,44 42,56 38,53" fill="#222a3a" stroke="#0a0e15" stroke-width="0.8"></polygon>
+  
+  <rect x="29" y="54" width="6" height="4.5" fill="#0d1118"></rect>
+  <ellipse cx="32" cy="61" rx="4" ry="6.5" fill="url(#es-eng)"></ellipse>
+</svg>

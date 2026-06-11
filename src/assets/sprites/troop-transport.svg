@@ -1,0 +1,45 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">
+  <defs>
+    <linearGradient id="tt-hull" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#465372"></stop>
+      <stop offset="0.5" stop-color="#2c3447"></stop>
+      <stop offset="1" stop-color="#171c27"></stop>
+    </linearGradient>
+    <linearGradient id="tt-pod" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#333d52"></stop>
+      <stop offset="1" stop-color="#1a2030"></stop>
+    </linearGradient>
+    <radialGradient id="tt-eng" cx="0.5" cy="0.35" r="0.65">
+      <stop offset="0" stop-color="#ffffff"></stop>
+      <stop offset="0.3" style="stop-color:var(--accent,#59d6ff)"></stop>
+      <stop offset="1" style="stop-color:var(--accent,#59d6ff)" stop-opacity="0"></stop>
+    </radialGradient>
+  </defs>
+  
+  <polygon points="32,4 47,16 51,34 49,52 41,58 23,58 15,52 13,34 17,16" fill="url(#tt-hull)" stroke="#0a0e15" stroke-width="1.2"></polygon>
+  
+  <polygon points="32,4 43,14 32,21 21,14" fill="#4a5878" stroke="#0a0e15" stroke-width="1"></polygon>
+  <polyline points="21,14 32,21 43,14" fill="none" style="stroke:var(--accent,#59d6ff)" stroke-width="1.5" opacity="0.9"></polyline>
+  
+  <polygon points="13,34 19,30 19,50 15,52" fill="#222a3a" stroke="#0a0e15" stroke-width="0.8"></polygon>
+  <polygon points="51,34 45,30 45,50 49,52" fill="#222a3a" stroke="#0a0e15" stroke-width="0.8"></polygon>
+  
+  <rect x="20" y="28" width="8" height="9" rx="2" fill="url(#tt-pod)" stroke="#0a0e15" stroke-width="0.9"></rect>
+  <circle cx="24" cy="32.5" r="1.6" style="fill:var(--accent,#59d6ff)" opacity="0.9"></circle>
+  <rect x="36" y="28" width="8" height="9" rx="2" fill="url(#tt-pod)" stroke="#0a0e15" stroke-width="0.9"></rect>
+  <circle cx="40" cy="32.5" r="1.6" style="fill:var(--accent,#59d6ff)" opacity="0.9"></circle>
+  <rect x="20" y="40" width="8" height="9" rx="2" fill="url(#tt-pod)" stroke="#0a0e15" stroke-width="0.9"></rect>
+  <circle cx="24" cy="44.5" r="1.6" style="fill:var(--accent,#59d6ff)" opacity="0.9"></circle>
+  <rect x="36" y="40" width="8" height="9" rx="2" fill="url(#tt-pod)" stroke="#0a0e15" stroke-width="0.9"></rect>
+  <circle cx="40" cy="44.5" r="1.6" style="fill:var(--accent,#59d6ff)" opacity="0.9"></circle>
+  
+  <rect x="28.5" y="24" width="7" height="28" fill="#0c111a" stroke="#2a3346" stroke-width="0.9"></rect>
+  <rect x="30" y="28" width="4" height="2" style="fill:var(--accent,#59d6ff)" opacity="0.6"></rect>
+  <rect x="30" y="36" width="4" height="2" style="fill:var(--accent,#59d6ff)" opacity="0.6"></rect>
+  <rect x="30" y="44" width="4" height="2" style="fill:var(--accent,#59d6ff)" opacity="0.6"></rect>
+  
+  <rect x="21" y="57" width="7" height="4" fill="#0d1118"></rect>
+  <rect x="36" y="57" width="7" height="4" fill="#0d1118"></rect>
+  <ellipse cx="24.5" cy="62.5" rx="4" ry="6" fill="url(#tt-eng)"></ellipse>
+  <ellipse cx="39.5" cy="62.5" rx="4" ry="6" fill="url(#tt-eng)"></ellipse>
+</svg>
