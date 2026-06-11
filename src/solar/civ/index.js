@@ -214,14 +214,14 @@ export class Civ {
 
   // предел установок ПВО зависит от населения
   pvoCap(p) {
-    return clamp(2 + Math.floor(p.pop / 1.5), 1, 8)
+    return clamp(2 + Math.floor(p.pop / 2), 1, 6)
   }
 
-  // урон по ПВО: установка ломается, накопив 30 урона
+  // урон по ПВО: установка ломается, накопив 24 урона
   damagePvo(p, amount) {
     if (p.pvoUnits <= 0) return
     p.pvoDmg += amount
-    if (p.pvoDmg >= 30) {
+    if (p.pvoDmg >= 24) {
       p.pvoDmg = 0
       p.pvoUnits--
       p.pvoReady = Math.min(p.pvoReady, p.pvoUnits)
@@ -250,6 +250,17 @@ export class Civ {
     if (!myPlanets.length) return
     const myShips = this.ships.filter((s) => s.owner === st.id)
     const myDreads = myShips.filter((s) => s.kind === 'dread')
+
+    // рудный рынок: излишки казны меняются на руду у вольных старателей (4 кр за единицу) —
+    // богатым деньгам есть куда деться, а рудный голод лечится кошельком
+    if (st.credits > 400 && st.ore < 90) {
+      const lot = Math.min(30, Math.floor((st.credits - 300) / 4))
+      if (lot > 0) {
+        st.credits -= lot * 4
+        st.ore += lot
+        if (Math.random() < 0.08) this.log(`⚖️ ${st.name} скупает руду у старателей (+${lot})`)
+      }
+    }
 
     economy.minersDecide(this, st, myPlanets, myShips)
     if (this._warDecide(st, myPlanets, myShips, myDreads)) return
@@ -1068,8 +1079,9 @@ export class Civ {
                     nearest = s2
                   }
                 }
-                this._damageShip(nearest, p.pvoUnits * 14 * h, null)
-                if (nearest !== sh) this._damageShip(sh, p.pvoUnits * 2.5 * h, null)
+                // ответка батареи считается один раз: полный залп ловит только ближайший
+                if (nearest === sh) this._damageShip(sh, p.pvoUnits * 9 * h, null)
+                else this._damageShip(sh, p.pvoUnits * 2.5 * h, null)
                 if (Math.random() < h * 2.2) this.beams.push({ x1: p.x, y1: p.y, x2: nearest.x, y2: nearest.y, life: 0.8, color: '#7df0ff' })
               } else if (p.shipyard || p.yardBuildT > 0) {
                 // ПВО подавлено — рушим верфь: инфраструктура ценнее погромов
@@ -1084,16 +1096,22 @@ export class Civ {
                   this.log(`🏗💥 верфь ${p.name} разрушена осадой`, { x: p.x, y: p.y, imp: true })
                 }
               } else {
-                // бомбардировка беззащитной планеты: выжигаем, но не захватываем
-                p.pop -= 0.12 * h
-                if (Math.random() < h * 1.5) this.beams.push({ x1: sh.x, y1: sh.y, x2: p.x, y2: p.y, life: 0.7, color: st.color })
-                if (p.pop <= 0.01) {
-                  if (p.owner) diplomacy.addWarScore(this, sh.owner, p.owner, 25)
-                  p.pop = 0
-                  p.owner = null
-                  p.pvoUnits = 0
-                  p.pvoReady = 0
-                  this.log(`🔥 ${st.name} выжгло ${p.name} дотла — планета обезлюдела`, { x: p.x, y: p.y, imp: true })
+                // свой десант на земле или на подходе — огонь придержать: планета нужна целой
+                const landing =
+                  p.ground?.owner === sh.owner ||
+                  this.ships.some((s) => s.owner === sh.owner && s.mission?.type === 'invade' && s.mission.planet === p.id)
+                if (!landing) {
+                  // бомбардировка беззащитной планеты: выжигаем, но не захватываем
+                  p.pop -= 0.12 * h
+                  if (Math.random() < h * 1.5) this.beams.push({ x1: sh.x, y1: sh.y, x2: p.x, y2: p.y, life: 0.7, color: st.color })
+                  if (p.pop <= 0.01) {
+                    if (p.owner) diplomacy.addWarScore(this, sh.owner, p.owner, 25)
+                    p.pop = 0
+                    p.owner = null
+                    p.pvoUnits = 0
+                    p.pvoReady = 0
+                    this.log(`🔥 ${st.name} выжгло ${p.name} дотла — планета обезлюдела`, { x: p.x, y: p.y, imp: true })
+                  }
                 }
               }
             }
@@ -1152,14 +1170,14 @@ export class Civ {
           this._steerPlanet(sh, tgt, h)
           if (dist(sh, tgt) < tgt.r + 16) {
             m.leg = 1 - m.leg
-            const gain = 20 * (m.boost || 1)
+            const gain = 10 * (m.boost || 1)
             if (m.boost > 1) {
               const o = this.stateById(sh.owner)
               if (o) o.credits += gain
             } else if (m.a === m.b) {
               // внутренний маршрут — скромнее, но стабильно
               const o = this.stateById(sh.owner)
-              if (o) o.credits += 12
+              if (o) o.credits += 8
             } else {
               const sa = this.stateById(m.a)
               const sb = this.stateById(m.b)
@@ -1244,7 +1262,7 @@ export class Civ {
           if (!sh.flakRolled && dist(sh, p) < p.r + 70) {
             sh.flakRolled = true
             const usePvo = p.pvoReady > 0
-            const chance = usePvo ? 0.65 : clamp(0.1 + p.pop * 0.05, 0.1, 0.45)
+            const chance = usePvo ? 0.65 : clamp(0.08 + p.pop * 0.03, 0.08, 0.3)
             if (Math.random() < chance) {
               if (usePvo) {
                 p.pvoReady--
@@ -1321,7 +1339,7 @@ export class Civ {
           this._steer(sh, ast.x, ast.y, h)
           if (dist(sh, ast) < ast.size + 8) {
             // выгребаем руду; пустой астероид исчезает
-            m.haul = Math.min(26, ast.res)
+            m.haul = Math.min(32, ast.res)
             ast.res -= m.haul
             if (ast.res <= 0) this.asteroids = this.asteroids.filter((a) => a.id !== ast.id)
             m.phase = 1
@@ -1602,7 +1620,7 @@ export class Civ {
       p.defT = (p.defT || 0) - h
       if (p.defT > 0) continue
       const militia = this.ships.filter((s) => s.militia && s.home === p.id && s.hp > 0).length
-      const cap = clamp(2 + Math.round(p.pop * 1.2), 2, 12)
+      const cap = clamp(2 + Math.round(p.pop * 0.7), 2, 8)
       if (militia >= cap) continue
       let threat = false
       for (const o of this.ships) {
@@ -1612,14 +1630,15 @@ export class Civ {
         }
       }
       if (!threat) continue
-      // ополчение поднимается, только пока есть кому летать, и стоит людей
-      if (p.pop < 0.08) continue
-      p.defT = 1.6
+      // ополчение поднимается, только пока есть кому летать, и заметно тратит людей —
+      // долгая осада реально истощает планету, а не упирается в бесконечных лётчиков
+      if (p.pop < 0.6) continue
+      p.defT = 2.6
       const st = this.stateById(p.owner)
       if (!st) continue
       const f = this._spawnShip('fighter', st, p)
       if (!f) continue
-      p.pop = Math.max(p.pop - 0.004, 0.01)
+      p.pop = Math.max(p.pop - 0.008, 0.01)
       f.militia = true
       f.hp = f.maxHp = 12
     }
@@ -1906,6 +1925,40 @@ export class Civ {
       ctx.restore()
     }
 
+    // маркеры войны прямо на карте: осада — пульсирующее красное кольцо,
+    // наземные бои — оранжевый ромб над планетой; ленту можно не читать
+    const pulse = 0.5 + 0.5 * Math.sin(this.e.visT * 5)
+    for (const p of this.e.planets) {
+      if (!p.alive || !p.owner) continue
+      const besieged = this.ships.some((s) => CAP_KINDS.includes(s.kind) && s.hp > 0 && this.hostile(p.owner, s.owner) && dist(s, p) < 260)
+      if (!besieged && !p.ground) continue
+      ctx.save()
+      if (besieged) {
+        const rr = p.r + 16 / Math.sqrt(z)
+        ctx.strokeStyle = `rgba(255, 93, 93, ${0.3 + 0.4 * pulse})`
+        ctx.lineWidth = 1.6 / z
+        ctx.setLineDash([6 / z, 5 / z])
+        ctx.beginPath()
+        ctx.ellipse(p.x, p.y * SQ, rr, rr * 0.85, 0, 0, TAU)
+        ctx.stroke()
+        ctx.setLineDash([])
+      }
+      if (p.ground) {
+        const mz = Math.max(4, 6 / Math.sqrt(z))
+        const gx = p.x
+        const gy = p.y * SQ - p.r - 12 / Math.sqrt(z)
+        ctx.fillStyle = `rgba(255, 130, 60, ${0.45 + 0.5 * pulse})`
+        ctx.beginPath()
+        ctx.moveTo(gx, gy - mz)
+        ctx.lineTo(gx + mz, gy)
+        ctx.lineTo(gx, gy + mz)
+        ctx.lineTo(gx - mz, gy)
+        ctx.closePath()
+        ctx.fill()
+      }
+      ctx.restore()
+    }
+
     // корабли: SVG-спрайты в цвете владельца (нос вверх → +90°).
     // При отдалении не растворяются: масштаб компенсирует зум + подсветка-свечение
     const mul = clamp(0.55 / z, 1, 3.4)
@@ -1947,16 +2000,18 @@ export class Civ {
       w *= mul
       hgt *= mul
 
-      // подсветка под корпусом
+      // подсветка под корпусом — без градиента: на сотне кораблей это десятки FPS
       const glowR = Math.max(w, hgt) * 0.75
       ctx.save()
       ctx.globalCompositeOperation = 'lighter'
-      const gg = ctx.createRadialGradient(x, y, 0, x, y, glowR)
-      gg.addColorStop(0, color + '66')
-      gg.addColorStop(1, color + '00')
-      ctx.fillStyle = gg
+      ctx.fillStyle = color
+      ctx.globalAlpha = 0.14
       ctx.beginPath()
       ctx.arc(x, y, glowR, 0, TAU)
+      ctx.fill()
+      ctx.globalAlpha = 0.22
+      ctx.beginPath()
+      ctx.arc(x, y, glowR * 0.45, 0, TAU)
       ctx.fill()
       ctx.restore()
 

@@ -26,7 +26,7 @@ export function populations(civ, h) {
     st.credits += p.pop * 0.12 * h
     // собственная добыча из недр: аванпост качает на полную, обычная планета — понемногу
     if (p.oreRes > 0) {
-      const rate = p.outpost ? 0.25 : Math.min(p.pop, 3) * 0.03
+      const rate = p.outpost ? 0.35 : Math.min(p.pop, 4) * 0.045
       const got = Math.min(rate * h, p.oreRes)
       p.oreRes -= got
       st.ore += got
@@ -207,7 +207,7 @@ export function peacetimeDecide(civ, st, myPlanets, myShips, myDreads) {
   // шахтёрский аванпост: руда кончается — пора застолбить богатую глыбу на окраине
   const OUTPOST_COST = 150
   const outpostEnRoute = civ.ships.some((s) => s.owner === st.id && s.mission?.type === 'outpost')
-  if (!outpostEnRoute && st.ore < 50 && st.credits >= OUTPOST_COST + SHIP.transport.cost && home) {
+  if (!outpostEnRoute && st.ore < 120 && st.credits >= OUTPOST_COST + SHIP.transport.cost && home) {
     const rocks = civ.e.planets.filter((p) => p.alive && !p.owner && p.barren && p.oreRes > 200)
     if (rocks.length) {
       rocks.sort((a, b) => dist(a, home) - dist(b, home))
