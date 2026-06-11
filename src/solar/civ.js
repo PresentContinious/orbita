@@ -136,6 +136,18 @@ export class Civ {
     this.rel[this.relKey(a, b)] = clamp(v, -100, 100)
   }
 
+  // при смерти государства вычищаем его дипломатические следы
+  _purgeRelations(id) {
+    for (const key of Object.keys(this.rel)) {
+      const [a, b] = key.split(':')
+      if (+a === id || +b === id) delete this.rel[key]
+    }
+    for (const key of Object.keys(this.warSince)) {
+      const [a, b] = key.split(':')
+      if (+a === id || +b === id) delete this.warSince[key]
+    }
+  }
+
   isWar(a, b) {
     const sa = this.stateById(a)
     const sb = this.stateById(b)
@@ -183,6 +195,7 @@ export class Civ {
     this.states = this.states.filter((s) => {
       if (this.planetsOf(s).length === 0 && !this.ships.some((sh) => sh.owner === s.id)) {
         this.log(`☠️ ${s.name} прекратило существование`)
+        this._purgeRelations(s.id)
         return false
       }
       return true
