@@ -42,7 +42,8 @@ export function declareWar(civ, aggId, defId, casus) {
   const key = relKey(aggId, defId)
   setRel(civ, aggId, defId, Math.min(getRel(civ, aggId, defId), -65))
   civ.warSince[key] = civ.t
-  civ.wars[key] = { a: Math.min(aggId, defId), b: Math.max(aggId, defId), since: civ.t, casus, scoreA: 0, scoreB: 0 }
+  // intelA/intelB — ошибка разведки каждой стороны о силе противника на всю войну
+  civ.wars[key] = { a: Math.min(aggId, defId), b: Math.max(aggId, defId), since: civ.t, casus, scoreA: 0, scoreB: 0, intelA: rand(0.65, 1.45), intelB: rand(0.65, 1.45) }
   const agg = civ.stateById(aggId)
   const def = civ.stateById(defId)
   const home = civ.planetById(agg?.home)
@@ -55,14 +56,14 @@ export function declareWar(civ, aggId, defId, casus) {
       const k2 = relKey(c.id, aggId)
       setRel(civ, c.id, aggId, -60)
       civ.warSince[k2] = civ.t
-      civ.wars[k2] = { a: Math.min(c.id, aggId), b: Math.max(c.id, aggId), since: civ.t, casus: 'союзный долг', scoreA: 0, scoreB: 0 }
+      civ.wars[k2] = { a: Math.min(c.id, aggId), b: Math.max(c.id, aggId), since: civ.t, casus: 'союзный долг', scoreA: 0, scoreB: 0, intelA: rand(0.65, 1.45), intelB: rand(0.65, 1.45) }
       civ.log(`🛡 ${c.name} вступается за союзника ${def?.name || '?'}!`, { imp: true })
     }
     if (isAlly(civ, c.id, aggId) && !isWar(civ, c.id, defId)) {
       const k2 = relKey(c.id, defId)
       setRel(civ, c.id, defId, -60)
       civ.warSince[k2] = civ.t
-      civ.wars[k2] = { a: Math.min(c.id, defId), b: Math.max(c.id, defId), since: civ.t, casus: 'союзный долг', scoreA: 0, scoreB: 0 }
+      civ.wars[k2] = { a: Math.min(c.id, defId), b: Math.max(c.id, defId), since: civ.t, casus: 'союзный долг', scoreA: 0, scoreB: 0, intelA: rand(0.65, 1.45), intelB: rand(0.65, 1.45) }
       civ.log(`🛡 ${c.name} вступается за союзника ${agg?.name || '?'}!`, { imp: true })
     }
   }

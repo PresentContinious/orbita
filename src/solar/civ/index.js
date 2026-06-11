@@ -272,9 +272,13 @@ export class Civ {
     // вес вымпела в силе: дредноут тяжелее крейсера, крейсер — эсминца
     const capStr = (list) => list.reduce((s, c) => s + (c.kind === 'dread' ? 4 : c.kind === 'cruiser' ? 2 : 1.2), 0)
 
-    // выбор тактики по соотношению сил (с инерцией)
+    // выбор тактики по соотношению сил (с инерцией).
+    // Туман войны: чужую силу бот видит с ошибкой разведки — «верный расчёт»
+    // иногда оборачивается сюрпризом, и слабый может рискнуть, а сильный — перестраховаться
+    const war0 = this.wars[this.relKey(st.id, enemy.id)]
+    const intel = (war0 ? (st.id === war0.a ? war0.intelA : war0.intelB) : null) ?? 1
     const myStr = myPop + capStr(myCaps)
-    const eStr = ePop + capStr(eCaps)
+    const eStr = (ePop + capStr(eCaps)) * intel * rand(0.92, 1.08)
     if (!st.tactic || Math.random() < 0.25) {
       const next =
         myStr > eStr * 1.35 ? 'assault' : myStr < eStr * 0.65 ? 'defense' : Math.random() < 0.5 ? 'raid' : 'blockade'
@@ -299,19 +303,20 @@ export class Civ {
     // баллистика — артподготовка, а не самоцель: в наступлении бьём по цели будущего
     // штурма, пока у неё стоит ПВО (тратим её заряды и режем оборону); голую планету
     // с малым населением ракетами не добиваем — её берёт десант, космос нужен целым.
-    // В глухой обороне ракетами не разбрасываемся — деньги уходят на ПВО и флот
-    if (st.missileT <= 0 && st.credits >= 25) {
+    // Боеголовка дорогая (55 кр + 6 руды) — спамить «двадцать ракет за раз» разорительно
+    if (st.missileT <= 0 && st.credits >= 55 && st.ore >= 6) {
       const defensive = st.tactic === 'defense'
       const target = st.tactic === 'assault' ? ePlanets[0] : pick(ePlanets)
       const worthIt = target.pvoUnits > 0 || target.pop > 1.5
       if (worthIt && (!defensive || Math.random() < 0.35)) {
-        const volley = defensive ? 1 : clamp(1 + Math.floor(myPop / 3), 1, 4)
-        for (let i = 0; i < volley && st.credits >= 25; i++) {
-          st.credits -= 25
+        const volley = defensive ? 1 : clamp(1 + Math.floor(myPop / 4), 1, 3)
+        for (let i = 0; i < volley && st.credits >= 55 && st.ore >= 6; i++) {
+          st.credits -= 55
+          st.ore -= 6
           this._launchWarhead(pick(myPlanets), target, st)
         }
       }
-      st.missileT = clamp(30 / Math.max(myPop, 0.4), 6, 40) * (defensive ? 2.5 : 1)
+      st.missileT = clamp(40 / Math.max(myPop, 0.4), 10, 45) * (defensive ? 2.5 : 1)
     }
 
     // разрушитель планет: оружие отчаяния — дорого (по размеру цели), сбивается ПВО
@@ -353,12 +358,15 @@ export class Civ {
       }
     }
 
-    // наёмники: за большое золото вольница на время топит снабжение врага
+    // наёмники: за БОЛЬШОЕ золото вольница топит снабжение врага; аванс сразу
+    // уходит на новые корпуса — нанятая орда ощутимо злее
     const pirateSt = this.states.find((s) => s.pirate)
-    if (pirateSt && !pirateSt.contract && st.credits >= 300 && Math.random() < 0.25) {
-      st.credits -= 250
-      pirateSt.credits += 250
-      pirateSt.contract = { employer: st.id, enemy: enemy.id, until: this.t + 90 }
+    if (pirateSt && !pirateSt.contract && st.credits >= 450 && Math.random() < 0.25) {
+      st.credits -= 400
+      pirateSt.credits += 400
+      pirateSt.contract = { employer: st.id, enemy: enemy.id, until: this.t + 120 }
+      const den0 = this.planetsOf(pirateSt)[0]
+      if (den0) for (let i = 0; i < 2; i++) this._spawnShip('raider', pirateSt, den0)
       this.log(`🏴‍☠️💰 ${st.name} нанимает вольницу против ${enemy.name} — золото за кровь`, { imp: true })
     }
 
@@ -372,14 +380,14 @@ export class Civ {
       }
     }
     // линия флота: крейсера и эсминцы — рабочие лошадки войны
-    if (hasYard && st.credits >= SHIP.cruiser.cost && st.ore >= SHIP.cruiser.ore && myShips.filter((s) => s.kind === 'cruiser').length < 3) {
+    if (hasYard && st.credits >= SHIP.cruiser.cost && st.ore >= SHIP.cruiser.ore && myShips.filter((s) => s.kind === 'cruiser').length < 4) {
       const c = this._spawnShip('cruiser', st, myPlanets[0])
       if (c) {
         st.credits -= SHIP.cruiser.cost
         st.ore -= SHIP.cruiser.ore
       }
     }
-    if (st.credits >= SHIP.destroyer.cost && st.ore >= SHIP.destroyer.ore && myShips.filter((s) => s.kind === 'destroyer').length < 3) {
+    if (st.credits >= SHIP.destroyer.cost && st.ore >= SHIP.destroyer.ore && myShips.filter((s) => s.kind === 'destroyer').length < 4) {
       const ds = this._spawnShip('destroyer', st, myPlanets[0])
       if (ds) {
         st.credits -= SHIP.destroyer.cost
@@ -548,8 +556,10 @@ export class Civ {
     if (st.contract && (this.t > st.contract.until || !this.stateById(st.contract.enemy))) st.contract = null
 
     // цель — грабёж транспортов и шахтёров; корсары охотятся наравне со стаей.
-    // по контракту бьём врага нанимателя, нанимателя не трогаем
-    let prey = this.ships.filter((s) => (s.kind === 'transport' || s.kind === 'miner') && s.owner !== st.id)
+    // по контракту бьём врага нанимателя, нанимателя не трогаем; откупившихся — тоже
+    let prey = this.ships.filter(
+      (s) => (s.kind === 'transport' || s.kind === 'miner') && s.owner !== st.id && !(st.truces && st.truces[s.owner] > this.t),
+    )
     if (st.contract) {
       const hired = prey.filter((s) => s.owner === st.contract.enemy)
       prey = hired.length ? hired : prey.filter((s) => s.owner !== st.contract.employer)
@@ -578,7 +588,7 @@ export class Civ {
   // ---------- корабли ----------
 
   _spawnShip(kind, st, fromPlanet) {
-    if (this.ships.length >= 130) return null
+    if (this.ships.length >= 160) return null
     const cfg = SHIP[kind]
     const a = Math.random() * TAU
     const sh = {
@@ -1624,10 +1634,10 @@ export class Civ {
       for (const p of this.e.planets) {
         if (!p.alive || !p.owner || p.pvoReady <= 0) continue
         if (!this.hostile(m.owner, p.owner)) continue
-        if (dist(m, p) < 180) {
+        if (dist(m, p) < 195) {
           m.dead = true
           p.pvoReady--
-          p.pvoReload.push(3)
+          p.pvoReload.push(2.2)
           this.beams.push({ x1: p.x, y1: p.y, x2: m.x, y2: m.y, life: 1, color: '#7df0ff' })
           this.e._burst(m.x, m.y, 12, ['#7df0ff', '#ffffff'], 40, 160)
           break
