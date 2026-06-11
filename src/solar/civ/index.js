@@ -1,34 +1,9 @@
 // Цивилизация: государства, население, дипломатия, флоты, пираты, экономика.
 // Боты принимают решения по utility-оценке своего положения, не по таймеру-пустышке.
 
-import { genName } from './gen.js'
-import { getSprite } from './sprites.js'
-
-const TAU = Math.PI * 2
-const SQ = 0.74
-
-const clamp = (v, a, b) => Math.min(b, Math.max(a, v))
-const rand = (a, b) => a + Math.random() * (b - a)
-const pick = (arr) => arr[(Math.random() * arr.length) | 0]
-const dist = (a, b) => Math.hypot(a.x - b.x, a.y - b.y)
-
-const STATE_COLORS = ['#5da8ff', '#ff8a5c', '#7dd87d', '#e0c060', '#c98bff', '#5ce0d8', '#ff8fc8', '#a8c84d', '#8aa0ff', '#ffd07a']
-const PIRATE_COLOR = '#ff5555'
-
-// Война при отношениях ниже, союз — выше
-const WAR_AT = -45
-const ALLY_AT = 55
-
-const SHIP = {
-  transport: { hp: 60, speed: 60, cost: 60, label: 'транспорт' },
-  dread: { hp: 420, speed: 30, cost: 320, label: 'дредноут' },
-  fighter: { hp: 14, speed: 115, cost: 0, label: 'истребитель' },
-  raider: { hp: 16, speed: 100, cost: 28, label: 'рейдер' },
-  miner: { hp: 30, speed: 52, cost: 45, label: 'шахтёр' },
-  escort: { hp: 24, speed: 108, cost: 22, label: 'эскорт' },
-}
-
-let uid = 1
+import { genName } from '../gen.js'
+import { getSprite } from '../sprites.js'
+import { TAU, SQ, clamp, rand, pick, dist, STATE_COLORS, PIRATE_COLOR, WAR_AT, ALLY_AT, SHIP, nextId } from './constants.js'
 
 export class Civ {
   constructor(engine) {
@@ -92,7 +67,7 @@ export class Civ {
   }
 
   log(text) {
-    this.events.push({ id: uid++, text })
+    this.events.push({ id: nextId(), text })
     if (this.events.length > 40) this.events.shift()
   }
 
@@ -102,7 +77,7 @@ export class Civ {
     const usedColors = new Set(this.states.filter((s) => !s.pirate).map((s) => s.color))
     const freeColor = STATE_COLORS.find((c) => !usedColors.has(c)) ?? STATE_COLORS[this.states.length % STATE_COLORS.length]
     const st = {
-      id: uid++,
+      id: nextId(),
       name: opts.name || planet.name,
       color: opts.pirate ? PIRATE_COLOR : freeColor,
       credits: opts.credits ?? 80,
@@ -675,7 +650,7 @@ export class Civ {
     const cfg = SHIP[kind]
     const a = Math.random() * TAU
     const sh = {
-      id: uid++,
+      id: nextId(),
       kind,
       owner: st.id,
       x: fromPlanet.x + Math.cos(a) * (fromPlanet.r + 14),
@@ -1495,7 +1470,7 @@ export class Civ {
   _spawnAsteroid(orbitR, ang = Math.random() * TAU, res = Math.round(rand(40, 110))) {
     const size = rand(2.2, 4.5)
     this.asteroids.push({
-      id: uid++,
+      id: nextId(),
       orbitR,
       ang,
       // кеплеровская угловая скорость — летят вместе со всеми, не отстают

@@ -1,5 +1,5 @@
 import { generateSystem } from './gen.js'
-import { Civ } from './civ.js'
+import { Civ } from './civ/index.js'
 import { getSprite } from './sprites.js'
 
 const TAU = Math.PI * 2
