@@ -1,7 +1,7 @@
 // Цивилизация: государства, население, дипломатия, флоты, пираты, экономика.
 // Боты принимают решения по utility-оценке своего положения, не по таймеру-пустышке.
 
-import { getSprite } from '../sprites.js'
+import { getSprite, spriteReady } from '../sprites.js'
 import { TAU, SQ, clamp, rand, pick, dist, STATE_COLORS, PIRATE_COLOR, SHIP, CAP_KINDS, PVO_ORE, nextId } from './constants.js'
 import * as diplomacy from './diplomacy.js'
 import * as economy from './economy.js'
@@ -2286,7 +2286,7 @@ export class Civ {
       ctx.save()
       ctx.translate(it.x, it.y)
       ctx.rotate(ang)
-      if (img.complete && img.naturalWidth) {
+      if (spriteReady(img)) {
         ctx.drawImage(img, -it.w / 2, -it.hgt / 2, it.w, it.hgt)
       } else {
         ctx.fillStyle = color

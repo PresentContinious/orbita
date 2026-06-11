@@ -1,6 +1,6 @@
 import { generateSystem } from './gen.js'
 import { Civ } from './civ/index.js'
-import { getSprite } from './sprites.js'
+import { getSprite, spriteReady } from './sprites.js'
 
 const TAU = Math.PI * 2
 // Сплющивание плоскости системы для псевдо-3/4 ракурса (только отрисовка)
@@ -1648,7 +1648,7 @@ export class Engine {
       ctx.save()
       ctx.translate(x, y)
       ctx.rotate(ang)
-      if (img.complete && img.naturalWidth) ctx.drawImage(img, -2.4 * mul, -6.4 * mul, 4.8 * mul, 12.8 * mul)
+      if (spriteReady(img)) ctx.drawImage(img, -2.4 * mul, -6.4 * mul, 4.8 * mul, 12.8 * mul)
       else {
         ctx.fillStyle = color
         ctx.beginPath()
