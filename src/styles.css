@@ -501,6 +501,19 @@ button {
   animation: panel-in 0.35s cubic-bezier(0.2, 0.9, 0.25, 1) both;
 }
 
+/* дипломатия открыта: карточка планеты встаёт левее неё (340px + 10px зазор) */
+.panel.with-diplo {
+  right: 366px;
+}
+
+@media (max-width: 900px) {
+  /* на узких экранах — карточка поверх дипломатии */
+  .panel.with-diplo {
+    right: 16px;
+    z-index: 25;
+  }
+}
+
 @keyframes panel-in {
   from {
     opacity: 0;

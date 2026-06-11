@@ -345,8 +345,8 @@ export default function App() {
 
       {!intro && !sel && <p className="hint">{activeTool.hint}</p>}
 
-      {sel && !showDiplo && (
-        <aside className="panel glass" key={sel.id}>
+      {sel && (
+        <aside className={`panel glass ${showDiplo ? 'with-diplo' : ''}`} key={sel.id}>
           <div className="panel-head">
             <h2 className="panel-name">{sel.name}</h2>
             {sel.ownerName && (
