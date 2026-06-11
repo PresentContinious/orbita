@@ -160,11 +160,13 @@ export class Civ {
 
   // ---------- главный тик ----------
 
-  update(h, dt) {
+  updateVisual(dt) {
     // визуальные эффекты гаснут и на паузе
     for (const b of this.beams) b.life -= dt * 2
     this.beams = this.beams.filter((b) => b.life > 0)
-    if (h <= 0) return
+  }
+
+  tick(h) {
     this.t += h
     if (this.battleLogT > 0) this.battleLogT -= h
 
