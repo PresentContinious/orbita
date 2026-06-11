@@ -1,5 +1,9 @@
-// Спрайты кораблей: SVG с CSS-переменной --accent,
-// перекрашиваются в цвет государства и кэшируются по (тип, цвет)
+// Спрайты кораблей: SVG с CSS-переменной --accent, перекрашиваются в цвет
+// государства и кэшируются по (тип, цвет).
+// ВАЖНО: SVG запекается в битмап ОДИН раз — drawImage прямо из SVG-<img>
+// заставляет браузер пере-растеризовывать вектор на каждом кадре для каждого
+// корабля; эта работа идёт в композиторе, мимо JS-профайлера, и валит FPS
+// пропорционально размеру флота
 
 import fighterRaw from '../assets/sprites/fighter.svg?raw'
 import raiderRaw from '../assets/sprites/raider.svg?raw'
@@ -31,12 +35,27 @@ const cache = new Map()
 
 export function getSprite(kind, color = '#59d6ff') {
   const key = kind + '|' + color
-  let img = cache.get(key)
-  if (!img) {
+  let entry = cache.get(key)
+  if (!entry) {
     const svg = (RAW[kind] || RAW.fighter).replace('<svg ', `<svg style="--accent:${color}" `)
-    img = new Image()
+    const img = new Image()
+    entry = { source: img }
+    img.onload = () => {
+      // запас разрешения ×6 — хватает на максимальный размер корабля на экране
+      const k = 6
+      const c = document.createElement('canvas')
+      c.width = Math.max(2, Math.round(img.naturalWidth * k))
+      c.height = Math.max(2, Math.round(img.naturalHeight * k))
+      c.getContext('2d').drawImage(img, 0, 0, c.width, c.height)
+      entry.source = c
+    }
     img.src = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svg)
-    cache.set(key, img)
+    cache.set(key, entry)
   }
-  return img
+  return entry.source
+}
+
+// готов ли спрайт к отрисовке: запечённый битмап — всегда, <img> — после загрузки
+export function spriteReady(s) {
+  return s instanceof HTMLCanvasElement ? true : !!(s.complete && s.naturalWidth)
 }
