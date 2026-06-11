@@ -99,10 +99,12 @@ export class Civ {
   // ---------- государства / дипломатия ----------
 
   _makeState(planet, pop, opts = {}) {
+    const usedColors = new Set(this.states.filter((s) => !s.pirate).map((s) => s.color))
+    const freeColor = STATE_COLORS.find((c) => !usedColors.has(c)) ?? STATE_COLORS[this.states.length % STATE_COLORS.length]
     const st = {
       id: uid++,
       name: opts.name || planet.name,
-      color: opts.pirate ? PIRATE_COLOR : STATE_COLORS[this.states.length % STATE_COLORS.length],
+      color: opts.pirate ? PIRATE_COLOR : freeColor,
       credits: opts.credits ?? 80,
       pirate: !!opts.pirate,
       decideT: rand(1, 5),
@@ -500,7 +502,6 @@ export class Civ {
       const newStates = []
       for (const p of rebels) {
         const ns = this._makeState(p, p.pop, { credits: 150 })
-        ns.color = STATE_COLORS[(this.states.length * 3 + 1) % STATE_COLORS.length]
         p.pvoUnits = 3
         p.pvoReady = 3
         this.setRel(ns.id, st.id, rand(-40, 25))
