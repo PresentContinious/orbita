@@ -499,15 +499,16 @@ export class Civ {
     }
 
     // наёмники: за БОЛЬШОЕ золото вольница топит снабжение врага; аванс сразу
-    // уходит на новые корпуса — нанятая орда ощутимо злее
+    // уходит на новые корпуса. Контракт ТАЙНЫЙ — в ленте лишь смутный слух,
+    // но каждое нападение по заказу может вскрыть сделку, и грянет скандал
     const pirateSt = this.states.find((s) => s.pirate)
     if (pirateSt && !pirateSt.contract && st.credits >= 450 && Math.random() < 0.25) {
       st.credits -= 400
       pirateSt.credits += 400
-      pirateSt.contract = { employer: st.id, enemy: enemy.id, until: this.t + 120 }
+      pirateSt.contract = { employer: st.id, enemy: enemy.id, until: this.t + 120, secret: true, exposed: false }
       const den0 = this.planetsOf(pirateSt)[0]
       if (den0) for (let i = 0; i < 2; i++) this._spawnShip('raider', pirateSt, den0)
-      this.log(`🏴‍☠️💰 ${st.name} нанимает вольницу против ${enemy.name} — золото за кровь`, { imp: true })
+      this.log('🏴‍☠️ у вольницы завелось чужое золото — рейдеры подозрительно зашевелились')
     }
 
     // флот: тяжёлые корпуса требуют руду и верфь
@@ -686,8 +687,8 @@ export class Civ {
     }
 
     const raiders = this.shipsOf(st.id).filter((s) => s.kind === 'raider')
-    // строят стаю рейдеров — побольше и позлее; руду берут грабежом и со своих скал
-    if (raiders.length < 10 && st.credits >= SHIP.raider.cost && st.ore >= SHIP.raider.ore) {
+    // строят стаю рейдеров — побольше и позлее; у короля стая крупнее
+    if (raiders.length < (st.king ? 14 : 10) && st.credits >= SHIP.raider.cost && st.ore >= SHIP.raider.ore) {
       if (this._spawnShip('raider', st, den)) {
         st.credits -= SHIP.raider.cost
         st.ore -= SHIP.raider.ore
@@ -695,18 +696,65 @@ export class Civ {
     }
     // разжились — со стапелей сходит корсар: гроза конвоев, которого так просто не сбить
     const corsairs = this.shipsOf(st.id).filter((s) => s.kind === 'corsair')
-    if (raiders.length >= 5 && corsairs.length < 2 && st.credits >= SHIP.corsair.cost && st.ore >= SHIP.corsair.ore) {
+    if (raiders.length >= 5 && corsairs.length < (st.king ? 4 : 2) && st.credits >= SHIP.corsair.cost && st.ore >= SHIP.corsair.ore) {
       if (this._spawnShip('corsair', st, den)) {
         st.credits -= SHIP.corsair.cost
         st.ore -= SHIP.corsair.ore
         this.log(`🏴‍☠️ со стапелей вольницы сошёл корсар`, { x: den.x, y: den.y, imp: true })
       }
     }
+
+    // ПИРАТСКИЙ КОРОЛЬ: богатая и многочисленная вольница коронуется — стая
+    // растёт, призовой флот больше, а слабые государства платят дань
+    if (!st.king && st.credits > 450 && raiders.length >= 7) {
+      st.king = true
+      this.log('👑 вольница коронует ПИРАТСКОГО КОРОЛЯ — стая растёт, налёты станут злее', { x: den.x, y: den.y, imp: true })
+    } else if (st.king && raiders.length + corsairs.length < 3) {
+      st.king = false
+      this.log('👑 пиратский король пал — стая разбежалась, корона в ломбарде')
+    }
+    if (st.king) {
+      if (!st.tributeT) st.tributeT = this.t + 30
+      if (this.t >= st.tributeT) {
+        st.tributeT = this.t + rand(45, 70)
+        const mark = this.states.filter((o) => !o.pirate && o.credits > 200).sort((a, b) => this.popOf(a) - this.popOf(b))[0]
+        if (mark) {
+          if (Math.random() < 0.5) {
+            const tax = Math.min(130, Math.round(mark.credits * 0.2))
+            mark.credits -= tax
+            st.credits += tax
+            st.truces = st.truces || {}
+            st.truces[mark.id] = this.t + 90
+            this.log(`👑 ${mark.name} платит дань пиратскому королю (−${tax} кр) — его суда пока не трогают`, { imp: true })
+          } else {
+            st.vendetta = { enemy: mark.id, until: this.t + 90 }
+            this.log(`👑 ${mark.name} отказал пиратскому королю — вольница объявляет охоту на его суда`, { imp: true })
+          }
+        }
+      }
+    }
+
     // наёмный контракт: истёк или враг сгинул — забываем
     if (st.contract && (this.t > st.contract.until || !this.stateById(st.contract.enemy))) st.contract = null
 
-    // цель — грабёж транспортов и шахтёров; корсары охотятся наравне со стаей.
-    // по контракту бьём врага нанимателя, нанимателя не трогаем; откупившихся — тоже
+    // КОНТРАБАНДА: планете в блокаде нужен прорыв снабжения — вольница за золото
+    // владельца возит груз сквозь кольцо (контрабандиста могут сбить блокадники)
+    const smugglers = this.shipsOf(st.id).filter((s) => s.mission?.type === 'smuggle').length
+    if (smugglers < 2) {
+      const sealed = this.e.planets.find((p) => {
+        if (!p.alive || !p.owner || p.owner === st.id) return false
+        const owner = this.stateById(p.owner)
+        if (!owner || owner.pirate || owner.credits < 80) return false
+        return this.hostileShipsOf(p.owner).some((s2) => CAP_KINDS.includes(s2.kind) && s2.hp > 0 && dist(s2, p) < 380)
+      })
+      if (sealed) {
+        const runner = raiders.find((r) => r.mission?.type !== 'smuggle')
+        if (runner) runner.mission = { type: 'smuggle', planet: sealed.id }
+      }
+    }
+
+    // цель — грабёж транспортов и шахтёров; по контракту бьём врага нанимателя,
+    // нанимателя не трогаем; откупившихся — тоже; вендетта короля — приоритет
     let prey = this.hostileShipsOf(st.id).filter(
       (s) => (s.kind === 'transport' || s.kind === 'miner') && !(st.truces && st.truces[s.owner] > this.t),
     )
@@ -714,11 +762,23 @@ export class Civ {
       const hired = prey.filter((s) => s.owner === st.contract.enemy)
       prey = hired.length ? hired : prey.filter((s) => s.owner !== st.contract.employer)
     }
+    if (st.vendetta && this.t < st.vendetta.until) {
+      const sworn = prey.filter((s) => s.owner === st.vendetta.enemy)
+      if (sworn.length) prey = sworn
+    }
     if (prey.length) {
+      // ВОЛЧЬИ СТАИ: добычу разбирают группами по трое — рвут сообща, а не поодиночке
+      const pool = [...prey].sort((a, b) => dist(a, den) - dist(b, den))
+      let pi = 0
+      let inPack = 0
       for (const r of [...raiders, ...corsairs]) {
-        if (!r.mission || r.mission.type !== 'hunt') {
-          const target = prey.reduce((b, p) => (dist(r, p) < dist(r, b) ? p : b), prey[0])
-          r.mission = { type: 'hunt', ship: target.id }
+        if (r.mission?.type === 'smuggle') continue
+        if (r.mission?.type === 'hunt' && (this.shipById(r.mission.ship)?.hp ?? 0) > 0) continue
+        r.mission = { type: 'hunt', ship: pool[pi % pool.length].id }
+        inPack++
+        if (inPack >= 3) {
+          inPack = 0
+          pi++
         }
       }
     }
@@ -913,6 +973,8 @@ export class Civ {
           let bd = Infinity
           for (const o of this.hostileShipsOf(sh.owner)) {
             if (o.hp <= 0 || o.kind === 'miner') continue
+            // контрабандиста с грузом для НАШЕЙ планеты ополчение пропускает
+            if (o.mission?.type === 'smuggle' && o.mission.planet === homeP.id) continue
             if (dist(homeP, o) > 330) continue
             const d = dist(sh, o)
             if (d < bd) {
@@ -955,6 +1017,28 @@ export class Civ {
             } else {
               const eHome = this.planetsOf(this.stateById(m.enemy))[0]
               if (eHome) this._holdOrbit(sh, eHome, 380, h)
+            }
+            continue
+          }
+        }
+
+        // контрабандист: прорыв в блокаду — в драки не лезет, везёт груз;
+        // владелец платит за снабжение, блокадники пытаются сбить по дороге
+        if (sh.kind === 'raider' && m?.type === 'smuggle') {
+          const p = this.planetById(m.planet)
+          if (!p || !p.alive || !p.owner || this.stateById(p.owner)?.pirate) {
+            sh.mission = null
+          } else {
+            this._steerPlanet(sh, p, h)
+            if (dist(sh, p) < p.r + 12) {
+              const buyer = this.stateById(p.owner)
+              if (buyer && buyer.credits >= 40) {
+                buyer.credits -= 40
+                st.credits += 40
+                p.unrest = clamp((p.unrest || 0) - 4, 0, 100)
+                if (Math.random() < 0.6) this.log(`🕳 контрабандисты прорвались на ${p.name} — блокада дала течь`, { x: p.x, y: p.y })
+              }
+              sh.mission = null
             }
             continue
           }
@@ -1524,6 +1608,22 @@ export class Civ {
     for (const sh of this.ships) {
       if (sh.hp > 0 || sh.gone) continue
       const killer = sh.killer ? this.stateById(sh.killer) : null
+      // вскрытие тайного контракта: нападение по заказу могут связать с нанимателем —
+      // жертва в ярости, остальные запоминают, кто платит пиратам
+      if (killer?.pirate && killer.contract?.secret && !killer.contract.exposed && sh.owner === killer.contract.enemy && Math.random() < 0.2) {
+        const emp = this.stateById(killer.contract.employer)
+        const vic = this.stateById(killer.contract.enemy)
+        if (emp && vic && !emp.pirate && !vic.pirate) {
+          killer.contract.exposed = true
+          this.setRel(emp.id, vic.id, this.getRel(emp.id, vic.id) - 30)
+          this.addIncident(emp.id, vic.id, 'тайный наём пиратов', -2.5, 60)
+          for (const o of this.states) {
+            if (o.pirate || o.id === emp.id || o.id === vic.id) continue
+            this.setRel(o.id, emp.id, this.getRel(o.id, emp.id) - 8)
+          }
+          this.log(`📰 СКАНДАЛ: вскрылся тайный контракт ${emp.name} с вольницей против ${vic.name}!`, { imp: true })
+        }
+      }
       // счёт войны: каждый сбитый корабль — очки противнику
       if (killer && !killer.pirate) {
         const victim = this.stateById(sh.owner)
@@ -1536,14 +1636,21 @@ export class Civ {
           if (sh.kind === 'transport' && sh.mission?.type === 'trade') killer.credits += 15
         }
       }
-      if (sh.kind === 'dread' && killer?.pirate) {
-        // пираты захватывают дредноут с половиной хп
-        sh.owner = killer.id
-        sh.hp = sh.maxHp / 2
-        sh.mission = null
-        sh.home = this.planetsOf(killer)[0]?.id ?? sh.home
-        this.log(`🏴‍☠️ пираты захватили дредноут! теперь он их`, { x: sh.x, y: sh.y, imp: true })
-        continue
+      if (CAP_KINDS.includes(sh.kind) && killer?.pirate) {
+        // призовая команда: сбитый боевой корабль достаётся вольнице с полхп —
+        // пока призовой флот не разросся (2, у короля 4), дальше дерут на металл
+        const prizes = this.shipsOf(killer.id).filter((s) => CAP_KINDS.includes(s.kind) && s.hp > 0).length
+        if (prizes < (killer.king ? 4 : 2)) {
+          sh.owner = killer.id
+          sh.hp = sh.maxHp / 2
+          sh.mission = null
+          sh.battle = false
+          sh.retreating = false
+          sh.home = this.planetsOf(killer)[0]?.id ?? sh.home
+          this.log(`🏴‍☠️ пираты взяли ${SHIP[sh.kind].label} на абордаж — призовая команда на борту!`, { x: sh.x, y: sh.y, imp: true })
+          continue
+        }
+        killer.credits += 40
       }
       if ((sh.kind === 'transport' || sh.kind === 'miner') && killer?.pirate) {
         const loot = sh.kind === 'transport' ? 45 : 20
@@ -1778,7 +1885,10 @@ export class Civ {
       if (militia >= cap) continue
       let threat = false
       for (const o of this.hostileShipsOf(p.owner)) {
-        if (o.hp > 0 && o.kind !== 'miner' && dist(o, p) < 320) {
+        if (o.hp <= 0 || o.kind === 'miner') continue
+        // свой контрабандист — не угроза, ополчение из-за него не поднимаем
+        if (o.mission?.type === 'smuggle' && o.mission.planet === p.id) continue
+        if (dist(o, p) < 320) {
           threat = true
           break
         }
@@ -1906,6 +2016,8 @@ export class Civ {
         return `осада ${pName(m.planet)}`
       case 'hunt':
         return sh.interceptor ? 'перехватывает десантный конвой' : 'охотится на добычу'
+      case 'smuggle':
+        return `контрабанда → ${pName(m.planet)} (прорыв блокады)`
       case 'sabotage':
         return `диверсия в тылу ${this.stateById(m.enemy)?.name || '?'}`
       case 'raid':
@@ -1960,7 +2072,7 @@ export class Civ {
             })
       return {
         id: st.id,
-        name: st.name,
+        name: st.king ? '👑 ' + st.name : st.name,
         color: st.color,
         pirate: st.pirate,
         home: this.planetsOf(st)[0]?.id || null,

@@ -10,7 +10,7 @@
   --amber: #ffb454;
   --red: #ff5d5d;
   --green: #7ee08c;
-  --panel-bg: rgba(7, 11, 20, 0.82);
+  --panel-bg: rgba(7, 11, 20, 0.92);
   --panel-line: rgba(80, 110, 160, 0.25);
   --panel-line-soft: rgba(80, 110, 160, 0.15);
   --display: 'Russo One', sans-serif;
@@ -88,8 +88,9 @@ button {
   position: relative;
   background: var(--panel-bg);
   border: 1px solid var(--panel-line);
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
+  /* без backdrop-filter: размытие поверх живого канваса пере-считывалось
+     браузером каждый кадр и съедало ~35 мс — главный пожиратель FPS.
+     Вместо него плотнее фон (0.92) */
 }
 
 .glass::before {
