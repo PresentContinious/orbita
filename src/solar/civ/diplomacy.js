@@ -30,7 +30,9 @@ export function isWar(civ, a, b) {
   const sb = civ.stateById(b)
   if (!sa || !sb) return false
   if (sa.pirate !== sb.pirate) return true // пираты вне закона всегда
-  return getRel(civ, a, b) < WAR_AT
+  // война — это запись с поводом и счётом, а не просто плохие отношения:
+  // иначе инцидент, уронивший отношения между дип-тиками, рождал «войну без объявления»
+  return !!civ.wars[relKey(a, b)]
 }
 
 export function isAlly(civ, a, b) {
@@ -137,7 +139,7 @@ export function diplomacyDrift(civ, h) {
       const b = civs[j]
       const key = relKey(a.id, b.id)
       const cur = getRel(civ, a.id, b.id)
-      const atWar = cur < WAR_AT
+      const atWar = !!civ.wars[key] // статус войны — по записи, не по цифре отношений
       const young = civ.t - (a.bornT ?? 0) < 60 || civ.t - (b.bornT ?? 0) < 60
       const causes = []
       // лёгкий шум настроения — погоду делают причины ниже
