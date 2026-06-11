@@ -35,26 +35,36 @@ export function populations(civ, h) {
     // недовольство колоний: далёкие, зрелые и уставшие от войны тянутся к свободе;
     // тяжёлый корабль на орбите (гарнизон) сепаратизм давит. Видно в карточке планеты
     if (!p.outpost && p.id !== st.home && !st.pirate) {
+      // недовольство НЕ копится бесконечно, а стремится к потолку из причин:
+      // дальняя колония ворчит на свой фиксированный процент и сама не взрывается.
+      // Выше порога сецессии (75) — только худшее сочетание далёкая+зрелая+война,
+      // либо всплески от обид (бомбёжки +6, катастрофа +4, свежий захват 35),
+      // которые потом сами остывают к потолку
       const home = civ.planetById(st.home)
-      let dU = 0
-      let why = null
+      let target = 0
+      const causes = []
       if (home) {
-        const far = Math.min(dist(p, home) / 900, 1.2) * 0.35
-        if (far > 0.12) why = 'столица далеко'
-        dU += far
+        // дальность — по разнице орбитальных колец: соседние кольца почти не считаются,
+        // и цифра не дёргается от того, в какой точке орбиты планеты сейчас стоят
+        const far = Math.min(Math.abs(p.orbit - home.orbit) / 1500, 1) * 38
+        target += far
+        causes.push({ text: 'столица далеко', val: far })
       }
       if (p.pop > p.baseR * 1.3 * 0.55) {
-        dU += 0.3
-        if (!why) why = 'выросла и хочет сама'
+        target += 20
+        causes.push({ text: 'выросла и хочет сама', val: 20 })
       }
       if (civ.states.some((o) => o.id !== st.id && !o.pirate && civ.isWar(st.id, o.id))) {
-        dU += 0.25
-        if (!why) why = 'устала от войны метрополии'
+        target += 20
+        causes.push({ text: 'устала от войны метрополии', val: 20 })
       }
-      if (civ.shipsOf(st.id).some((s) => CAP_KINDS.includes(s.kind) && s.hp > 0 && dist(s, p) < 220)) dU -= 0.55
-      dU -= 0.12
-      p.unrest = clamp((p.unrest || 0) + dU * 0.6 * h, 0, 100)
-      p.unrestWhy = p.unrest > 5 ? why : null
+      // гарнизон (тяжёлый корабль в 220) давит сепаратизм почти в ноль
+      if (civ.shipsOf(st.id).some((s) => CAP_KINDS.includes(s.kind) && s.hp > 0 && dist(s, p) < 220)) target -= 45
+      target = clamp(target, 0, 85)
+      p.unrest = clamp((p.unrest || 0) + (target - (p.unrest || 0)) * 0.05 * h, 0, 100)
+      // подпись — главная причина, и только если она сама по себе ощутима
+      const top = causes.sort((a, b) => b.val - a.val)[0]
+      p.unrestWhy = p.unrest > 5 && top && top.val >= 12 ? top.text : null
     } else {
       p.unrest = 0
       p.unrestWhy = null

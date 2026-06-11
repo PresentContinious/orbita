@@ -55,6 +55,7 @@ export class Civ {
     this.relTrend = {} // ключ пары -> сдвиг отношений за последний дип-тик (для стрелок в UI)
     this.truce = {} // ключ пары -> время, до которого действует перемирие после мира
     this.incidents = {} // ключ пары -> { text, val, until } — свежие обиды (шахтёры в чужой зоне и т.п.)
+    this.salvos = [] // отложенные пуски ракетных залпов: { t, from, target, owner, kind }
     this.battleLogT = 0
 
     // GM солнца из текущей орбиты любой планеты: v²·r
@@ -276,6 +277,20 @@ export class Civ {
     this._rebuildCaches()
     this._populations(h)
     this._decisions(h)
+    // отложенные пуски залпа: рассчитаны так, чтобы боеголовки с разных планет
+    // прилетели к цели одной волной — перехват не успевает перезаряжаться
+    if (this.salvos.length) {
+      this.salvos = this.salvos.filter((s) => {
+        if (this.t < s.t) return true
+        const from = this.planetById(s.from)
+        const to = this.planetById(s.target)
+        const owner = this.stateById(s.owner)
+        if (from && to && owner && from.alive && to.alive && from.owner === s.owner && to.owner && this.hostile(s.owner, to.owner)) {
+          this._launchWarhead(from, to, owner, s.kind)
+        }
+        return false
+      })
+    }
     this._diplomacyDrift(h)
     // дипломатия могла объявить войну или заключить мир — списки врагов заново
     this._hostileMemo = new Map()
@@ -399,23 +414,36 @@ export class Civ {
       }
     }
 
-    // баллистика — артподготовка, а не самоцель: в наступлении бьём по цели будущего
-    // штурма, пока у неё стоит ПВО (тратим её заряды и режем оборону); голую планету
-    // с малым населением ракетами не добиваем — её берёт десант, космос нужен целым.
-    // Боеголовка дорогая (55 кр + 6 руды) — спамить «двадцать ракет за раз» разорительно
-    if (st.missileT <= 0 && st.credits >= 55 && st.ore >= 6) {
+    // ракетный удар — продуманная операция, а не разовая трата: бот оценивает
+    // ПВО цели (с ошибкой разведки ±35%) и бьёт ЗАЛПОМ «оценка + запас», причём
+    // пуски с разных планет задерживаются так, чтобы вся волна пришла к цели
+    // одновременно и насытила перехват (каждая установка собьёт лишь одну).
+    // Не потянул полный залп — копит деньги, «бомжарских» одиночек не кидает.
+    // По голой цели — 1–2 ракеты, добавить потерь (если населения > 1500)
+    if (st.missileT <= 0) {
       const defensive = st.tactic === 'defense'
       const target = st.tactic === 'assault' ? ePlanets[0] : pick(ePlanets)
+      const pvoEst = Math.round(target.pvoUnits * rand(0.75, 1.35))
+      const punch = clamp(1 + Math.floor(myPop / 6), 1, 3) // сколько должно долететь
+      const volley = target.pvoUnits > 0 ? pvoEst + punch : Math.min(punch, 2)
       const worthIt = target.pvoUnits > 0 || target.pop > 1.5
-      if (worthIt && (!defensive || Math.random() < 0.35)) {
-        const volley = defensive ? 1 : clamp(1 + Math.floor(myPop / 4), 1, 3)
-        for (let i = 0; i < volley && st.credits >= 55 && st.ore >= 6; i++) {
-          st.credits -= 55
-          st.ore -= 6
-          this._launchWarhead(pick(myPlanets), target, st)
+      const canPay = st.credits >= volley * 55 && st.ore >= volley * 6
+      if (worthIt && canPay && volley <= 9 && (!defensive || Math.random() < 0.35)) {
+        st.credits -= volley * 55
+        st.ore -= volley * 6
+        // синхронизация: дальние пуски уходят первыми, ближние ждут своей секунды
+        const tofs = myPlanets.map((p) => ({ p, tof: dist(p, target) / 200 }))
+        const maxTof = Math.max(...tofs.map((x) => x.tof))
+        for (let i = 0; i < volley; i++) {
+          const src = tofs[i % tofs.length]
+          this.salvos.push({ t: this.t + (maxTof - src.tof) + rand(0, 0.6), from: src.p.id, target: target.id, owner: st.id, kind: 'warhead' })
         }
+        if (volley >= 3) this.log(`🚀 ${st.name} даёт ракетный залп по ${target.name} — ${volley} боеголовок одной волной`, { x: target.x, y: target.y, imp: true })
+        st.missileT = clamp(45 / Math.max(myPop, 0.4), 18, 50) * (defensive ? 2.5 : 1)
+      } else {
+        // копим на осмысленный удар (или цель-крепость не по зубам — нужен флот)
+        st.missileT = 8
       }
-      st.missileT = clamp(40 / Math.max(myPop, 0.4), 10, 45) * (defensive ? 2.5 : 1)
     }
 
     // разрушитель планет: оружие отчаяния — дорого (по размеру цели), сбивается ПВО
@@ -1690,13 +1718,14 @@ export class Civ {
       diplomacy.addWarScore(this, m.owner, p.owner, 4)
       return
     }
-    // обычная боеголовка: чисто противонаселенческое оружие,
-    // планету не ломает, ПВО лишь слегка царапает; бомбёжки злят колонию
-    const kills = rand(0.18, 0.4)
+    // обычная боеголовка: чисто противонаселенческое оружие, планету не ломает,
+    // ПВО лишь слегка царапает; бомбёжки злят колонию. Долетевшая ракета
+    // бьёт ощутимо — прорыв насыщающего залпа должен окупаться
+    const kills = rand(0.45, 0.85)
     p.pop = Math.max(0, p.pop - kills)
-    p.unrest = clamp((p.unrest || 0) + 6, 0, 100)
+    p.unrest = clamp((p.unrest || 0) + 7, 0, 100)
     if (Math.random() < 0.5) this.damagePvo(p, 1.2)
-    this.setRel(m.owner, p.owner, this.getRel(m.owner, p.owner) - 8)
+    this.setRel(m.owner, p.owner, this.getRel(m.owner, p.owner) - 3)
     diplomacy.addWarScore(this, m.owner, p.owner, 2)
     if (p.pop <= 0.01) {
       diplomacy.addWarScore(this, m.owner, p.owner, 25)
