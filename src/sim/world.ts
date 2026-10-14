@@ -1,4 +1,5 @@
 import { createCivs, stepPopulation } from './civ'
+import { stepEconomy } from './economy'
 import { SIM_DT } from './config'
 import { generateGalaxy } from './galaxy'
 import { createRng } from './rng'
@@ -33,5 +34,6 @@ export function stepWorld(w: World): void {
   w.t += SIM_DT
   w.tick++
   stepPopulation(w)
+  stepEconomy(w)
   stepShips(w)
 }
