@@ -12,7 +12,7 @@
   - `attachInput` (function, 7)
 - `src/app/loop.ts` — 32 стр.
   - `Clock` (interface, 3), `createClock` (function, 10), `advance` (function, 15), `alpha` (function, 29)
-- `src/app/main.tsx` — 64 стр.
+- `src/app/main.tsx` — 76 стр.
 - `src/render/camera.ts` — 136 стр.
   - `View` (interface, 4), `Bounds` (interface, 9), `CamTarget` (interface, 16), `Fly` (interface, 22), `Camera` (interface, 29), `ZOOM_MAX` (const, 40), `LOD` (const, 41), `Lod` (type, 42), `LodInfo` (interface, 43), `createCamera` (function, 49), `worldToScreen` (function, 53), `screenToWorld` (function, 57), `galaxyBounds` (function, 61), `fitZoom` (function, 72), `galaxyZoom` (function, 77), `zoomAt` (function, 83), `flyDuration` (function, 91), `startFly` (function, 95), `updateCamera` (function, 103), `lodOf` (function, 127)
 - `src/render/galaxyLayer.ts` — 151 стр.
@@ -109,7 +109,7 @@
 - `scripts/balance.ts` — 118 стр. — Балансный прогон: npm run balance [зёрен=12] [минут=30]. Цели — раздел 12.2 спеки.
 - `scripts/codemap.mjs` — 43 стр. — Карта кода: файл → первая строка-комментарий, длина и экспорты с номерами строк.
 - `scripts/shot.ts` — 41 стр. — Снимок экрана игры: npm run shot -- "<параметры URL>" <файл.png> "<JS перед снимком>"
-- `scripts/smoke.ts` — 111 стр. — Дымовой тест: npm run smoke. Снимки — artifacts/smoke/
+- `scripts/smoke.ts` — 122 стр. — Дымовой тест: npm run smoke. Снимки — artifacts/smoke/
 - `scripts/stress.ts` — 19 стр. — Нагрузка: npm run stress — 2000 кораблей, 600 в одной системе; цель — шаг ≤ 6 мс
 
 ## tests/

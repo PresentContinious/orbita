@@ -24,20 +24,31 @@ async function open(query: string, width: number, height: number): Promise<Page>
   return page
 }
 
-// код передаётся строкой: esbuild (tsx) добавляет в функции вызовы __name, которых нет в странице
-const FPS_JS = `new Promise((done) => {
-  let n = 0
-  const t0 = performance.now()
-  const tick = () => {
-    n++
-    if (performance.now() - t0 < 3000) requestAnimationFrame(tick)
-    else done(n / 3)
-  }
-  requestAnimationFrame(tick)
-})`
+// Бюджет кадра по спеке: ≥ 50 к/с = 20 мс. Не повышать; для другой машины — SMOKE_FRAME_MS
+const BUDGET_MS = Number(process.env.SMOKE_FRAME_MS) || 20
 
-async function fps(page: Page): Promise<number> {
-  return page.evaluate<number>(FPS_JS)
+// Время кадра (шаги + отрисовка + UI) из кольцевых буферов страницы, не зависит от vsync.
+// Код строкой: esbuild (tsx) добавляет в функции вызовы __name, которых нет в странице.
+const STATS_JS = `(() => {
+  const s = window.__orbita.frameStats
+  const k = Math.min(s.n, 300)
+  return { n: s.n, frame: Array.from(s.frameMs.slice(0, k)), step: Array.from(s.stepMs.slice(0, k)), render: Array.from(s.renderMs.slice(0, k)) }
+})()`
+
+const avg = (a: number[]) => a.reduce((x, y) => x + y, 0) / Math.max(a.length, 1)
+const p95 = (a: number[]) => [...a].sort((x, y) => x - y)[Math.max(0, Math.ceil(a.length * 0.95) - 1)] ?? 0
+
+async function frameTime(page: Page, label: string): Promise<void> {
+  await page.evaluate('window.__orbita.frameStats.n = 0')
+  await page.waitForTimeout(3000)
+  const s = await page.evaluate<{ n: number; frame: number[]; step: number[]; render: number[] }>(STATS_JS)
+  if (s.frame.length < 30) problems.push(`${label}: за 3 с набралось только ${s.frame.length} кадров`)
+  const f = p95(s.frame)
+  notes.push(
+    `время кадра, ${label}: среднее ${avg(s.frame).toFixed(1)} мс, p95 ${f.toFixed(1)} мс (бюджет ${BUDGET_MS} мс); ` +
+      `шаги: среднее ${avg(s.step).toFixed(1)} / p95 ${p95(s.step).toFixed(1)} мс; отрисовка: среднее ${avg(s.render).toFixed(1)} / p95 ${p95(s.render).toFixed(1)} мс; кадров ${s.frame.length}`,
+  )
+  if (f > BUDGET_MS) problems.push(`${label}: p95 времени кадра ${f.toFixed(1)} мс больше бюджета ${BUDGET_MS} мс`)
 }
 
 // браузер и сервер закрываются при любом исходе — иначе после таймаута они висят в фоне
@@ -66,7 +77,7 @@ try {
       o.controller.flyToGalaxy(true)
       o.controller.setSpeed(2)
     })
-    notes.push(`кадров в секунду, галактика ×20: ${(await fps(page)).toFixed(0)}`)
+    await frameTime(page, 'галактика ×20')
     await page.close()
   }
 
@@ -92,7 +103,7 @@ try {
     const page = await open('seed=4815&stress=1', 1600, 900)
     await page.waitForTimeout(1500)
     await page.screenshot({ path: 'artifacts/smoke/stress.png' })
-    notes.push(`кадров в секунду, 2000 кораблей: ${(await fps(page)).toFixed(0)}`)
+    await frameTime(page, '2000 кораблей')
     await page.close()
   }
 } catch (e) {
@@ -102,7 +113,7 @@ try {
   await server.close()
 }
 for (const n of notes) console.log(n)
-console.log('Частота кадров в headless Chrome может быть занижена (программная отрисовка) — финальная проверка: npm run dev и ?fps=1 в обычном браузере.')
+console.log('Время кадра измеряется на стороне JS (шаги + команды отрисовки + UI); в headless без видеокарты WebGL может идти программно — финальная проверка: npm run dev и ?fps=1 в обычном браузере.')
 if (problems.length) {
   console.log('ПРОБЛЕМЫ:\n' + problems.join('\n'))
   process.exit(1)
