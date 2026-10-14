@@ -19,8 +19,10 @@
   - `Share` (interface, 4), `territoryShares` (function, 11)
 - `src/render/textures.ts` — 22 стр.
   - `glowTexture` (function, 11)
-- `src/sim/civ.ts` — 50 стр.
-  - `createCivs` (function, 8), `stepPopulation` (function, 38)
+- `src/sim/belts.ts` — 35 стр.
+  - `asteroidPos` (const, 6), `asteroidVel` (const, 7), `nearestAsteroid` (function, 9), `stepAsteroids` (function, 25)
+- `src/sim/civ.ts` — 71 стр.
+  - `createCivs` (function, 8), `stepPopulation` (function, 38), `colonyValue` (function, 52), `bestColonyTarget` (function, 58)
 - `src/sim/config.ts` — 169 стр. — ---------- время ----------
   - `SIM_DT` (const, 4), `YEAR_SECONDS` (const, 5), `MAX_STEPS_PER_FRAME` (const, 6), `MAX_FRAME_DT` (const, 7), `SPEEDS` (const, 9), `GALAXY` (const, 12), `CIVS` (const, 24), `StarType` (type, 27), `STAR_TYPES` (const, 28), `ORBIT` (const, 36), `HZ` (const, 52), `PlanetKind` (type, 54), `PLANET_KINDS` (const, 55), `ROLE_GEN` (const, 62), `BELT` (const, 72), `POP` (const, 75), `ShipKind` (type, 78), `SHIP_KINDS` (const, 79), `MOVE` (const, 85), `Envelope` (type, 101), `ENVELOPE_SHARES` (const, 102), `ECON` (const, 104), `ResearchBranch` (type, 154), `RESEARCH` (const, 155), `RESEARCH_BRANCHES` (const, 161), `BOT` (const, 164), `PALETTE` (const, 167), `EVENTS` (const, 168)
 - `src/sim/economy.ts` — 327 стр. — ---------- журнал: единственное место, где меняется казна ----------
@@ -33,8 +35,8 @@
   - `tryInfra` (function, 9), `tryStation` (function, 17), `tryProject` (function, 26), `tryResearch` (function, 35), `advanceJobs` (function, 45)
 - `src/sim/math.ts` — 9 стр.
   - `Vec` (type, 1), `TAU` (const, 3), `ZERO` (const, 4), `clamp` (const, 6), `lerp` (const, 7), `dist` (const, 8)
-- `src/sim/missions.ts` — 18 стр.
-  - `missionGoal` (function, 4)
+- `src/sim/missions.ts` — 216 стр. — ---------- колонизация ----------
+  - `missionGoal` (function, 14)
 - `src/sim/names.ts` — 27 стр. — Слоги из старой ОРБИТЫ
   - `genName` (function, 8), `uniqueName` (function, 15)
 - `src/sim/nav.ts` — 125 стр.
@@ -53,8 +55,8 @@
   - `Orbiting` (type, 7), `periodOf` (function, 9), `zoneOf` (function, 13), `tempKOf` (function, 20), `planetPos` (function, 24), `planetVel` (function, 29), `makeLook` (function, 50), `habitableCount` (function, 68), `makeAsteroid` (function, 72), `generateSystem` (function, 86)
 - `src/sim/types.ts` — 230 стр.
   - `Zone` (type, 7), `SystemRole` (type, 8), `PlanetLook` (interface, 10), `Build` (interface, 17), `Planet` (interface, 24), `Belt` (interface, 45), `Asteroid` (interface, 50), `Gate` (interface, 60), `Star` (interface, 67), `StarSystem` (interface, 74), `Corridor` (interface, 92), `Galaxy` (interface, 102), `Mission` (type, 107), `Transit` (interface, 113), `Ship` (interface, 121), `Stage` (type, 138), `IncomeSource` (type, 139), `ExpenseCat` (type, 140), `Ledger` (interface, 142), `CivEconomy` (interface, 148), `CivProject` (interface, 165), `ResearchJob` (interface, 171), `Civ` (interface, 178), `GameEvent` (interface, 194), `Fx` (interface, 206), `World` (interface, 215)
-- `src/sim/world.ts` — 40 стр.
-  - `createWorld` (function, 10), `stepWorld` (function, 33)
+- `src/sim/world.ts` — 43 стр.
+  - `createWorld` (function, 11), `stepWorld` (function, 34)
 
 ## scripts/
 
@@ -72,6 +74,7 @@
 - `tests/sim/events.test.ts` — 35 стр.
 - `tests/sim/galaxy.test.ts` — 124 стр.
 - `tests/sim/invest.test.ts` — 112 стр.
+- `tests/sim/missions.test.ts` — 165 стр.
 - `tests/sim/names.test.ts` — 11 стр.
 - `tests/sim/rng.test.ts` — 60 стр.
 - `tests/sim/routing.test.ts` — 111 стр. — 0 —60— 1 —60— 2 —60— 3, напрямую 0 —200— 2; система 4 ни с кем не связана

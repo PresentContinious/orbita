@@ -1,9 +1,9 @@
-import { CIVS, PALETTE, POP, SIM_DT } from './config'
-import { newEconomy } from './economy'
+import { BOT, CIVS, ECON, PALETTE, POP, SIM_DT } from './config'
+import { adminTotal, colonyPrice, newEconomy } from './economy'
 import { uniqueName } from './names'
-import { capOf, civById } from './query'
+import { capOf, civById, colonyTargets } from './query'
 import type { Rng } from './rng'
-import type { Civ, World } from './types'
+import type { Civ, Planet, World } from './types'
 
 export function createCivs(w: World, rng: Rng): void {
   const used = new Set<string>([...w.planets.values()].map((p) => p.name).concat(w.galaxy.systems.map((s) => s.name)))
@@ -46,4 +46,25 @@ export function stepPopulation(w: World): void {
       p.pop += POP.growth * p.pop * (1 - p.pop / cap) * SIM_DT
     }
   }
+}
+
+/** выгода колонии: налог при «зрелой» колонии минус прирост администрации, на кредит цены */
+export function colonyValue(w: World, civ: Civ, p: Planet): number {
+  const income = ECON.taxPerPop * BOT.colonyMaturity * capOf(p, civ)
+  const dAdmin = adminTotal(w, civ, p) - adminTotal(w, civ)
+  return (income - dAdmin) / colonyPrice(w, civ, p)
+}
+
+export function bestColonyTarget(w: World, civ: Civ, exclude: Set<string>): Planet | null {
+  let best: Planet | null = null
+  let bestV = -Infinity
+  for (const p of colonyTargets(w, civ)) {
+    if (exclude.has(p.id)) continue
+    const v = colonyValue(w, civ, p)
+    if (v > bestV) {
+      best = p
+      bestV = v
+    }
+  }
+  return best
 }

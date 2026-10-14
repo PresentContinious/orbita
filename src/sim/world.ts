@@ -1,6 +1,7 @@
+import { stepAsteroids } from './belts'
 import { createCivs, stepPopulation } from './civ'
 import { stepEconomy } from './economy'
-import { SIM_DT } from './config'
+import { EVENTS, SIM_DT } from './config'
 import { generateGalaxy } from './galaxy'
 import { createRng } from './rng'
 import { stepShips } from './ships'
@@ -36,4 +37,6 @@ export function stepWorld(w: World): void {
   stepPopulation(w)
   stepEconomy(w)
   stepShips(w)
+  stepAsteroids(w)
+  while (w.fx.length && w.t - w.fx[0].t > EVENTS.fxLife) w.fx.shift()
 }
