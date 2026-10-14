@@ -59,6 +59,8 @@
   - `WAR` (const, 5), `FRAME` (const, 17), `BATTLE` (const, 58), `TRAITS` (const, 115), `TRAIT_LIST` (const, 124), `PROJ` (const, 127), `HIT` (const, 141), `DAMAGE` (const, 149), `WING` (const, 168), `DOCK` (const, 181), `SKIRMISH` (const, 190)
 - `src/sim/config.ts` — 184 стр. — ---------- время ----------
   - `SIM_DT` (const, 4), `YEAR_SECONDS` (const, 5), `MAX_STEPS_PER_FRAME` (const, 6), `MAX_FRAME_DT` (const, 7), `SPEEDS` (const, 9), `GALAXY` (const, 12), `CIVS` (const, 24), `StarType` (type, 27), `STAR_TYPES` (const, 28), `ORBIT` (const, 36), `HZ` (const, 52), `PlanetKind` (type, 54), `PLANET_KINDS` (const, 55), `ROLE_GEN` (const, 62), `BELT` (const, 72), `POP` (const, 75), `ShipKind` (type, 78), `SHIP_KINDS` (const, 82), `UNIT_CAP` (const, 98), `MOVE` (const, 100), `Envelope` (type, 116), `ENVELOPE_SHARES` (const, 117), `ECON` (const, 119), `ResearchBranch` (type, 169), `RESEARCH` (const, 170), `RESEARCH_BRANCHES` (const, 176), `BOT` (const, 179), `PALETTE` (const, 182), `EVENTS` (const, 183)
+- `src/sim/damage.ts` — 22 стр. — Урон. ЗАГЛУШКА задачи 4: корпус минус урон; щиты, модули, горение и обломки — задача 5.
+  - `applyHit` (function, 5), `onBeamEnd` (function, 21)
 - `src/sim/economy.ts` — 344 стр. — ---------- журнал: единственное место, где меняется казна ----------
   - `newEconomy` (function, 9), `earn` (function, 38), `spend` (function, 47), `ledgerBalance` (function, 54), `creditLine` (const, 62), `netPerSec` (const, 63), `canAfford` (function, 66), `buy` (function, 74), `EconomyReport` (interface, 83), `report` (function, 95), `shipPrice` (function, 112), `shipUpkeepOf` (function, 118), `shipUpkeep` (function, 123), `taxOf` (function, 133), `stationIncome` (function, 138), `adminTotal` (function, 143), `colonyPrice` (function, 156), `tradeIncome` (function, 163), `stepEconomy` (function, 173)
 - `src/sim/events.ts` — 33 стр.
@@ -79,6 +81,8 @@
   - `Goal` (interface, 9), `Body` (type, 18), `avoidStar` (function, 21), `steer` (function, 45), `shipSpeed` (function, 64), `planetGoal` (function, 69), `setDestination` (function, 85), `gateGoal` (function, 90), `transitDuration` (function, 99), `advanceTransit` (function, 112)
 - `src/sim/options.ts` — 236 стр.
   - `OptionKind` (type, 13), `Option` (interface, 15), `score` (function, 29), `Route` (interface, 33), `tradeRoutes` (function, 41), `listOptions` (function, 128), `execute` (function, 190)
+- `src/sim/projectiles.ts` — 373 стр. — Снаряды-объекты: пулы, полёт, самонаведение, «первый чужой на пути», лучи, трассеры (спека 2А, §10.1).
+  - `Hit` (interface, 33), `initPools` (function, 50), `allocProjectile` (function, 55), `fireMissile` (function, 90), `fireTorpedo` (function, 109), `fireBeam` (function, 119), `firstForeignOnSegment` (function, 148), `hitProjectile` (function, 234), `traceShot` (function, 240), `stepProjectiles` (function, 338)
 - `src/sim/query.ts` — 73 стр.
   - `civById` (function, 5), `planetsOf` (function, 9), `populatedOf` (function, 15), `capOf` (function, 19), `capitalOf` (function, 24), `capitalSystem` (function, 34), `reachableSystems` (function, 39), `claimedTargets` (function, 45), `colonyTargets` (function, 52), `stationTargets` (function, 64)
 - `src/sim/rng.ts` — 59 стр. — Генератор случайных чисел с зерном (mulberry32): одно зерно — одна и та же история.
@@ -97,8 +101,8 @@
   - `Orbiting` (type, 7), `periodOf` (function, 9), `zoneOf` (function, 13), `tempKOf` (function, 20), `planetPos` (function, 24), `planetVel` (function, 29), `makeLook` (function, 50), `habitableCount` (function, 68), `makeAsteroid` (function, 72), `generateSystem` (function, 86)
 - `src/sim/types.ts` — 529 стр. — ---------- война (2А) ----------
   - `Zone` (type, 8), `SystemRole` (type, 9), `PlanetLook` (interface, 11), `Build` (interface, 18), `Planet` (interface, 25), `Belt` (interface, 46), `Asteroid` (interface, 51), `Gate` (interface, 61), `Star` (interface, 68), `StarSystem` (interface, 75), `Corridor` (interface, 93), `Galaxy` (interface, 103), `Mission` (type, 108), `Transit` (interface, 120), `Ship` (interface, 128), `Stage` (type, 148), `IncomeSource` (type, 149), `ExpenseCat` (type, 150), `Ledger` (interface, 152), `CivEconomy` (interface, 158), `CivProject` (interface, 175), `ResearchJob` (interface, 181), `Civ` (interface, 188), `GameEvent` (interface, 204), `Fx` (interface, 216), `World` (interface, 225), `Module` (type, 268), `Trait` (type, 269), `Order` (type, 270), `TargetPriority` (type, 271), `SlotKind` (type, 272), `Slot` (interface, 275), `WingState` (interface, 283), `Hangar` (interface, 289), `Combat` (interface, 300), `FleetMission` (type, 330), `Fleet` (interface, 337), `Admiral` (interface, 403), `ProjectileKind` (type, 413), `Projectile` (interface, 415), `BattlePhase` (type, 441), `BattleSide` (interface, 443), `BattleLogEntry` (interface, 458), `BattleMetrics` (interface, 466), `Battle` (interface, 484), `Debris` (interface, 513), `BattleFx` (type, 526)
-- `src/sim/world.ts` — 70 стр.
-  - `createWorld` (function, 15), `stepWorld` (function, 54)
+- `src/sim/world.ts` — 73 стр.
+  - `createWorld` (function, 16), `stepWorld` (function, 56)
 - `src/ui/Breadcrumbs.tsx` — 18 стр.
   - `Breadcrumbs` (function, 3)
 - `src/ui/Card.tsx` — 24 стр.
@@ -172,6 +176,7 @@
 - `tests/sim/longrun.test.ts` — 53 стр.
 - `tests/sim/missions.test.ts` — 187 стр.
 - `tests/sim/names.test.ts` — 11 стр.
+- `tests/sim/projectiles.test.ts` — 226 стр.
 - `tests/sim/rng.test.ts` — 60 стр.
 - `tests/sim/routing.test.ts` — 111 стр. — 0 —60— 1 —60— 2 —60— 3, напрямую 0 —200— 2; система 4 ни с кем не связана
 - `tests/sim/setup.test.ts` — 116 стр.

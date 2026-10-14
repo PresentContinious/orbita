@@ -8,6 +8,7 @@ import { generateGalaxy } from './galaxy'
 import { createRng } from './rng'
 import { clampOptions, SETUP, setupOf, type GalaxyOptions } from './setup'
 import { stepFleets } from './fleet'
+import { initPools, stepProjectiles } from './projectiles'
 import { buildGrids, compactShips, moveShips } from './ships'
 import { SpatialGrid } from './spatial'
 import type { Planet, World } from './types'
@@ -48,6 +49,7 @@ export function createWorld(seed: number, opts: GalaxyOptions = {}): World {
   }
   createCivs(w, root.fork('civs'))
   for (const c of w.civs) w.civIndex.set(c.id, c)
+  initPools(w)
   return w
 }
 
@@ -63,6 +65,7 @@ export function stepWorld(w: World): void {
   stepFleets(w)
   buildGrids(w)
   moveShips(w)
+  stepProjectiles(w)
   compactShips(w)
   stepAsteroids(w)
   while (w.fx.length && w.t - w.fx[0].t > EVENTS.fxLife) w.fx.shift()
