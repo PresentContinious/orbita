@@ -260,7 +260,7 @@ export function ovalPoint(fleet: Fleet, side: -1 | 1, phase: number, t: number, 
     a = W / 2 + FRAME.frontPad
     b = FRAME.frontB
   } else {
-    const small = W < FRAME.ovalMinLen - 2 * FRAME.ovalA
+    const small = W < FRAME.ovalSmallW
     cx = small ? FRAME.ovalSmallCx : FRAME.ovalCx
     a = small ? FRAME.ovalSmallA : FRAME.ovalA
     b = FRAME.ovalB

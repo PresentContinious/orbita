@@ -146,6 +146,29 @@ describe('рамка флота: геометрия', () => {
     expect(hi - lo).toBeGreaterThanOrEqual(199)
   })
 
+  it('граница малого флота: W = 100 — полуось 100 от −60; W = 120 — обычный овал', () => {
+    const { fleet } = setup()
+    const span = () => {
+      let lo = Infinity
+      let hi = -Infinity
+      const p = v()
+      for (let t = 0; t < 60; t += 0.05) {
+        ovalPoint(fleet, -1, 0, t, p)
+        lo = Math.min(lo, p.x)
+        hi = Math.max(hi, p.x)
+      }
+      return [lo, hi]
+    }
+    fleet.width = 100
+    let [lo, hi] = span()
+    expect((lo + hi) / 2).toBeCloseTo(-60, 0)
+    expect(hi - lo).toBeGreaterThan(199)
+    fleet.width = 120
+    ;[lo, hi] = span()
+    expect((lo + hi) / 2).toBeCloseTo(-30, 0)
+    expect(hi - lo).toBeLessThan(141)
+  })
+
   it('завеса вперёд: точки передней петли x ∈ [+15, +45] вдоль всей ширины', () => {
     const { w, fleet, add } = setup()
     for (let i = 0; i < 6; i++) add('battleship', i * 10)

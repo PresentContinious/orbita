@@ -23,6 +23,7 @@ export const FRAME = {
   ovalB: 12,
   ovalCx: -30,
   ovalMinLen: 200,
+  ovalSmallW: 120,
   ovalSmallA: 100,
   ovalSmallCx: -60,
   frontCx: 30,
