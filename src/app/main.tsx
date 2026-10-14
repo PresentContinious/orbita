@@ -6,6 +6,7 @@ import { Hud } from '../ui/Hud'
 import { UiModel } from '../ui/model'
 import { buildSnapshot } from '../ui/snapshot'
 import { createStore } from '../ui/store'
+import { spawnStressShips } from '../sim/stress'
 import { createWorld, stepWorld } from '../sim/world'
 import { Controller } from './controller'
 import { attachInput } from './input'
@@ -25,6 +26,15 @@ async function boot(): Promise<void> {
   const clock = createClock(1)
   const controller = new Controller(world, createCamera(), clock, view)
   controller.flyToGalaxy(true)
+  if (params.get('stress')) controller.flyToSystem(spawnStressShips(world, 2000, 600), 'approach', true)
+  if (params.get('fps')) {
+    const fps = document.createElement('div')
+    fps.style.cssText = 'position:fixed;left:50%;top:8px;transform:translateX(-50%);font:12px JetBrains Mono,monospace;color:#7df0ff;z-index:9;pointer-events:none'
+    document.body.appendChild(fps)
+    setInterval(() => {
+      fps.textContent = `${Math.round(app.ticker.FPS)} к/с · кораблей ${world.ships.length}`
+    }, 500)
+  }
   attachInput(app.canvas, controller)
 
   const store = createStore()
