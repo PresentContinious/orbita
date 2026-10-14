@@ -1,5 +1,6 @@
 import { zoomAt } from '../render/camera'
 import { pickAt } from '../render/hit'
+import { alpha } from './loop'
 import type { Controller } from './controller'
 
 /** мышь и клавиатура → контроллер; возвращает функцию отписки */
@@ -9,7 +10,7 @@ export function attachInput(el: HTMLElement, c: Controller): () => void {
     const r = el.getBoundingClientRect()
     return { x: e.clientX - r.left, y: e.clientY - r.top }
   }
-  const pick = (e: MouseEvent) => pickAt(c.world, c.cam, c.view(), local(e))
+  const pick = (e: MouseEvent) => pickAt(c.world, c.cam, c.view(), local(e), alpha(c.clock))
 
   const onWheel = (e: WheelEvent) => {
     e.preventDefault()
@@ -26,7 +27,7 @@ export function attachInput(el: HTMLElement, c: Controller): () => void {
   const onMove = (e: PointerEvent) => {
     const p = local(e)
     if (!drag) {
-      c.hover(pickAt(c.world, c.cam, c.view(), p), p)
+      c.hover(pickAt(c.world, c.cam, c.view(), p, alpha(c.clock)), p)
       return
     }
     const dx = p.x - drag.x

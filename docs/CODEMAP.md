@@ -4,21 +4,21 @@
 
 ## src/
 
-- `src/app/controller.ts` — 277 стр.
+- `src/app/controller.ts` — 278 стр.
   - `Crumb` (interface, 11), `UiState` (interface, 16), `Controller` (class, 30)
 - `src/app/director.ts` — 20 стр.
   - `Focus` (interface, 3), `pickFocus` (function, 10)
-- `src/app/input.ts` — 104 стр.
-  - `attachInput` (function, 6)
+- `src/app/input.ts` — 105 стр.
+  - `attachInput` (function, 7)
 - `src/app/loop.ts` — 32 стр.
   - `Clock` (interface, 3), `createClock` (function, 10), `advance` (function, 15), `alpha` (function, 29)
 - `src/app/main.tsx` — 54 стр.
 - `src/render/camera.ts` — 136 стр.
   - `View` (interface, 4), `Bounds` (interface, 9), `CamTarget` (interface, 16), `Fly` (interface, 22), `Camera` (interface, 29), `ZOOM_MAX` (const, 40), `LOD` (const, 41), `Lod` (type, 42), `LodInfo` (interface, 43), `createCamera` (function, 49), `worldToScreen` (function, 53), `screenToWorld` (function, 57), `galaxyBounds` (function, 61), `fitZoom` (function, 72), `galaxyZoom` (function, 77), `zoomAt` (function, 83), `flyDuration` (function, 91), `startFly` (function, 95), `updateCamera` (function, 103), `lodOf` (function, 127)
-- `src/render/galaxyLayer.ts` — 138 стр.
+- `src/render/galaxyLayer.ts` — 151 стр.
   - `GalaxyLayer` (class, 11)
-- `src/render/hit.ts` — 43 стр.
-  - `Pick` (type, 6), `pickAt` (function, 9)
+- `src/render/hit.ts` — 47 стр.
+  - `Pick` (type, 7), `pickAt` (function, 10)
 - `src/render/renderer.ts` — 41 стр.
   - `GameRenderer` (class, 11)
 - `src/render/shipsLayer.ts` — 106 стр.
@@ -113,13 +113,13 @@
 
 ## tests/
 
-- `tests/app/controller.test.ts` — 78 стр.
+- `tests/app/controller.test.ts` — 99 стр.
 - `tests/app/director.test.ts` — 55 стр.
 - `tests/app/loop.test.ts` — 34 стр.
 - `tests/helpers.ts` — 27 стр.
   - `run` (function, 5), `snapshot` (function, 11), `quietWorld` (function, 22)
 - `tests/render/camera.test.ts` — 81 стр.
-- `tests/render/hit.test.ts` — 52 стр.
+- `tests/render/hit.test.ts` — 68 стр.
 - `tests/render/territory.test.ts` — 32 стр.
 - `tests/sim/bot.test.ts` — 127 стр.
 - `tests/sim/economy.test.ts` — 186 стр.

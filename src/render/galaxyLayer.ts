@@ -20,6 +20,8 @@ export class GalaxyLayer {
   private readonly icons: Sprite[] = []
   private readonly names: Text[] = []
   private tradeAt = -Infinity
+  private tradeZ = 0
+  private hopsSet = new Set<string>()
 
   constructor(w: World, glow: Texture) {
     for (const c of w.galaxy.corridors) {
@@ -94,16 +96,21 @@ export class GalaxyLayer {
       name.alpha = (1 - L.systemAlpha) * 0.9
     })
     this.spokes.alpha = 1 - focus
+    this.trade.alpha = 1 - focus
+    let redraw = z !== this.tradeZ
     if (Math.abs(w.t - this.tradeAt) > 0.25) {
       this.tradeAt = w.t
-      this.drawTrade(w, z, 1 - focus)
+      this.hopsSet = this.collectHops(w)
+      redraw = true
+    }
+    if (redraw) {
+      this.tradeZ = z
+      this.drawTrade(w, z)
     }
   }
 
   /** бегущий пунктир по пути межсистемных караванов */
-  private drawTrade(w: World, z: number, alpha: number): void {
-    this.trade.clear()
-    if (alpha < 0.01) return
+  private collectHops(w: World): Set<string> {
     const hopsSet = new Set<string>()
     for (const s of w.ships) {
       if (!s.alive || s.mission.type !== 'trade') continue
@@ -116,6 +123,12 @@ export class GalaxyLayer {
         from = to
       }
     }
+    return hopsSet
+  }
+
+  private drawTrade(w: World, z: number): void {
+    this.trade.clear()
+    const hopsSet = this.hopsSet
     if (!hopsSet.size) return
     const dash = 10 / z
     const gap = 8 / z
@@ -132,6 +145,6 @@ export class GalaxyLayer {
         this.trade.moveTo(A.x + ux * d, A.y + uy * d).lineTo(A.x + ux * e, A.y + uy * e)
       }
     }
-    this.trade.stroke({ width: 2 / z, color: 0xe0c060, alpha: 0.75 * alpha })
+    this.trade.stroke({ width: 2 / z, color: 0xe0c060, alpha: 0.75 })
   }
 }

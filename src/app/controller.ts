@@ -1,12 +1,12 @@
 import { galaxyBounds, galaxyZoom, lodOf, startFly, updateCamera, ZOOM_MAX, type Camera, type CamTarget, type Lod, type View } from '../render/camera'
 import type { Pick } from '../render/hit'
-import { SPEEDS } from '../sim/config'
+import { SIM_DT, SPEEDS } from '../sim/config'
 import { clamp } from '../sim/math'
 import { capitalOf, civById } from '../sim/query'
 import { planetPos } from '../sim/system'
 import type { GameEvent, World } from '../sim/types'
 import { pickFocus, type Focus } from './director'
-import type { Clock } from './loop'
+import { alpha, type Clock } from './loop'
 
 export interface Crumb {
   label: string
@@ -231,6 +231,7 @@ export class Controller {
 
   /** Esc: снять выбор → обзор системы → вся галактика */
   back(): void {
+    this.ui.follow = false
     if (this.ui.selected || this.civCardId !== null) {
       this.select(null)
       return
@@ -247,7 +248,7 @@ export class Controller {
       const p = this.world.planets.get(this.cam.follow)
       if (p) {
         const s = this.world.galaxy.systems[p.systemId]
-        const q = planetPos(p, this.world.t)
+        const q = planetPos(p, this.world.t - SIM_DT * (1 - alpha(this.clock)))
         if (this.cam.fly) {
           this.cam.fly.to.x = s.pos.x + q.x
           this.cam.fly.to.y = s.pos.y + q.y

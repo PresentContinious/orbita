@@ -44,6 +44,22 @@ describe('pickAt', () => {
     expect(pickAt(w, c.cam, view, at)).toEqual({ type: 'ship', id: ship.id })
   })
 
+  test('летящий корабль выбирается там, где нарисован (со сглаживанием)', () => {
+    const { w, c } = setup()
+    const civ = w.civs[0]
+    const home = capitalOf(w, civ)!
+    c.flyToPlanet(home.id, true)
+    const ship = spawnShip(w, civ, 'caravan', home, { type: 'return', planetId: home.id }, 50)
+    const q = planetPos(home, w.t)
+    ship.prevPos = { x: q.x + 100, y: q.y + 200 }
+    ship.pos = { x: q.x + 140, y: q.y + 200 }
+    c.cam.zoom = 3
+    const s = w.galaxy.systems[home.systemId]
+    const mid = worldToScreen(c.cam, view, { x: s.pos.x + q.x + 120, y: s.pos.y + q.y + 200 })
+    expect(pickAt(w, c.cam, view, mid, 0.5)).toEqual({ type: 'ship', id: ship.id })
+    expect(pickAt(w, c.cam, view, mid)).not.toEqual({ type: 'ship', id: ship.id })
+  })
+
   test('пустота — ничего', () => {
     const { w, c } = setup()
     expect(pickAt(w, c.cam, view, { x: 3, y: 3 })).toBeNull()

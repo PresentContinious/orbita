@@ -1,4 +1,5 @@
 import type { Vec } from '../sim/math'
+import { SIM_DT } from '../sim/config'
 import { planetPos } from '../sim/system'
 import type { World } from '../sim/types'
 import { lodOf, screenToWorld, type Camera, type View } from './camera'
@@ -6,8 +7,9 @@ import { lodOf, screenToWorld, type Camera, type View } from './camera'
 export type Pick = { type: 'ship'; id: number } | { type: 'planet'; id: string } | { type: 'system'; id: number }
 
 /** что под курсором; корабль важнее планеты, планета — системы */
-export function pickAt(w: World, cam: Camera, view: View, screen: Vec): Pick | null {
+export function pickAt(w: World, cam: Camera, view: View, screen: Vec, alpha = 1): Pick | null {
   const z = cam.zoom
+  const t = w.t - SIM_DT * (1 - alpha)
   const wp = screenToWorld(cam, view, screen)
   let ship: { id: number; d: number } | null = null
   let planet: { id: string; d: number } | null = null
@@ -25,12 +27,14 @@ export function pickAt(w: World, cam: Camera, view: View, screen: Vec): Pick | n
     if (L.approachAlpha >= 0.5) {
       for (const sh of w.ships) {
         if (!sh.alive || sh.transit || sh.systemId !== s.id) continue
-        const d = Math.hypot(sh.pos.x - lx, sh.pos.y - ly) * z
+        const px = sh.prevPos.x + (sh.pos.x - sh.prevPos.x) * alpha
+        const py = sh.prevPos.y + (sh.pos.y - sh.prevPos.y) * alpha
+        const d = Math.hypot(px - lx, py - ly) * z
         if (d < 10 && (!ship || d < ship.d)) ship = { id: sh.id, d }
       }
     }
     for (const p of s.planets) {
-      const q = planetPos(p, w.t)
+      const q = planetPos(p, t)
       const d = Math.hypot(q.x - lx, q.y - ly) * z
       if (d < Math.max(p.radius * z, 6) + 4 && (!planet || d < planet.d)) planet = { id: p.id, d }
     }
