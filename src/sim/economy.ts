@@ -1,5 +1,6 @@
 import { ECON, ENVELOPE_SHARES, RESEARCH, SHIP_KINDS, SIM_DT, type Envelope, type ShipKind } from './config'
 import { pushEvent } from './events'
+import { advanceJobs } from './invest'
 import { capitalSystem, civById, colonyTargets, planetsOf, populatedOf } from './query'
 import type { Civ, CivEconomy, ExpenseCat, IncomeSource, Planet, Ship, Stage, StarSystem, World } from './types'
 
@@ -179,6 +180,7 @@ export function stepEconomy(w: World): void {
     updateEma(civ, dt)
     fillEnvelopes(w, civ)
     updateStage(w, civ)
+    advanceJobs(w, civ)
     civ.eco.earnedStep = 0
     civ.eco.upkeepStep = 0
     civ.eco.tradeStep = 0
