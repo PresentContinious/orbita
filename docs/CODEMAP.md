@@ -8,6 +8,8 @@
   - `Crumb` (interface, 11), `UiState` (interface, 16), `Controller` (class, 32)
 - `src/app/director.ts` — 20 стр.
   - `Focus` (interface, 3), `pickFocus` (function, 10)
+- `src/app/display.ts` — 78 стр. — Настройки вида, которые зритель выбирает под себя: территории, стиль планет, торговые пути.
+  - `TerritoryMode` (type, 3), `PlanetStyle` (type, 4), `Display` (interface, 6), `DEFAULT_DISPLAY` (const, 12), `display` (const, 17), `resolveDisplay` (function, 36), `initDisplay` (function, 53), `setDisplay` (function, 64), `onDisplay` (function, 74)
 - `src/app/input.ts` — 105 стр.
   - `attachInput` (function, 7)
 - `src/app/loop.ts` — 32 стр.
@@ -122,6 +124,7 @@
 
 - `tests/app/controller.test.ts` — 99 стр.
 - `tests/app/director.test.ts` — 55 стр.
+- `tests/app/display.test.ts` — 20 стр.
 - `tests/app/loop.test.ts` — 34 стр.
 - `tests/helpers.ts` — 27 стр.
   - `run` (function, 5), `snapshot` (function, 11), `quietWorld` (function, 22)
