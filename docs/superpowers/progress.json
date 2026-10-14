@@ -30,6 +30,7 @@
     "3": { "status": "active", "note": "пишется в worktree" }
   },
   "2026-10-14-battle": {
-    "1": { "status": "review", "note": "коммит 7dd37d3 (worktree)" }
+    "1": { "status": "done", "note": "коммит 7dd37d3 → galaxy, ревью PASS" },
+    "2": { "status": "active", "note": "пишется" }
   }
 }

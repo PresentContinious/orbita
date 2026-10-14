@@ -8,7 +8,7 @@ export interface EventInput {
   /** текст для склеенной пачки из n однотипных P2-событий */
   textMany?: (n: number) => string
   civs: number[]
-  at: { system: number; planet?: string }
+  at: GameEvent['at']
 }
 
 export function pushEvent(w: World, e: EventInput): GameEvent {

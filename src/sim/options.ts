@@ -1,5 +1,5 @@
 import { BOT, ECON, MOVE, POP, RESEARCH, RESEARCH_BRANCHES, SHIP_KINDS, type Envelope, type ResearchBranch } from './config'
-import { adminTotal, buy, colonyPrice, shipPrice, shipUpkeep, stationIncome, taxOf, tradeIncome } from './economy'
+import { adminTotal, buy, colonyPrice, shipPrice, shipUpkeep, shipUpkeepOf, stationIncome, taxOf, tradeIncome } from './economy'
 import { pushEvent } from './events'
 import { tryInfra, tryProject, tryResearch, tryStation } from './invest'
 import { setDestination } from './nav'
@@ -108,7 +108,7 @@ function minerBase(w: World, civ: Civ): { planet: Planet; rate: number } | null 
 
 function shipUpkeepTotal(w: World, civ: Civ): number {
   let s = 0
-  for (const sh of w.ships) if (sh.alive && sh.owner === civ.id) s += shipUpkeep(civ, sh.kind)
+  for (const sh of w.ships) if (sh.alive && sh.owner === civ.id) s += shipUpkeep(civ, sh)
   return s
 }
 
@@ -174,14 +174,14 @@ export function listOptions(w: World, civ: Civ): Option[] {
     if (routes.filter((r) => routeSlot(r) === slot).length >= routeLimit) continue
     const best = bestRoute(w, civ, slot, routes)
     if (best && trafficAllowed(w, civ)) {
-      out.push({ kind: 'caravan', price: shipPrice(civ, 'caravan'), envelope: 'trade', dIncome: best.rate, dUpkeep: shipUpkeep(civ, 'caravan'), planetId: best.a.id, partnerId: best.b.id })
+      out.push({ kind: 'caravan', price: shipPrice(civ, 'caravan'), envelope: 'trade', dIncome: best.rate, dUpkeep: shipUpkeepOf(civ, 'caravan'), planetId: best.a.id, partnerId: best.b.id })
     }
   }
 
   const miners = w.ships.filter((s) => s.alive && s.owner === civ.id && s.kind === 'miner').length
   if (trafficAllowed(w, civ) && miners < Math.min(BOT.minerMax, BOT.minerBase + Math.floor(mine.length / 2))) {
     const base = minerBase(w, civ)
-    if (base) out.push({ kind: 'miner', price: shipPrice(civ, 'miner'), envelope: 'trade', dIncome: base.rate, dUpkeep: shipUpkeep(civ, 'miner'), planetId: base.planet.id })
+    if (base) out.push({ kind: 'miner', price: shipPrice(civ, 'miner'), envelope: 'trade', dIncome: base.rate, dUpkeep: shipUpkeepOf(civ, 'miner'), planetId: base.planet.id })
   }
 
   return out

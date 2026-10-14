@@ -23,6 +23,8 @@ export function spawnShip(w: World, civ: Civ, kind: ShipKind, from: Planet, miss
     transit: null,
     mission,
     alive: true,
+    combat: null,
+    fleetId: null,
   }
   w.ships.push(ship)
   return ship

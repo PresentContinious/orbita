@@ -1,4 +1,6 @@
 import { ECON, ENVELOPE_SHARES, RESEARCH, SHIP_KINDS, SIM_DT, type Envelope, type ShipKind } from './config'
+import { CLASSES } from './classes'
+import { WAR } from './combat-config'
 import { pushEvent } from './events'
 import { advanceJobs } from './invest'
 import { capitalSystem, civById, colonyTargets, planetsOf, populatedOf } from './query'
@@ -8,14 +10,15 @@ export function newEconomy(start: number): CivEconomy {
   return {
     ledger: {
       start,
-      income: { tax: 0, trade: 0, tradePartner: 0, mining: 0, station: 0, refund: 0 },
-      expense: { colony: 0, caravan: 0, miner: 0, station: 0, infra: 0, port: 0, shipyard: 0, research: 0, upkeep: 0, admin: 0 },
+      income: { tax: 0, trade: 0, tradePartner: 0, mining: 0, station: 0, refund: 0, salvage: 0 },
+      expense: { colony: 0, caravan: 0, miner: 0, station: 0, infra: 0, port: 0, shipyard: 0, research: 0, upkeep: 0, admin: 0, warship: 0, fighter: 0 },
     },
     envelopes: {
       expand: start * ENVELOPE_SHARES.expand,
       develop: start * ENVELOPE_SHARES.develop,
       trade: start * ENVELOPE_SHARES.trade,
       reserve: start * ENVELOPE_SHARES.reserve,
+      war: start * ENVELOPE_SHARES.war,
     },
     stage: 'ok',
     grossEma: 0,
@@ -106,13 +109,25 @@ export function report(civ: Civ): EconomyReport {
 
 // ---------- формулы ----------
 
-export function shipPrice(civ: Civ, kind: 'caravan' | 'miner'): number {
-  const base = kind === 'caravan' ? ECON.caravanPrice : ECON.minerPrice
+export function shipPrice(civ: Civ, kind: ShipKind): number {
+  const base = kind === 'caravan' ? ECON.caravanPrice : kind === 'miner' ? ECON.minerPrice : kind === 'colony' ? ECON.colonyBase : CLASSES[kind].price
   return base * (civ.shipyard ? ECON.shipyardPriceMul : 1)
 }
 
-export function shipUpkeep(civ: Civ, kind: ShipKind): number {
+/** содержание класса для ещё не купленного корабля (варианты бота) */
+export function shipUpkeepOf(civ: Civ, kind: ShipKind): number {
   return SHIP_KINDS[kind].upkeep * (civ.shipyard ? ECON.shipyardUpkeepMul : 1) * (1 - RESEARCH.logistics.perLevel * civ.research.logistics)
+}
+
+/** содержание конкретного корабля: консервация ×0.3, машины 0 (через носитель), сироты — как корвет ×0.5, носитель +0.01 за машину */
+export function shipUpkeep(civ: Civ, ship: Ship): number {
+  const c = ship.combat
+  if (!c) return shipUpkeepOf(civ, ship.kind)
+  if (c.wing) return c.wing.phase === 'orphan' ? WAR.orphanUpkeep : 0
+  let u = shipUpkeepOf(civ, ship.kind)
+  if (c.hangar) u += WAR.craftUpkeep * c.hangar.craft
+  if (c.mothballed) u *= WAR.mothballMul
+  return u
 }
 
 export function taxOf(p: Planet, civ: Civ): number {
@@ -152,7 +167,7 @@ export function tradeIncome(owner: Civ, a: Planet, b: Planet): number {
 
 // ---------- шаг экономики ----------
 
-const ENVELOPES: Envelope[] = ['expand', 'develop', 'trade', 'reserve']
+const ENVELOPES: Envelope[] = ['expand', 'develop', 'trade', 'reserve', 'war']
 const BADNESS: Record<Stage, number> = { ok: 0, deficit: 1, crisis: 2, bankrupt: 3 }
 
 export function stepEconomy(w: World): void {
@@ -173,7 +188,7 @@ export function stepEconomy(w: World): void {
   for (const ship of w.ships) {
     if (!ship.alive) continue
     const civ = civById(w, ship.owner)
-    if (civ) spend(civ, shipUpkeep(civ, ship.kind) * dt, 'upkeep')
+    if (civ) spend(civ, shipUpkeep(civ, ship) * dt, 'upkeep')
   }
   for (const civ of w.civs) {
     spend(civ, adminTotal(w, civ) * dt, 'admin')
@@ -212,6 +227,7 @@ function fillEnvelopes(w: World, civ: Civ): void {
       develop: ECON.envelopeCapMul * Math.max(ECON.researchPrice[2], ECON.infraPrice[2], ECON.portPrice, ECON.shipyardPrice),
       trade: ECON.envelopeCapMul * ECON.stationPrice,
       reserve: Infinity,
+      war: ECON.envelopeCapMul * WAR.envelopeCap,
     }
     let overflow = 0
     const add = (k: Envelope, v: number) => {
@@ -223,6 +239,7 @@ function fillEnvelopes(w: World, civ: Civ): void {
     add('develop', net * (ENVELOPE_SHARES.develop + (hasTargets ? 0 : ENVELOPE_SHARES.expand)))
     add('trade', net * ENVELOPE_SHARES.trade)
     add('reserve', net * ENVELOPE_SHARES.reserve)
+    add('war', net * ENVELOPE_SHARES.war)
     // излишек — в развитие, а если и там полно — в резерв
     const spill = overflow
     overflow = 0
@@ -292,8 +309,8 @@ function decommission(w: World, civ: Civ): void {
       victim = s
       continue
     }
-    const a = shipUpkeep(civ, s.kind)
-    const b = shipUpkeep(civ, victim.kind)
+    const a = shipUpkeep(civ, s)
+    const b = shipUpkeep(civ, victim)
     if (a > b || (a === b && s.id > victim.id)) victim = s
   }
   if (victim) {

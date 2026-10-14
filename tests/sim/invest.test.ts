@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'vitest'
-import { shipPrice, shipUpkeep, taxOf } from '../../src/sim/economy'
+import { shipPrice, shipUpkeepOf, taxOf } from '../../src/sim/economy'
 import { tryInfra, tryProject, tryResearch, tryStation } from '../../src/sim/invest'
 import { capOf, capitalOf } from '../../src/sim/query'
 import type { Civ, World } from '../../src/sim/types'
@@ -9,7 +9,7 @@ function rich(seed = 1): { w: World; civ: Civ } {
   const w = quietWorld(seed)
   const civ = w.civs[0]
   civ.treasury = 10_000
-  civ.eco.envelopes = { expand: 5000, develop: 5000, trade: 5000, reserve: 0 }
+  civ.eco.envelopes = { expand: 5000, develop: 5000, trade: 5000, reserve: 0, war: 0 }
   return { w, civ }
 }
 
@@ -74,7 +74,7 @@ describe('порт и верфь', () => {
     expect(civ.shipyard).toBe(true)
     expect(civ.project).toBeNull()
     expect(shipPrice(civ, 'caravan')).toBeCloseTo(37.5)
-    expect(shipUpkeep(civ, 'caravan')).toBeCloseTo(0.035)
+    expect(shipUpkeepOf(civ, 'caravan')).toBeCloseTo(0.035)
     expect(w.events.some((e) => e.kind === 'shipyard' && e.pri === 1)).toBe(true)
     expect(tryProject(civ, 'shipyard')).toBe(false)
   })

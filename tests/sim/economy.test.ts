@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'vitest'
 import {
-  adminTotal, buy, canAfford, colonyPrice, earn, ledgerBalance, report, shipPrice, shipUpkeep, spend, stationIncome, taxOf, tradeIncome,
+  adminTotal, buy, canAfford, colonyPrice, earn, ledgerBalance, report, shipPrice, shipUpkeepOf, spend, stationIncome, taxOf, tradeIncome,
 } from '../../src/sim/economy'
 import { CIVS } from '../../src/sim/config'
 import { capitalOf } from '../../src/sim/query'
@@ -162,13 +162,13 @@ describe('формулы', () => {
 
   test('содержание и цена кораблей: верфь и логистика', () => {
     const { civ } = freshCiv()
-    expect(shipUpkeep(civ, 'caravan')).toBeCloseTo(0.05)
+    expect(shipUpkeepOf(civ, 'caravan')).toBeCloseTo(0.05)
     expect(shipPrice(civ, 'caravan')).toBe(50)
     civ.shipyard = true
-    expect(shipUpkeep(civ, 'caravan')).toBeCloseTo(0.035)
+    expect(shipUpkeepOf(civ, 'caravan')).toBeCloseTo(0.035)
     expect(shipPrice(civ, 'miner')).toBeCloseTo(33.75)
     civ.research.logistics = 2
-    expect(shipUpkeep(civ, 'caravan')).toBeCloseTo(0.028)
+    expect(shipUpkeepOf(civ, 'caravan')).toBeCloseTo(0.028)
   })
 
   test('налог: 0.12 за тысячу × (1 + 0.3·инфраструктура), в кризисе ×0.9', () => {

@@ -12,7 +12,7 @@ function rich(seed = 1): { w: World; civ: Civ } {
   const w = quietWorld(seed)
   const civ = w.civs[0]
   civ.treasury = 10_000
-  civ.eco.envelopes = { expand: 3000, develop: 3000, trade: 3000, reserve: 0 }
+  civ.eco.envelopes = { expand: 3000, develop: 3000, trade: 3000, reserve: 0, war: 0 }
   capitalOf(w, civ)!.pop = 6
   return { w, civ }
 }
@@ -110,14 +110,14 @@ describe('межсистемный слот', () => {
 describe('decide', () => {
   test('деньги только в конверте развития — покупается развитие', () => {
     const { w, civ } = rich()
-    civ.eco.envelopes = { expand: 0, develop: 3000, trade: 0, reserve: 0 }
+    civ.eco.envelopes = { expand: 0, develop: 3000, trade: 0, reserve: 0, war: 0 }
     const o = decide(w, civ)!
     expect(['infra', 'port', 'shipyard', 'research']).toContain(o.kind)
   })
 
   test('деньги только в конверте расширения — летят колонисты', () => {
     const { w, civ } = rich()
-    civ.eco.envelopes = { expand: 3000, develop: 0, trade: 0, reserve: 0 }
+    civ.eco.envelopes = { expand: 3000, develop: 0, trade: 0, reserve: 0, war: 0 }
     const o = decide(w, civ)!
     expect(o.kind).toBe('colony')
     expect(w.ships.some((s) => s.owner === civ.id && s.kind === 'colony')).toBe(true)

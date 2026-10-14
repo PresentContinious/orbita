@@ -67,31 +67,32 @@ describe('доходы и расходы по шагам', () => {
 })
 
 describe('конверты', () => {
-  test('чистый доход раскладывается 35/35/20/10', () => {
+  test('чистый доход раскладывается 30/30/15/5/20', () => {
     const { w, civ, tax } = steadyCiv()
-    civ.eco.envelopes = { expand: 0, develop: 0, trade: 0, reserve: 0 }
+    civ.eco.envelopes = { expand: 0, develop: 0, trade: 0, reserve: 0, war: 0 }
     civ.treasury = 10_000
     run(w, 10)
-    expect(civ.eco.envelopes.expand).toBeCloseTo(tax * 10 * 0.35, 6)
-    expect(civ.eco.envelopes.develop).toBeCloseTo(tax * 10 * 0.35, 6)
-    expect(civ.eco.envelopes.trade).toBeCloseTo(tax * 10 * 0.2, 6)
-    expect(civ.eco.envelopes.reserve).toBeCloseTo(tax * 10 * 0.1, 6)
+    expect(civ.eco.envelopes.expand).toBeCloseTo(tax * 10 * 0.3, 6)
+    expect(civ.eco.envelopes.develop).toBeCloseTo(tax * 10 * 0.3, 6)
+    expect(civ.eco.envelopes.trade).toBeCloseTo(tax * 10 * 0.15, 6)
+    expect(civ.eco.envelopes.reserve).toBeCloseTo(tax * 10 * 0.05, 6)
+    expect(civ.eco.envelopes.war).toBeCloseTo(tax * 10 * 0.2, 6)
   })
 
   test('без целей для колоний доля расширения идёт в развитие', () => {
     const { w, civ, tax } = steadyCiv()
     for (const s of w.galaxy.systems) for (const p of s.planets) if (p.owner === null && p.habitability > 0) p.owner = 999
-    civ.eco.envelopes = { expand: 0, develop: 0, trade: 0, reserve: 0 }
+    civ.eco.envelopes = { expand: 0, develop: 0, trade: 0, reserve: 0, war: 0 }
     civ.treasury = 10_000
     run(w, 10)
     expect(civ.eco.envelopes.expand).toBe(0)
-    expect(civ.eco.envelopes.develop).toBeCloseTo(tax * 10 * 0.7, 6)
+    expect(civ.eco.envelopes.develop).toBeCloseTo(tax * 10 * 0.6, 6)
   })
 
   test('конверт развития не растёт выше 1.5 × самого дорогого варианта категории, излишек уходит в резерв', () => {
     const { w, civ } = steadyCiv()
     const cap = ECON.envelopeCapMul * Math.max(ECON.researchPrice[2], ECON.infraPrice[2], ECON.portPrice, ECON.shipyardPrice)
-    civ.eco.envelopes = { expand: 0, develop: cap - 1, trade: 0, reserve: 0 }
+    civ.eco.envelopes = { expand: 0, develop: cap - 1, trade: 0, reserve: 0, war: 0 }
     civ.treasury = 100_000
     run(w, 10)
     expect(civ.eco.envelopes.develop).toBeCloseTo(cap, 6)
@@ -101,7 +102,7 @@ describe('конверты', () => {
   test('богатая держава со временем покупает инфраструктуру III', () => {
     const w = createWorld(1)
     let reached = false
-    for (let i = 0; i < 1800 * 10 && !reached; i++) {
+    for (let i = 0; i < 1800 * 10 * 2 && !reached; i++) {
       for (const c of w.civs) c.treasury = Math.max(c.treasury, 50_000)
       stepWorld(w)
       reached = [...w.planets.values()].some((p) => p.infra >= 3)
@@ -111,11 +112,11 @@ describe('конверты', () => {
 
   test('сумма конвертов не больше казны', () => {
     const { w, civ } = steadyCiv()
-    civ.eco.envelopes = { expand: 100, develop: 100, trade: 100, reserve: 100 }
+    civ.eco.envelopes = { expand: 100, develop: 100, trade: 100, reserve: 100, war: 0 }
     civ.treasury = 50
     stepEconomy(w)
     const e = civ.eco.envelopes
-    expect(e.expand + e.develop + e.trade + e.reserve).toBeLessThanOrEqual(civ.treasury + 1e-9)
+    expect(e.expand + e.develop + e.trade + e.reserve + e.war).toBeLessThanOrEqual(civ.treasury + 1e-9)
   })
 })
 

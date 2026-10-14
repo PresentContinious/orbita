@@ -75,12 +75,27 @@ export const BELT = { asteroidsMin: 16, asteroidsMax: 30, oreMin: 40, oreMax: 12
 export const POP = { growth: 0.012, capPerRadius: 0.5, settlers: 0.5, capitalReserve: 3 }
 
 // ---------- корабли и полёты ----------
-export type ShipKind = 'colony' | 'caravan' | 'miner'
-export const SHIP_KINDS: Record<ShipKind, { length: number; speed: number; accel: number; upkeep: number }> = {
-  colony: { length: 6, speed: 70, accel: 40, upkeep: 0.05 },
-  caravan: { length: 6, speed: 80, accel: 50, upkeep: 0.05 },
-  miner: { length: 5, speed: 70, accel: 40, upkeep: 0.04 },
+export type ShipKind =
+  | 'colony' | 'caravan' | 'miner'
+  | 'corvette' | 'torpedo' | 'frigate' | 'battleship' | 'carrier' | 'interceptor' | 'bomber' | 'trooper' | 'supply' | 'scout'
+/** length — длина корпуса, speed/accel — ед/с и ед/с², turn — поворот носа °/с, upkeep — кр/с (машины 0: содержание идёт через носитель) */
+export const SHIP_KINDS: Record<ShipKind, { length: number; speed: number; accel: number; turn: number; upkeep: number }> = {
+  colony: { length: 6, speed: 70, accel: 40, turn: 180, upkeep: 0.05 },
+  caravan: { length: 6, speed: 80, accel: 50, turn: 180, upkeep: 0.05 },
+  miner: { length: 5, speed: 70, accel: 40, turn: 180, upkeep: 0.04 },
+  corvette: { length: 5, speed: 80, accel: 60, turn: 120, upkeep: 0.03 },
+  torpedo: { length: 5, speed: 75, accel: 55, turn: 110, upkeep: 0.04 },
+  frigate: { length: 8, speed: 45, accel: 15, turn: 40, upkeep: 0.08 },
+  battleship: { length: 12, speed: 30, accel: 6, turn: 12, upkeep: 0.2 },
+  carrier: { length: 14, speed: 28, accel: 5, turn: 10, upkeep: 0.25 },
+  interceptor: { length: 1.5, speed: 140, accel: 150, turn: 300, upkeep: 0 },
+  bomber: { length: 2, speed: 100, accel: 150, turn: 180, upkeep: 0 },
+  trooper: { length: 8, speed: 50, accel: 15, turn: 40, upkeep: 0.05 },
+  supply: { length: 8, speed: 45, accel: 15, turn: 40, upkeep: 0.05 },
+  scout: { length: 4, speed: 110, accel: 80, turn: 200, upkeep: 0.03 },
 }
+/** потолок юнитов на карте (ползунок — этап 1.5); читают военный бот и режиссёр */
+export const UNIT_CAP = 2000
 
 export const MOVE = {
   starSafetyMul: 3,
@@ -98,8 +113,8 @@ export const MOVE = {
 }
 
 // ---------- экономика ----------
-export type Envelope = 'expand' | 'develop' | 'trade' | 'reserve'
-export const ENVELOPE_SHARES: Record<Envelope, number> = { expand: 0.35, develop: 0.35, trade: 0.2, reserve: 0.1 }
+export type Envelope = 'expand' | 'develop' | 'trade' | 'reserve' | 'war'
+export const ENVELOPE_SHARES: Record<Envelope, number> = { expand: 0.3, develop: 0.3, trade: 0.15, reserve: 0.05, war: 0.2 }
 
 export const ECON = {
   taxPerPop: 0.12,
@@ -165,4 +180,4 @@ export const BOT = { decideMin: 4, decideMax: 6, minerBase: 1, minerMax: 4, colo
 
 // ---------- оформление и журнал ----------
 export const PALETTE = [0x5da8ff, 0xff8a5c, 0x7dd87d, 0xe0c060, 0xc98bff, 0x5ce0d8, 0xff8fc8, 0xa8c84d, 0x8aa0ff, 0xffd07a]
-export const EVENTS = { groupWindow: 20, maxLog: 500, fxLife: 5 }
+export const EVENTS = { groupWindow: 20, maxLog: 500, fxLife: 5, battleLog: 200 }

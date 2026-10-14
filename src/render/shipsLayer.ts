@@ -3,7 +3,7 @@ import { SHIP_KINDS } from '../sim/config'
 import { lerp } from '../sim/math'
 import { civById } from '../sim/query'
 import { transitGalaxyPos } from '../sim/routing'
-import type { Fx, World } from '../sim/types'
+import type { Fx, Ship, World } from '../sim/types'
 import { worldToScreen, type Camera, type LodInfo, type View } from './camera'
 import { ICON_BODY, type Atlas } from './textures'
 
@@ -28,6 +28,11 @@ export class ShipsLayer {
 
   constructor(private readonly atlas: Atlas) {}
 
+  /** силуэты боевых классов — задача 17; пока им достаётся значок каравана */
+  private tex(kind: Ship['kind']) {
+    return this.atlas[kind as keyof Atlas] ?? this.atlas.caravan
+  }
+
   update(w: World, cam: Camera, view: View, lods: LodInfo[], alpha: number, now: number): void {
     const z = cam.zoom
     this.frame++
@@ -35,7 +40,7 @@ export class ShipsLayer {
       if (!s.alive) continue
       let p = this.parts.get(s.id)
       if (!p) {
-        p = new Particle({ texture: this.atlas[s.kind], anchorX: 0.5, anchorY: 0.5 })
+        p = new Particle({ texture: this.tex(s.kind), anchorX: 0.5, anchorY: 0.5 })
         this.root.addParticle(p)
         this.parts.set(s.id, p)
       }
@@ -59,7 +64,7 @@ export class ShipsLayer {
         continue
       }
       const sys = w.galaxy.systems[s.systemId]
-      p.texture = this.atlas[s.kind]
+      p.texture = this.tex(s.kind)
       p.x = sys.pos.x + lerp(s.prevPos.x, s.pos.x, alpha)
       p.y = sys.pos.y + lerp(s.prevPos.y, s.pos.y, alpha)
       p.rotation = Math.atan2(s.vel.y, s.vel.x)

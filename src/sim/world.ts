@@ -32,8 +32,21 @@ export function createWorld(seed: number, opts: GalaxyOptions = {}): World {
     planets,
     settings: setupOf(galaxy, o),
     unitCap: o.unitCap ?? SETUP.unitCap.def,
+    civIndex: new Map(),
+    shipIndex: new Map(),
+    fleets: [],
+    admirals: [],
+    battles: [],
+    projectiles: [],
+    projGrids: galaxy.systems.map(() => new SpatialGrid(50)),
+    debris: [],
+    hostility: new Map(),
+    fxBattle: [],
+    pushOuts: 0,
+    skirmish: { nextAt: 0, lastTo: new Map(), recentBig: [], nextBot: 0 },
   }
   createCivs(w, root.fork('civs'))
+  for (const c of w.civs) w.civIndex.set(c.id, c)
   return w
 }
 

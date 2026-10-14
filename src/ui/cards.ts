@@ -24,7 +24,11 @@ const KIND_RU = { rocky: 'каменистая', ice: 'ледяной гиган
 const ZONE_RU = { hot: 'горячая', temperate: 'умеренная', cold: 'холодная' }
 const ROLE_RU = { inhabited: 'обитаемая', ore: 'рудная', pit: 'астероидная «Яма»', nebula: 'туманность' }
 const STAGE_RU = { ok: 'в норме', deficit: 'дефицит', crisis: 'кризис', bankrupt: 'банкрот' }
-const SHIP_RU = { colony: 'Колонисты', caravan: 'Караван', miner: 'Шахтёр' }
+const SHIP_RU: Record<Ship['kind'], string> = {
+  colony: 'Колонисты', caravan: 'Караван', miner: 'Шахтёр',
+  corvette: 'Корвет', torpedo: 'Торпедный катер', frigate: 'Фрегат', battleship: 'Линкор', carrier: 'Носитель',
+  interceptor: 'Перехватчик', bomber: 'Бомбардировщик', trooper: 'Десантник', supply: 'Снабженец', scout: 'Разведчик',
+}
 
 export function planetCard(w: World, id: string): CardData | null {
   const p = w.planets.get(id)
@@ -115,6 +119,12 @@ export function missionText(w: World, ship: Ship): string {
       return 'возвращается в док'
     case 'patrol':
       return 'патрулирует'
+    case 'fleet':
+      return 'в строю флота'
+    case 'wing':
+      return m.carrierId === null ? 'без носителя' : 'в крыле носителя'
+    case 'salvage':
+      return 'собирает лом'
   }
 }
 

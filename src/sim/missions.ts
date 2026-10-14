@@ -23,6 +23,10 @@ export function missionGoal(w: World, ship: Ship): Goal | null {
       return mineGoal(w, ship)
     case 'patrol':
       return planetGoal(w, ship, ship.mission.leg === 0 ? ship.mission.b : ship.mission.a, turnAround)
+    case 'fleet':
+    case 'wing':
+    case 'salvage':
+      return null
   }
 }
 
