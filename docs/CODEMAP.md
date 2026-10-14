@@ -13,8 +13,8 @@
   - `createCivs` (function, 8), `stepPopulation` (function, 38)
 - `src/sim/config.ts` — 169 стр. — ---------- время ----------
   - `SIM_DT` (const, 4), `YEAR_SECONDS` (const, 5), `MAX_STEPS_PER_FRAME` (const, 6), `MAX_FRAME_DT` (const, 7), `SPEEDS` (const, 9), `GALAXY` (const, 12), `CIVS` (const, 24), `StarType` (type, 27), `STAR_TYPES` (const, 28), `ORBIT` (const, 36), `HZ` (const, 52), `PlanetKind` (type, 54), `PLANET_KINDS` (const, 55), `ROLE_GEN` (const, 62), `BELT` (const, 72), `POP` (const, 75), `ShipKind` (type, 78), `SHIP_KINDS` (const, 79), `MOVE` (const, 85), `Envelope` (type, 101), `ENVELOPE_SHARES` (const, 102), `ECON` (const, 104), `ResearchBranch` (type, 154), `RESEARCH` (const, 155), `RESEARCH_BRANCHES` (const, 161), `BOT` (const, 164), `PALETTE` (const, 167), `EVENTS` (const, 168)
-- `src/sim/economy.ts` — 29 стр.
-  - `newEconomy` (function, 4)
+- `src/sim/economy.ts` — 150 стр. — ---------- журнал: единственное место, где меняется казна ----------
+  - `newEconomy` (function, 5), `earn` (function, 33), `spend` (function, 42), `ledgerBalance` (function, 49), `creditLine` (const, 57), `netPerSec` (const, 58), `canAfford` (function, 61), `buy` (function, 69), `EconomyReport` (interface, 78), `report` (function, 90), `shipPrice` (function, 107), `shipUpkeep` (function, 112), `taxOf` (function, 116), `stationIncome` (function, 121), `adminTotal` (function, 126), `colonyPrice` (function, 139), `tradeIncome` (function, 146)
 - `src/sim/galaxy.ts` — 281 стр.
   - `placeSystems` (function, 8), `isConnected` (function, 26), `buildCorridorEdges` (function, 55), `hopMatrix` (function, 153), `assignRoles` (function, 192), `civSlots` (function, 228), `generateGalaxy` (function, 250)
 - `src/sim/math.ts` — 9 стр.
@@ -52,6 +52,7 @@
 - `tests/helpers.ts` — 27 стр.
   - `run` (function, 5), `snapshot` (function, 11), `quietWorld` (function, 22)
 - `tests/render/camera.test.ts` — 81 стр.
+- `tests/sim/economy.test.ts` — 186 стр.
 - `tests/sim/galaxy.test.ts` — 124 стр.
 - `tests/sim/names.test.ts` — 11 стр.
 - `tests/sim/rng.test.ts` — 60 стр.
