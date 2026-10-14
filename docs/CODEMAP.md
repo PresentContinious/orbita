@@ -59,8 +59,8 @@
   - `CombatKind` (type, 5), `Role` (type, 7), `WeaponKind` (type, 8), `Weapon` (interface, 10), `HangarSpec` (interface, 22), `ShipClass` (interface, 30), `CLASSES` (const, 46), `COMBAT_KINDS` (const, 68), `isCombatKind` (function, 70), `isCraft` (const, 74), `isCapital` (function, 76), `pushable` (const, 83), `radiusOf` (const, 85), `DEFAULT_WING` (const, 88), `newCombat` (function, 93), `fullPrice` (function, 124)
 - `src/sim/combat-config.ts` — 216 стр. — Все числа боя (спека 2А). Арена крутит их; в коде боя литералов из спеки быть не должно.
   - `WAR` (const, 5), `FRAME` (const, 17), `BATTLE` (const, 58), `TRAITS` (const, 115), `TRAIT_LIST` (const, 124), `PROJ` (const, 127), `HIT` (const, 143), `DAMAGE` (const, 151), `WING` (const, 170), `DOCK` (const, 183), `SKIRMISH` (const, 192)
-- `src/sim/config.ts` — 184 стр. — ---------- время ----------
-  - `SIM_DT` (const, 4), `YEAR_SECONDS` (const, 5), `MAX_STEPS_PER_FRAME` (const, 6), `MAX_FRAME_DT` (const, 7), `SPEEDS` (const, 9), `GALAXY` (const, 12), `CIVS` (const, 24), `StarType` (type, 27), `STAR_TYPES` (const, 28), `ORBIT` (const, 36), `HZ` (const, 52), `PlanetKind` (type, 54), `PLANET_KINDS` (const, 55), `ROLE_GEN` (const, 62), `BELT` (const, 72), `POP` (const, 75), `ShipKind` (type, 78), `SHIP_KINDS` (const, 82), `UNIT_CAP` (const, 98), `MOVE` (const, 100), `Envelope` (type, 116), `ENVELOPE_SHARES` (const, 117), `ECON` (const, 119), `ResearchBranch` (type, 169), `RESEARCH` (const, 170), `RESEARCH_BRANCHES` (const, 176), `BOT` (const, 179), `PALETTE` (const, 182), `EVENTS` (const, 183)
+- `src/sim/config.ts` — 182 стр. — ---------- время ----------
+  - `SIM_DT` (const, 4), `YEAR_SECONDS` (const, 5), `MAX_STEPS_PER_FRAME` (const, 6), `MAX_FRAME_DT` (const, 7), `SPEEDS` (const, 9), `GALAXY` (const, 12), `CIVS` (const, 24), `StarType` (type, 27), `STAR_TYPES` (const, 28), `ORBIT` (const, 36), `HZ` (const, 52), `PlanetKind` (type, 54), `PLANET_KINDS` (const, 55), `ROLE_GEN` (const, 62), `BELT` (const, 72), `POP` (const, 75), `ShipKind` (type, 78), `SHIP_KINDS` (const, 82), `MOVE` (const, 98), `Envelope` (type, 114), `ENVELOPE_SHARES` (const, 115), `ECON` (const, 117), `ResearchBranch` (type, 167), `RESEARCH` (const, 168), `RESEARCH_BRANCHES` (const, 174), `BOT` (const, 177), `PALETTE` (const, 180), `EVENTS` (const, 181)
 - `src/sim/damage.ts` — 323 стр. — Урон (спека 2А, §9.2, §10.2–10.4): щит до нуля, модули, горение, гибель, обломки и лом.
   - `DamageSource` (type, 15), `shipName` (function, 31), `applyHit` (function, 60), `onBeamEnd` (function, 90), `rollModule` (function, 100), `speedMul` (function, 116), `fireMul` (function, 125), `turretsOk` (function, 129), `beamsOf` (function, 134), `canLaunch` (function, 141), `canVolley` (function, 145), `stepCombatState` (function, 157), `killShip` (function, 184), `spawnDebris` (function, 210), `stepDebris` (function, 232), `salvageGoal` (function, 282)
 - `src/sim/economy.ts` — 344 стр. — ---------- журнал: единственное место, где меняется казна ----------
@@ -93,7 +93,7 @@
   - `hops` (function, 6), `findPath` (function, 26), `gateTo` (function, 54), `gateGalaxyPos` (function, 58), `transitGalaxyPos` (function, 63)
 - `src/sim/setup.ts` — 81 стр.
   - `GalaxyOptions` (interface, 4), `SETUP` (const, 17), `clampOptions` (function, 35), `Setup` (interface, 52), `setupOf` (function, 66)
-- `src/sim/ships.ts` — 136 стр.
+- `src/sim/ships.ts` — 139 стр.
   - `spawnShip` (function, 12), `shipById` (function, 38), `spawnWarship` (function, 44), `turnHeading` (function, 55), `stepShips` (function, 71), `buildGrids` (function, 77), `moveShips` (function, 85), `compactShips` (function, 108)
 - `src/sim/spatial.ts` — 46 стр. — Пространственная сетка: поиск соседей без перебора всех кораблей.
   - `SpatialGrid` (class, 3)
@@ -170,7 +170,7 @@
 - `tests/sim/bot.test.ts` — 145 стр.
 - `tests/sim/cap.test.ts` — 104 стр.
 - `tests/sim/classes.test.ts` — 46 стр.
-- `tests/sim/damage.test.ts` — 300 стр.
+- `tests/sim/damage.test.ts` — 331 стр.
 - `tests/sim/economy.test.ts` — 187 стр.
 - `tests/sim/events.test.ts` — 35 стр.
 - `tests/sim/fleet.test.ts` — 279 стр.

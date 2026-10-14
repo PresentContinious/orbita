@@ -61,7 +61,7 @@ export function applyHit(w: World, target: Ship, damage: number, source: DamageS
   if (!target.alive) return
   const c = target.combat
   if (!c) {
-    target.alive = false
+    killShip(w, target, source, shooterId)
     return
   }
   let rest = damage

@@ -94,8 +94,6 @@ export const SHIP_KINDS: Record<ShipKind, { length: number; speed: number; accel
   supply: { length: 8, speed: 45, accel: 15, turn: 40, upkeep: 0.05 },
   scout: { length: 4, speed: 110, accel: 80, turn: 200, upkeep: 0.03 },
 }
-/** потолок юнитов на карте (ползунок — этап 1.5); читают военный бот и режиссёр */
-export const UNIT_CAP = 2000
 
 export const MOVE = {
   starSafetyMul: 3,

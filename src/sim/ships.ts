@@ -112,8 +112,11 @@ export function compactShips(w: World): void {
     if (s.alive) w.ships[j++] = s
     else w.shipIndex.delete(s.id)
   }
+  const removed = j < w.ships.length
   w.ships.length = j
   for (let i = 0; i < j; i++) w.shipIndex.set(w.ships[i].id, i)
+  // сетка хранит позиции в ships: после сжатия они устарели (§4.3 — сжатие и перестройка сетки)
+  if (removed) buildGrids(w)
 }
 
 /** корабли не слипаются: лёгкое отталкивание от соседей */

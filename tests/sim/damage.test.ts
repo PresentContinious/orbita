@@ -263,6 +263,37 @@ describe('урон', () => {
     expect(w.debris).toHaveLength(0)
   })
 
+  it('гибель в шаге не сбивает сетку: stepDebris после compactShips видит настоящего соседа', () => {
+    const { w, put } = setup()
+    const dead = put('b', 'corvette', X, Y, false)
+    applyHit(w, dead, 9999, 'beam', 0)
+    const victim = put('b', 'corvette', X + 5000, Y, false)
+    const mine = put('a', 'corvette', X + 500, Y, false)
+    compactShips(w)
+    const d = w.debris[0]
+    while ((w.tick + 1) % 10 !== 0) w.tick++
+    w.t += SIM_DT
+    w.tick++
+    buildGrids(w)
+    // корабль с меньшим индексом гибнет в этом шаге — индексы сдвигаются при сжатии
+    victim.alive = false
+    compactShips(w)
+    stepDebris(w)
+    expect(d.holdCiv).toBe(mine.owner)
+  })
+
+  it('мирный корабль от попадания гибнет через killShip: событие и обломок', () => {
+    const { w, a, home, sys } = setup()
+    const caravan = spawnShip(w, a, 'caravan', home, { type: 'return', planetId: home.id }, 50)
+    caravan.systemId = sys
+    caravan.pos = { x: X, y: Y }
+    const events = w.events.length
+    applyHit(w, caravan, 10, 'beam', 0)
+    expect(caravan.alive).toBe(false)
+    expect(w.debris).toHaveLength(1)
+    expect(w.events.length).toBeGreaterThan(events)
+  })
+
   it('журнал боя не длиннее 200 строк', () => {
     const { w, battle } = setup()
     for (let i = 0; i < 300; i++) logBattle(w, battle, 'x', 'строка ' + i)

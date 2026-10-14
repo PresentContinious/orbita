@@ -30,11 +30,11 @@
     "3": { "status": "done", "note": "коммит 238fce0 → galaxy, ревью PASS; снимки artifacts/setup/" }
   },
   "2026-10-14-battle": {
-    "1": { "status": "done", "note": "коммит 7dd37d3 → galaxy, ревью PASS" },
+    "1": { "status": "done", "note": "коммит 7dd37d3 → galaxy, ревью PASS; веха 1: UNIT_CAP убран (лимит — w.unitCap)" },
     "2": { "status": "done", "note": "коммит 61a7b42, ревью PASS" },
     "3": { "status": "done", "note": "коммит 029fed1 → 264c840, ревью PASS" },
     "4": { "status": "done", "note": "коммиты 63a9404 + 7637087 (FIX: ракета гасит чужую торпеду, weapon на снаряде), 1000 трассировок 6–18 мс" },
-    "5": { "status": "done", "note": "коммиты eb4bfc5 + 334a311 (FIX: состояние в типах, сброс таймера лома)" },
+    "5": { "status": "done", "note": "коммиты eb4bfc5 + 334a311 (FIX: состояние в типах, сброс таймера лома) + веха 1 (сетка после сжатия, мирный — через killShip)" },
     "7": { "status": "active", "note": "пишется в worktree" },
     "8": { "status": "active", "note": "пишется в worktree" },
     "6": { "status": "done", "note": "коммиты d64f7f3 + 464301e (FIX: порог малого овала), ревью PASS" }
