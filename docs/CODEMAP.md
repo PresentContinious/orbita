@@ -196,7 +196,7 @@
 - `tests/sim/system.test.ts` — 110 стр.
 - `tests/sim/war-economy.test.ts` — 77 стр.
 - `tests/sim/warships.test.ts` — 122 стр.
-- `tests/sim/weapons.test.ts` — 394 стр.
+- `tests/sim/weapons.test.ts` — 395 стр.
 - `tests/sim/world.test.ts` — 84 стр.
 - `tests/ui/cards.test.ts` — 56 стр.
 - `tests/ui/format.test.ts` — 27 стр.
