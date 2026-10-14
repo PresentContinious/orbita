@@ -1,3 +1,11 @@
 {
-  "2026-10-14-galaxy-skeleton": {}
+  "2026-10-14-galaxy-skeleton": {
+    "1": { "status": "done", "note": "коммит d10872d, ревью PASS" },
+    "2": { "status": "done", "note": "коммит 96026b1, ревью PASS" },
+    "3": { "status": "done", "note": "коммит a7ac235, ревью PASS (исправлен тест плана)" },
+    "4": { "status": "done", "note": "коммит cc6e8f9, ревью PASS" },
+    "5": { "status": "done", "note": "коммит 1a93c45 + веха 1 (25b924b: петля, чаще 6 систем), ревью PASS" },
+    "6": { "status": "done", "note": "коммит c917853 + веха 1 (25b924b: уникальные имена), ревью PASS" },
+    "15": { "status": "done", "note": "коммит 152d20f + веха 1 (25b924b: galaxyZoom), ревью PASS" }
+  }
 }

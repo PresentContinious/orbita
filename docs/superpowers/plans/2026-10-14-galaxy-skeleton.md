@@ -14,6 +14,7 @@
 
 - Версии зависимостей закреплены точно: `pixi.js 8.21.0`, `react 19.3.0`, `react-dom 19.3.0`, `typescript 5.9.3`, `vite 6.4.3`, `vitest 3.2.7`, `@vitejs/plugin-react 4.7.0`, `tsx 4.23.15`, `playwright-core 1.63.0`, `@types/react 19.3.0`, `@types/react-dom 19.3.0`, `@types/node 22.20.4`.
 - `src/sim/` не импортирует `pixi.js`, `react`, DOM; внутри `src/sim/` запрещены `Math.random()` и `Date.now()` — всё случайное только из `Rng`.
+- `rng.fork(label)` зависит только от исходного зерна и метки (метки смешиваются через XOR): `w.rng.fork('x')` всегда даёт один и тот же поток, сколько бы `w.rng` ни потратил; `fork(a).fork(b)` = `fork(b).fork(a)`, `fork(a).fork(a)` = родитель. Поэтому в шаге симуляции не форкать с постоянной меткой на каждое событие — брать числа из `w.rng` по порядку или класть в метку уникальный id (найдено на вехе 1).
 - Шаг симуляции `SIM_DT = 0.1` с; не больше 60 шагов за кадр; кадр длиннее 0.25 с обрезается; 1 год = 20 с.
 - Кредиты меняются только функциями `earn` / `spend` / `buy` из `src/sim/economy.ts`.
 - Каждый корабль — отдельная сущность симуляции; никакой агрегации «флот = число».
@@ -4807,6 +4808,8 @@ git commit -m "sim: purchase options with payback scoring, temporary economic bo
 - Consumes: весь `src/sim/`.
 - Produces: `Mission` получает вариант `{ type: 'patrol'; a: string; b: string; leg: 0 | 1 }` (летает между планетами без денег — для нагрузки); `spawnStressShips(w, count, focus): number` (возвращает id нагруженной системы); `npm run balance [зёрен] [минут]`, `npm run stress`.
 
+**Заметка с вехи 1 (проверить при настройке чисел):** рудная система по спеке — место, где «жить почти нельзя», но на деле в ~61% миров в ней есть планета с пригодностью ≥ 1.0, а ледяные и газовые планеты годятся под колонию (`colonyTargets` берёт пригодность > 0). Если баланс покажет, что колонии в рудной перебивают цель «станции выгодны в рудной», — убрать `rocky` из `ROLE_GEN.ore.kinds` в `config.ts`.
+
 - [ ] **Step 1: Write the failing test**
 
 `tests/sim/longrun.test.ts`:
@@ -5119,7 +5122,7 @@ git commit -m "sim: long-run invariants, balance and stress scripts, tuned numbe
 - Consumes: `SIM_DT`, `MAX_STEPS_PER_FRAME`, `MAX_FRAME_DT`, `Galaxy`, `math.ts`.
 - Produces:
   - `loop.ts`: `interface Clock { acc: number; speed: number }`, `createClock(speed = 1): Clock`, `advance(clock, realDt, step: () => void): number`, `alpha(clock): number`.
-  - `camera.ts`: `interface View { width; height }`, `interface Bounds { minX; minY; maxX; maxY }`, `interface CamTarget { x; y; zoom }`, `interface Camera { x; y; zoom; vx; vy; fly: Fly | null; follow: string | null }`, `ZOOM_MAX = 3`, `type Lod = 'galaxy' | 'approach' | 'system'`, `interface LodInfo { level; approachAlpha; systemAlpha }`, `createCamera()`, `worldToScreen(cam, view, p)`, `screenToWorld(cam, view, s)`, `galaxyBounds(g)`, `fitZoom(view, b, pad = 1.15)`, `zoomAt(cam, view, screen, factor, minZoom)`, `flyDuration(z0, z1)`, `startFly(cam, to, now)`, `updateCamera(cam, now, dt)`, `lodOf(systemRadius, zoom)`.
+  - `camera.ts`: `interface View { width; height }`, `interface Bounds { minX; minY; maxX; maxY }`, `interface CamTarget { x; y; zoom }`, `interface Camera { x; y; zoom; vx; vy; fly: Fly | null; follow: string | null }`, `ZOOM_MAX = 3`, `type Lod = 'galaxy' | 'approach' | 'system'`, `interface LodInfo { level; approachAlpha; systemAlpha }`, `createCamera()`, `worldToScreen(cam, view, p)`, `screenToWorld(cam, view, s)`, `galaxyBounds(g)`, `fitZoom(view, b, pad = 1.15)`, `zoomAt(cam, view, screen, factor, minZoom)`, `flyDuration(z0, z1)`, `startFly(cam, to, now)`, `updateCamera(cam, now, dt)`, `lodOf(systemRadius, zoom)`, `galaxyZoom(view, g)` (добавлена на вехе 1: зум «вся галактика», при котором каждая система остаётся уровнем `galaxy` — использовать вместо голого `fitZoom`).
 
 - [ ] **Step 1: Write the failing tests**
 
