@@ -6,6 +6,11 @@
     "4": { "status": "done", "note": "коммит cc6e8f9, ревью PASS" },
     "5": { "status": "done", "note": "коммит 1a93c45 + веха 1 (25b924b: петля, чаще 6 систем), ревью PASS" },
     "6": { "status": "done", "note": "коммит c917853 + веха 1 (25b924b: уникальные имена), ревью PASS" },
-    "15": { "status": "done", "note": "коммит 152d20f + веха 1 (25b924b: galaxyZoom), ревью PASS" }
+    "7": { "status": "done", "note": "коммит 71c8c5f, ревью PASS" },
+    "8": { "status": "done", "note": "коммит 9764bbc, ревью PASS" },
+    "9": { "status": "done", "note": "коммит 7d89522, ревью PASS" },
+    "10": { "status": "active", "note": "implementer пишет" },
+    "15": { "status": "done", "note": "коммит 152d20f + веха 1 (25b924b: galaxyZoom), ревью PASS" },
+    "16": { "status": "active", "note": "implementer пишет (параллельно, в worktree)" }
   }
 }

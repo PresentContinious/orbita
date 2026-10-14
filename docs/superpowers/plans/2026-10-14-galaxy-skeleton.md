@@ -6997,6 +6997,7 @@ git commit -m "app: picking, camera controller, mouse and keyboard input"
 - Consumes: `Controller`, `Crumb`, `report`, `populatedOf`, `GameEvent`, `YEAR_SECONDS`, `SPEEDS`.
 - Produces:
   - `format.ts`: `yearOf(t)`, `fmtInt(n)`, `fmtPop(popK)`, `fmtRate(perMin)` (`+1.2 кр/с`), `fmtCredits(n)`, `fmtDuration(sec)`, `roman(n)`, `hex(color)`.
+  - Заметка с ревью задачи 9: `report(civ).runwaySec` по плану равен `Infinity` при `net >= 0`. Любое его отображение (`fmtDuration` и т. п.) проверяет `Number.isFinite` и выводит «∞», а не «Infinity»/`NaN`.
   - `model.ts`: `interface Toast { ev: GameEvent; until: number }`, `TOAST_LIFE`, `MAX_TOASTS = 3`, `updateToasts(toasts, events, lastId, now)`, `class TrendTracker { trend(id, pop, t): -1 | 0 | 1 }`, `class UiModel { toasts; lastId; trends; tick(w, now) }`.
   - `snapshot.ts`: `interface CivSummary`, `interface Snapshot`, `buildSnapshot(w, c, model): Snapshot`.
   - `store.ts`: `interface Store { get; set; subscribe }`, `createStore()`.
