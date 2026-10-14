@@ -4,6 +4,10 @@
 
 ## src/
 
+- `src/app/controller.ts` — 223 стр.
+  - `Crumb` (interface, 10), `UiState` (interface, 15), `Controller` (class, 29)
+- `src/app/input.ts` — 104 стр.
+  - `attachInput` (function, 6)
 - `src/app/loop.ts` — 32 стр.
   - `Clock` (interface, 3), `createClock` (function, 10), `advance` (function, 15), `alpha` (function, 29)
 - `src/app/main.tsx` — 38 стр.
@@ -11,6 +15,8 @@
   - `View` (interface, 4), `Bounds` (interface, 9), `CamTarget` (interface, 16), `Fly` (interface, 22), `Camera` (interface, 29), `ZOOM_MAX` (const, 40), `LOD` (const, 41), `Lod` (type, 42), `LodInfo` (interface, 43), `createCamera` (function, 49), `worldToScreen` (function, 53), `screenToWorld` (function, 57), `galaxyBounds` (function, 61), `fitZoom` (function, 72), `galaxyZoom` (function, 77), `zoomAt` (function, 83), `flyDuration` (function, 91), `startFly` (function, 95), `updateCamera` (function, 103), `lodOf` (function, 127)
 - `src/render/galaxyLayer.ts` — 138 стр.
   - `GalaxyLayer` (class, 11)
+- `src/render/hit.ts` — 43 стр.
+  - `Pick` (type, 6), `pickAt` (function, 9)
 - `src/render/renderer.ts` — 41 стр.
   - `GameRenderer` (class, 11)
 - `src/render/shipsLayer.ts` — 106 стр.
@@ -77,10 +83,12 @@
 
 ## tests/
 
+- `tests/app/controller.test.ts` — 78 стр.
 - `tests/app/loop.test.ts` — 34 стр.
 - `tests/helpers.ts` — 27 стр.
   - `run` (function, 5), `snapshot` (function, 11), `quietWorld` (function, 22)
 - `tests/render/camera.test.ts` — 81 стр.
+- `tests/render/hit.test.ts` — 52 стр.
 - `tests/render/territory.test.ts` — 32 стр.
 - `tests/sim/bot.test.ts` — 127 стр.
 - `tests/sim/economy.test.ts` — 186 стр.

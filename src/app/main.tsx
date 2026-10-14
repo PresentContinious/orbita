@@ -1,7 +1,9 @@
 import { Application } from 'pixi.js'
-import { createCamera, galaxyBounds, galaxyZoom, updateCamera } from '../render/camera'
+import { createCamera } from '../render/camera'
 import { GameRenderer } from '../render/renderer'
 import { createWorld, stepWorld } from '../sim/world'
+import { Controller } from './controller'
+import { attachInput } from './input'
 import { advance, alpha, createClock } from './loop'
 
 async function boot(): Promise<void> {
@@ -15,22 +17,20 @@ async function boot(): Promise<void> {
   const view = () => ({ width: app.screen.width, height: app.screen.height })
 
   const renderer = new GameRenderer(app, world)
-  const cam = createCamera()
-  const b = galaxyBounds(world.galaxy)
-  cam.x = (b.minX + b.maxX) / 2
-  cam.y = (b.minY + b.maxY) / 2
-  cam.zoom = galaxyZoom(view(), world.galaxy)
   const clock = createClock(1)
+  const controller = new Controller(world, createCamera(), clock, view)
+  controller.flyToGalaxy(true)
+  attachInput(app.canvas, controller)
 
   app.ticker.add((ticker) => {
     const dt = ticker.deltaMS / 1000
     advance(clock, dt, () => stepWorld(world))
-    updateCamera(cam, performance.now() / 1000, dt)
-    renderer.render(world, cam, view(), alpha(clock))
+    controller.update(performance.now() / 1000, dt)
+    renderer.render(world, controller.cam, view(), alpha(clock), controller.selectedPlanet())
   })
 
   Object.assign(window, {
-    __orbita: { world, cam, clock, renderer, fastForward: (n: number) => { for (let i = 0; i < n; i++) stepWorld(world) } },
+    __orbita: { world, cam: controller.cam, clock, renderer, controller, fastForward: (n: number) => { for (let i = 0; i < n; i++) stepWorld(world) } },
   })
 }
 
