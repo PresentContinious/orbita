@@ -33,7 +33,7 @@
     "1": { "status": "done", "note": "коммит 7dd37d3 → galaxy, ревью PASS" },
     "2": { "status": "done", "note": "коммит 61a7b42, ревью PASS" },
     "3": { "status": "done", "note": "коммит 029fed1 → 264c840, ревью PASS" },
-    "4": { "status": "active", "note": "пишется в worktree" },
-    "6": { "status": "active", "note": "пишется в worktree" }
+    "4": { "status": "fix", "note": "818d535, ревью FIX: ракета гасит чужую торпеду, вид оружия на снаряде, число в config" },
+    "6": { "status": "done", "note": "коммиты d64f7f3 + 464301e (FIX: порог малого овала), ревью PASS" }
   }
 }
