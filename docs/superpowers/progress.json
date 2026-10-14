@@ -32,7 +32,7 @@
   "2026-10-14-battle": {
     "1": { "status": "done", "note": "коммит 7dd37d3 → galaxy, ревью PASS" },
     "2": { "status": "done", "note": "коммит 61a7b42, ревью PASS" },
-    "3": { "status": "active", "note": "пишется в worktree" },
+    "3": { "status": "done", "note": "коммит 029fed1 → 264c840, ревью PASS" },
     "4": { "status": "active", "note": "пишется в worktree" },
     "6": { "status": "active", "note": "пишется в worktree" }
   }
