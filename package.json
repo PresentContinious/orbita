@@ -12,7 +12,7 @@
     "balance": "tsx scripts/balance.ts",
     "stress": "tsx scripts/stress.ts",
     "shot": "tsx scripts/shot.ts",
-    "smoke":"tsx scripts/smoke.ts",
+    "smoke": "tsx scripts/smoke.ts",
     "codemap": "node scripts/codemap.mjs",
     "panel": "python tools/panel/panel.py"
   },
