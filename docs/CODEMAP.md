@@ -63,8 +63,8 @@
   - `newEconomy` (function, 9), `earn` (function, 38), `spend` (function, 47), `ledgerBalance` (function, 54), `creditLine` (const, 62), `netPerSec` (const, 63), `canAfford` (function, 66), `buy` (function, 74), `EconomyReport` (interface, 83), `report` (function, 95), `shipPrice` (function, 112), `shipUpkeepOf` (function, 118), `shipUpkeep` (function, 123), `taxOf` (function, 133), `stationIncome` (function, 138), `adminTotal` (function, 143), `colonyPrice` (function, 156), `tradeIncome` (function, 163), `stepEconomy` (function, 173)
 - `src/sim/events.ts` — 33 стр.
   - `EventInput` (interface, 4), `pushEvent` (function, 14)
-- `src/sim/fleet.ts` — 112 стр.
-  - `createFleet` (function, 9), `fleetById` (function, 75), `addToFleet` (function, 80), `removeFromFleet` (function, 91), `disbandFleet` (function, 98), `stepFleets` (function, 104), `fleetGoal` (function, 107)
+- `src/sim/fleet.ts` — 394 стр. — ---------- геометрия рамки (спека 7.1); числа — только FRAME ----------
+  - `createFleet` (function, 11), `fleetById` (function, 77), `addToFleet` (function, 82), `removeFromFleet` (function, 93), `disbandFleet` (function, 101), `stepFleets` (function, 107), `fleetGoal` (function, 112), `fleetWidth` (function, 122), `assignSlots` (function, 151), `ovalPoint` (function, 250), `slotLocal` (function, 287), `slotWorld` (function, 297), `closeRanks` (function, 333), `markDamaged` (function, 383), `clearDamaged` (function, 390)
 - `src/sim/galaxy.ts` — 323 стр.
   - `placeSystems` (function, 9), `isConnected` (function, 28), `buildCorridorEdges` (function, 57), `hopMatrix` (function, 178), `assignRoles` (function, 217), `civSlots` (function, 259), `generateGalaxy` (function, 282)
 - `src/sim/invest.ts` — 101 стр.
@@ -166,6 +166,7 @@
 - `tests/sim/classes.test.ts` — 46 стр.
 - `tests/sim/economy.test.ts` — 187 стр.
 - `tests/sim/events.test.ts` — 35 стр.
+- `tests/sim/fleet.test.ts` — 256 стр.
 - `tests/sim/galaxy.test.ts` — 124 стр.
 - `tests/sim/invest.test.ts` — 112 стр.
 - `tests/sim/longrun.test.ts` — 53 стр.
