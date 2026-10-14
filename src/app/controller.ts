@@ -66,14 +66,37 @@ export class Controller {
 
   // ---------- выбор ----------
 
+  /** держава, чья карточка открыта кликом в полосе держав */
+  civCardId: number | null = null
+  private hoverSince = 0
+
   select(p: Pick | null): void {
     this.ui.selected = p
+    this.civCardId = null
     if (p === null) this.cam.follow = null
   }
 
   hover(p: Pick | null, mouse?: { x: number; y: number }): void {
+    const prev = this.ui.hovered
+    const changed = !prev || !p || prev.type !== p.type || prev.id !== p.id
+    if (changed) this.hoverSince = this.now
     this.ui.hovered = p
     if (mouse) this.ui.mouse = mouse
+  }
+
+  /** подсказка готова: под курсором что-то есть уже 0.3 с и это не выбранный объект */
+  hoverReady(): boolean {
+    const h = this.ui.hovered
+    const s = this.ui.selected
+    if (!h || this.now - this.hoverSince < 0.3) return false
+    return !(s && s.type === h.type && s.id === h.id)
+  }
+
+  /** клик по державе: перелёт к столице и карточка державы */
+  showCiv(id: number): void {
+    this.flyToCiv(id)
+    this.ui.selected = null
+    this.civCardId = id
   }
 
   selectedPlanet(): string | null {
@@ -191,7 +214,7 @@ export class Controller {
 
   /** Esc: снять выбор → обзор системы → вся галактика */
   back(): void {
-    if (this.ui.selected) {
+    if (this.ui.selected || this.civCardId !== null) {
       this.select(null)
       return
     }

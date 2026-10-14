@@ -63,3 +63,16 @@ button.on { background: var(--accent); color: #fff; }
 .feed li button { text-align: left; width: 100%; }
 .feed li.pri0 { color: var(--gold); }
 .feed li.pri2 { color: var(--muted); }
+
+.minimap { right: 16px; top: 60px; padding: 4px; }
+.minimap canvas { display: block; cursor: pointer; }
+
+.card { right: 16px; top: 200px; width: 260px; }
+.card header { display: flex; justify-content: space-between; align-items: center; }
+.card .subtitle { color: var(--muted); margin: 2px 0 6px; }
+.card dl { margin: 0; }
+.card .row { display: flex; justify-content: space-between; gap: 12px; padding: 2px 0; border-top: 1px solid rgba(255, 255, 255, 0.04); }
+.card dt { color: var(--muted); }
+.card dd { margin: 0; text-align: right; }
+
+.tooltip { pointer-events: none; max-width: 280px; padding: 4px 8px; }

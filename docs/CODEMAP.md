@@ -4,7 +4,7 @@
 
 ## src/
 
-- `src/app/controller.ts` — 223 стр.
+- `src/app/controller.ts` — 246 стр.
   - `Crumb` (interface, 10), `UiState` (interface, 15), `Controller` (class, 29)
 - `src/app/input.ts` — 104 стр.
   - `attachInput` (function, 6)
@@ -75,22 +75,30 @@
   - `createWorld` (function, 12), `stepWorld` (function, 35)
 - `src/ui/Breadcrumbs.tsx` — 18 стр.
   - `Breadcrumbs` (function, 3)
+- `src/ui/Card.tsx` — 24 стр.
+  - `Card` (function, 3)
 - `src/ui/CivBar.tsx` — 26 стр.
   - `CivBar` (function, 6)
 - `src/ui/FeedDrawer.tsx` — 23 стр.
   - `FeedDrawer` (function, 4)
-- `src/ui/Hud.tsx` — 24 стр.
-  - `Hud` (function, 11)
+- `src/ui/Hud.tsx` — 30 стр.
+  - `Hud` (function, 14)
+- `src/ui/Minimap.tsx` — 58 стр.
+  - `Minimap` (function, 7)
 - `src/ui/TimeControls.tsx` — 42 стр.
   - `TimeControls` (function, 5)
 - `src/ui/Toasts.tsx` — 15 стр.
   - `Toasts` (function, 4)
+- `src/ui/Tooltip.tsx` — 16 стр.
+  - `Tooltip` (function, 3)
+- `src/ui/cards.ts` — 144 стр.
+  - `CardRow` (interface, 9), `CardData` (interface, 15), `planetCard` (function, 29), `systemCard` (function, 62), `civCard` (function, 75), `missionText` (function, 99), `shipCard` (function, 121), `cardFor` (function, 138)
 - `src/ui/format.ts` — 30 стр.
   - `yearOf` (const, 3), `fmtInt` (function, 6), `fmtPop` (const, 11), `fmtRate` (function, 14), `fmtCredits` (const, 19), `fmtDuration` (function, 21), `roman` (const, 27), `hex` (const, 29)
 - `src/ui/model.ts` — 60 стр.
   - `Toast` (interface, 3), `TOAST_LIFE` (const, 9), `MAX_TOASTS` (const, 10), `updateToasts` (function, 13), `TrendTracker` (class, 30), `UiModel` (class, 49)
-- `src/ui/snapshot.ts` — 65 стр.
-  - `CivSummary` (interface, 8), `Snapshot` (interface, 20), `buildSnapshot` (function, 34)
+- `src/ui/snapshot.ts` — 107 стр.
+  - `CivSummary` (interface, 12), `MinimapData` (interface, 24), `Snapshot` (interface, 31), `buildSnapshot` (function, 69)
 - `src/ui/store.ts` — 24 стр.
   - `Store` (interface, 3), `createStore` (function, 9)
 
@@ -125,6 +133,7 @@
 - `tests/sim/stepEconomy.test.ts` — 152 стр.
 - `tests/sim/system.test.ts` — 110 стр.
 - `tests/sim/world.test.ts` — 83 стр.
+- `tests/ui/cards.test.ts` — 56 стр.
 - `tests/ui/format.test.ts` — 27 стр.
 - `tests/ui/model.test.ts` — 37 стр.
 - `tests/ui/snapshot.test.ts` — 23 стр.
