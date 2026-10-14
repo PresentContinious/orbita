@@ -34,7 +34,9 @@
     "2": { "status": "done", "note": "коммит 61a7b42, ревью PASS" },
     "3": { "status": "done", "note": "коммит 029fed1 → 264c840, ревью PASS" },
     "4": { "status": "done", "note": "коммиты 63a9404 + 7637087 (FIX: ракета гасит чужую торпеду, weapon на снаряде), 1000 трассировок 6–18 мс" },
-    "5": { "status": "fix", "note": "eb4bfc5, ревью FIX: состояние из WeakMap/WeakSet — в типы" },
+    "5": { "status": "done", "note": "коммиты eb4bfc5 + 334a311 (FIX: состояние в типах, сброс таймера лома)" },
+    "7": { "status": "active", "note": "пишется в worktree" },
+    "8": { "status": "active", "note": "пишется в worktree" },
     "6": { "status": "done", "note": "коммиты d64f7f3 + 464301e (FIX: порог малого овала), ревью PASS" }
   }
 }
