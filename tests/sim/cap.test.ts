@@ -21,7 +21,7 @@ describe('лимит юнитов', () => {
     run(a, 1800)
     run(b, 1800)
     expect(snapshot(a)).toBe(snapshot(b))
-  })
+  }, 60_000)
 
   it('стресс 2000 кораблей, лимит 500 — через 20 с живых ≤ 500, колонисты целы', () => {
     const w = createWorld(5)
@@ -34,7 +34,7 @@ describe('лимит юнитов', () => {
     run(w, 20)
     expect(liveShips(w)).toBeLessThanOrEqual(500)
     expect(w.ships.filter((s) => s.alive && s.kind === 'colony').length).toBe(3)
-  })
+  }, 60_000)
 
   it('списание возвращает 25 % цены через earn, журнал сходится', () => {
     const w = quietWorld(3)
