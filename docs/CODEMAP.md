@@ -21,6 +21,8 @@
   - `glowTexture` (function, 11)
 - `src/sim/belts.ts` — 35 стр.
   - `asteroidPos` (const, 6), `asteroidVel` (const, 7), `nearestAsteroid` (function, 9), `stepAsteroids` (function, 25)
+- `src/sim/bot.ts` — 24 стр.
+  - `decide` (function, 7), `stepBots` (function, 17)
 - `src/sim/civ.ts` — 71 стр.
   - `createCivs` (function, 8), `stepPopulation` (function, 38), `colonyValue` (function, 52), `bestColonyTarget` (function, 58)
 - `src/sim/config.ts` — 169 стр. — ---------- время ----------
@@ -41,6 +43,8 @@
   - `genName` (function, 8), `uniqueName` (function, 15)
 - `src/sim/nav.ts` — 125 стр.
   - `Goal` (interface, 9), `Body` (type, 18), `avoidStar` (function, 21), `steer` (function, 45), `shipSpeed` (function, 64), `planetGoal` (function, 69), `setDestination` (function, 85), `gateGoal` (function, 90), `transitDuration` (function, 99), `advanceTransit` (function, 112)
+- `src/sim/options.ts` — 226 стр.
+  - `OptionKind` (type, 12), `Option` (interface, 14), `score` (function, 28), `Route` (interface, 32), `tradeRoutes` (function, 38), `listOptions` (function, 118), `execute` (function, 180)
 - `src/sim/query.ts` — 74 стр.
   - `civById` (function, 5), `planetsOf` (function, 10), `populatedOf` (function, 16), `capOf` (function, 20), `capitalOf` (function, 25), `capitalSystem` (function, 35), `reachableSystems` (function, 40), `claimedTargets` (function, 46), `colonyTargets` (function, 53), `stationTargets` (function, 65)
 - `src/sim/rng.ts` — 59 стр. — Генератор случайных чисел с зерном (mulberry32): одно зерно — одна и та же история.
@@ -55,8 +59,8 @@
   - `Orbiting` (type, 7), `periodOf` (function, 9), `zoneOf` (function, 13), `tempKOf` (function, 20), `planetPos` (function, 24), `planetVel` (function, 29), `makeLook` (function, 50), `habitableCount` (function, 68), `makeAsteroid` (function, 72), `generateSystem` (function, 86)
 - `src/sim/types.ts` — 230 стр.
   - `Zone` (type, 7), `SystemRole` (type, 8), `PlanetLook` (interface, 10), `Build` (interface, 17), `Planet` (interface, 24), `Belt` (interface, 45), `Asteroid` (interface, 50), `Gate` (interface, 60), `Star` (interface, 67), `StarSystem` (interface, 74), `Corridor` (interface, 92), `Galaxy` (interface, 102), `Mission` (type, 107), `Transit` (interface, 113), `Ship` (interface, 121), `Stage` (type, 138), `IncomeSource` (type, 139), `ExpenseCat` (type, 140), `Ledger` (interface, 142), `CivEconomy` (interface, 148), `CivProject` (interface, 165), `ResearchJob` (interface, 171), `Civ` (interface, 178), `GameEvent` (interface, 194), `Fx` (interface, 206), `World` (interface, 215)
-- `src/sim/world.ts` — 43 стр.
-  - `createWorld` (function, 11), `stepWorld` (function, 34)
+- `src/sim/world.ts` — 45 стр.
+  - `createWorld` (function, 12), `stepWorld` (function, 35)
 
 ## scripts/
 
@@ -70,6 +74,7 @@
   - `run` (function, 5), `snapshot` (function, 11), `quietWorld` (function, 22)
 - `tests/render/camera.test.ts` — 81 стр.
 - `tests/render/territory.test.ts` — 32 стр.
+- `tests/sim/bot.test.ts` — 127 стр.
 - `tests/sim/economy.test.ts` — 186 стр.
 - `tests/sim/events.test.ts` — 35 стр.
 - `tests/sim/galaxy.test.ts` — 124 стр.
