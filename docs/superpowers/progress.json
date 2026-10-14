@@ -25,9 +25,11 @@
     "23": { "status": "done", "note": "коммиты 107e517 + 4f82e6d (бюджет времени кадра 20 мс), ревью PASS" }
   },
   "2026-10-14-galaxy-setup": {
-    "1": { "status": "active", "note": "пишется" }
+    "1": { "status": "done", "note": "коммит bb26b74, ревью PASS" },
+    "2": { "status": "done", "note": "коммит deb432a, ревью PASS (стресс 2.43 мс)" },
+    "3": { "status": "active", "note": "пишется в worktree" }
   },
   "2026-10-14-battle": {
-    "1": { "status": "active", "note": "пишется параллельно в worktree" }
+    "1": { "status": "review", "note": "коммит 7dd37d3 (worktree)" }
   }
 }
