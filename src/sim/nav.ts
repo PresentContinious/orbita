@@ -1,6 +1,7 @@
-import { MOVE, RESEARCH, SHIP_KINDS } from './config'
-import { clamp, type Vec } from './math'
+import { MOVE, RESEARCH, SHIP_KINDS, SIM_DT } from './config'
+import { clamp, ZERO, type Vec } from './math'
 import { civById } from './query'
+import { findPath, gateTo } from './routing'
 import { planetPos, planetVel } from './system'
 import type { Ship, World } from './types'
 
@@ -67,7 +68,11 @@ export function shipSpeed(w: World, ship: Ship): number {
 
 export function planetGoal(w: World, ship: Ship, planetId: string, onReach: Goal['onReach']): Goal | null {
   const p = w.planets.get(planetId)
-  if (!p || p.systemId !== ship.systemId) return null
+  if (!p) return null
+  if (p.systemId !== ship.systemId) {
+    setDestination(w, ship, p.systemId)
+    return null
+  }
   return {
     pos: planetPos(p, w.t),
     vel: planetVel(p, w.t),
@@ -75,4 +80,45 @@ export function planetGoal(w: World, ship: Ship, planetId: string, onReach: Goal
     dockR: p.radius + MOVE.dockPad,
     onReach,
   }
+}
+
+export function setDestination(w: World, ship: Ship, systemId: number): void {
+  ship.route = systemId === ship.systemId ? [] : (findPath(w.galaxy, ship.systemId, systemId) ?? [])
+}
+
+/** следующая точка маршрута — врата в сторону route[0] */
+export function gateGoal(w: World, ship: Ship): Goal | null {
+  const gate = gateTo(w.galaxy.systems[ship.systemId], ship.route[0])
+  if (!gate) {
+    ship.route = []
+    return null
+  }
+  return { pos: gate.pos, vel: ZERO, frameR: 0, dockR: MOVE.gateDock, onReach: enterCorridor }
+}
+
+export function transitDuration(w: World, ship: Ship, corridorTransit: number): number {
+  const civ = civById(w, ship.owner)
+  return corridorTransit * Math.max(0.4, 1 - RESEARCH.engines.perLevel * (civ?.research.engines ?? 0))
+}
+
+function enterCorridor(w: World, ship: Ship): void {
+  const gate = gateTo(w.galaxy.systems[ship.systemId], ship.route[0])!
+  const c = w.galaxy.corridors[gate.corridorId]
+  ship.transit = { corridorId: c.id, from: ship.systemId, to: gate.toSystem, elapsed: 0, duration: transitDuration(w, ship, c.transit) }
+  ship.vel.x = 0
+  ship.vel.y = 0
+}
+
+export function advanceTransit(w: World, ship: Ship): void {
+  const tr = ship.transit!
+  tr.elapsed += SIM_DT
+  if (tr.elapsed < tr.duration) return
+  const back = gateTo(w.galaxy.systems[tr.to], tr.from)!
+  ship.systemId = tr.to
+  ship.pos.x = back.pos.x * MOVE.gateInset
+  ship.pos.y = back.pos.y * MOVE.gateInset
+  ship.prevPos.x = ship.pos.x
+  ship.prevPos.y = ship.pos.y
+  ship.transit = null
+  if (ship.route[0] === tr.to) ship.route.shift()
 }

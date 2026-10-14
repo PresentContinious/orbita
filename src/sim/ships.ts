@@ -1,7 +1,7 @@
 import { MOVE, SHIP_KINDS, SIM_DT, type ShipKind } from './config'
 import { TAU, ZERO } from './math'
 import { missionGoal } from './missions'
-import { avoidStar, shipSpeed, steer } from './nav'
+import { advanceTransit, avoidStar, gateGoal, shipSpeed, steer } from './nav'
 import { planetPos, planetVel } from './system'
 import type { Civ, Mission, Planet, Ship, World } from './types'
 
@@ -41,7 +41,11 @@ export function stepShips(w: World): void {
     if (!ship.alive) continue
     ship.prevPos.x = ship.pos.x
     ship.prevPos.y = ship.pos.y
-    const goal = missionGoal(w, ship)
+    if (ship.transit) {
+      advanceTransit(w, ship)
+      continue
+    }
+    const goal = ship.route.length ? gateGoal(w, ship) : missionGoal(w, ship)
     if (!goal) continue
     const sys = w.galaxy.systems[ship.systemId]
     const near = Math.hypot(goal.pos.x - ship.pos.x, goal.pos.y - ship.pos.y)

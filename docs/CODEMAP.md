@@ -23,15 +23,15 @@
   - `missionGoal` (function, 4)
 - `src/sim/names.ts` — 27 стр. — Слоги из старой ОРБИТЫ
   - `genName` (function, 8), `uniqueName` (function, 15)
-- `src/sim/nav.ts` — 79 стр.
-  - `Goal` (interface, 8), `Body` (type, 17), `avoidStar` (function, 20), `steer` (function, 44), `shipSpeed` (function, 63), `planetGoal` (function, 68)
+- `src/sim/nav.ts` — 125 стр.
+  - `Goal` (interface, 9), `Body` (type, 18), `avoidStar` (function, 21), `steer` (function, 45), `shipSpeed` (function, 64), `planetGoal` (function, 69), `setDestination` (function, 85), `gateGoal` (function, 90), `transitDuration` (function, 99), `advanceTransit` (function, 112)
 - `src/sim/query.ts` — 74 стр.
   - `civById` (function, 5), `planetsOf` (function, 10), `populatedOf` (function, 16), `capOf` (function, 20), `capitalOf` (function, 25), `capitalSystem` (function, 35), `reachableSystems` (function, 40), `claimedTargets` (function, 46), `colonyTargets` (function, 53), `stationTargets` (function, 65)
 - `src/sim/rng.ts` — 59 стр. — Генератор случайных чисел с зерном (mulberry32): одно зерно — одна и та же история.
   - `Rng` (interface, 4), `hashString` (function, 19), `createRng` (function, 28)
-- `src/sim/routing.ts` — 22 стр.
-  - `hops` (function, 4)
-- `src/sim/ships.ts` — 75 стр.
+- `src/sim/routing.ts` — 71 стр.
+  - `hops` (function, 6), `findPath` (function, 26), `gateTo` (function, 54), `gateGalaxyPos` (function, 58), `transitGalaxyPos` (function, 63)
+- `src/sim/ships.ts` — 79 стр.
   - `spawnShip` (function, 8), `stepShips` (function, 33)
 - `src/sim/spatial.ts` — 46 стр. — Пространственная сетка: поиск соседей без перебора всех кораблей.
   - `SpatialGrid` (class, 3)
@@ -55,6 +55,7 @@
 - `tests/sim/galaxy.test.ts` — 124 стр.
 - `tests/sim/names.test.ts` — 11 стр.
 - `tests/sim/rng.test.ts` — 60 стр.
+- `tests/sim/routing.test.ts` — 111 стр. — 0 —60— 1 —60— 2 —60— 3, напрямую 0 —200— 2; система 4 ни с кем не связана
 - `tests/sim/ships.test.ts` — 77 стр.
 - `tests/sim/spatial.test.ts` — 42 стр.
 - `tests/sim/system.test.ts` — 110 стр.
