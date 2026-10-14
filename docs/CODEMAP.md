@@ -49,8 +49,8 @@
   - `tryInfra` (function, 9), `tryStation` (function, 17), `tryProject` (function, 26), `tryResearch` (function, 35), `advanceJobs` (function, 45)
 - `src/sim/math.ts` — 9 стр.
   - `Vec` (type, 1), `TAU` (const, 3), `ZERO` (const, 4), `clamp` (const, 6), `lerp` (const, 7), `dist` (const, 8)
-- `src/sim/missions.ts` — 224 стр. — ---------- колонизация ----------
-  - `missionGoal` (function, 14)
+- `src/sim/missions.ts` — 241 стр. — ---------- колонизация ----------
+  - `missionGoal` (function, 14), `checkColonize` (function, 69)
 - `src/sim/names.ts` — 27 стр. — Слоги из старой ОРБИТЫ
   - `genName` (function, 8), `uniqueName` (function, 15)
 - `src/sim/nav.ts` — 125 стр.
@@ -63,7 +63,7 @@
   - `Rng` (interface, 4), `hashString` (function, 19), `createRng` (function, 28)
 - `src/sim/routing.ts` — 71 стр.
   - `hops` (function, 6), `findPath` (function, 26), `gateTo` (function, 54), `gateGalaxyPos` (function, 58), `transitGalaxyPos` (function, 63)
-- `src/sim/ships.ts` — 79 стр.
+- `src/sim/ships.ts` — 80 стр.
   - `spawnShip` (function, 8), `stepShips` (function, 33)
 - `src/sim/spatial.ts` — 46 стр. — Пространственная сетка: поиск соседей без перебора всех кораблей.
   - `SpatialGrid` (class, 3)
@@ -128,13 +128,13 @@
 - `tests/sim/galaxy.test.ts` — 124 стр.
 - `tests/sim/invest.test.ts` — 112 стр.
 - `tests/sim/longrun.test.ts` — 53 стр.
-- `tests/sim/missions.test.ts` — 165 стр.
+- `tests/sim/missions.test.ts` — 187 стр.
 - `tests/sim/names.test.ts` — 11 стр.
 - `tests/sim/rng.test.ts` — 60 стр.
 - `tests/sim/routing.test.ts` — 111 стр. — 0 —60— 1 —60— 2 —60— 3, напрямую 0 —200— 2; система 4 ни с кем не связана
 - `tests/sim/ships.test.ts` — 77 стр.
 - `tests/sim/spatial.test.ts` — 42 стр.
-- `tests/sim/stepEconomy.test.ts` — 152 стр.
+- `tests/sim/stepEconomy.test.ts` — 166 стр.
 - `tests/sim/system.test.ts` — 110 стр.
 - `tests/sim/world.test.ts` — 83 стр.
 - `tests/ui/cards.test.ts` — 56 стр.

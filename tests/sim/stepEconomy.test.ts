@@ -1,8 +1,10 @@
 import { describe, expect, test } from 'vitest'
+import { ECON } from '../../src/sim/config'
 import { ledgerBalance, stepEconomy } from '../../src/sim/economy'
 import { capOf, capitalOf } from '../../src/sim/query'
 import { spawnShip } from '../../src/sim/ships'
 import type { Civ, World } from '../../src/sim/types'
+import { stepWorld, createWorld } from '../../src/sim/world'
 import { quietWorld, run } from '../helpers'
 
 /** держава с одной планетой на потолке населения — доход постоянен; астероидов в системе нет */
@@ -86,13 +88,25 @@ describe('конверты', () => {
     expect(civ.eco.envelopes.develop).toBeCloseTo(tax * 10 * 0.7, 6)
   })
 
-  test('конверт развития не растёт выше 1200, излишек уходит в резерв', () => {
+  test('конверт развития не растёт выше 1.5 × самого дорогого варианта категории, излишек уходит в резерв', () => {
     const { w, civ } = steadyCiv()
-    civ.eco.envelopes = { expand: 0, develop: 1199, trade: 0, reserve: 0 }
-    civ.treasury = 10_000
+    const cap = ECON.envelopeCapMul * Math.max(ECON.researchPrice[2], ECON.infraPrice[2], ECON.portPrice, ECON.shipyardPrice)
+    civ.eco.envelopes = { expand: 0, develop: cap - 1, trade: 0, reserve: 0 }
+    civ.treasury = 100_000
     run(w, 10)
-    expect(civ.eco.envelopes.develop).toBeCloseTo(1200, 6)
+    expect(civ.eco.envelopes.develop).toBeCloseTo(cap, 6)
     expect(civ.eco.envelopes.reserve).toBeGreaterThan(0)
+  })
+
+  test('богатая держава со временем покупает инфраструктуру III', () => {
+    const w = createWorld(1)
+    let reached = false
+    for (let i = 0; i < 1800 * 10 && !reached; i++) {
+      for (const c of w.civs) c.treasury = Math.max(c.treasury, 50_000)
+      stepWorld(w)
+      reached = [...w.planets.values()].some((p) => p.infra >= 3)
+    }
+    expect(reached).toBe(true)
   })
 
   test('сумма конвертов не больше казны', () => {

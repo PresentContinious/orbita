@@ -209,7 +209,7 @@ function fillEnvelopes(w: World, civ: Civ): void {
     const hasTargets = colonyTargets(w, civ).length > 0
     const caps: Record<Envelope, number> = {
       expand: ECON.envelopeCapMul * maxColonyPrice(w, civ),
-      develop: ECON.envelopeCapMul * ECON.researchPrice[2],
+      develop: ECON.envelopeCapMul * Math.max(ECON.researchPrice[2], ECON.infraPrice[2], ECON.portPrice, ECON.shipyardPrice),
       trade: ECON.envelopeCapMul * ECON.stationPrice,
       reserve: Infinity,
     }

@@ -61,6 +61,28 @@ describe('колонизация', () => {
     expect((ship.mission as { planetId: string }).planetId).not.toBe(target.id)
   })
 
+  test('цель заняли, пока колонист в пути, — перенацеливается на свободную планету текущей системы', () => {
+    const w = quietWorld(5)
+    const civ = w.civs[0]
+    const home = capitalOf(w, civ)!
+    const target = w.galaxy.systems
+      .filter((s) => hops(w.galaxy, home.systemId, s.id) === 1)
+      .flatMap((s) => s.planets)
+      .find((p) => p.owner === null && p.habitability > 0)!
+    const local = w.galaxy.systems[home.systemId].planets.filter((p) => p.owner === null && p.habitability > 0)
+    expect(local.length).toBeGreaterThan(0)
+    const ship = colonist(w, civ, target)
+    stepWorld(w)
+    expect(ship.route.length).toBeGreaterThan(0)
+    target.owner = w.civs[1].id
+    target.pop = 1
+    stepWorld(w)
+    const m = ship.mission as { planetId: string }
+    expect(m.planetId).not.toBe(target.id)
+    expect(local.map((p) => p.id)).toContain(m.planetId)
+    expect(ship.route).toEqual([])
+  })
+
   test('лететь больше некуда — половина цены возвращается, корабль идёт домой', () => {
     const w = quietWorld(4)
     const civ = w.civs[0]

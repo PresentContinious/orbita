@@ -1,11 +1,11 @@
 import { asteroidPos, asteroidVel, nearestAsteroid } from './belts'
-import { bestColonyTarget } from './civ'
+import { bestColonyTarget, colonyValue } from './civ'
 import { ECON, MOVE, SIM_DT } from './config'
 import { earn, tradeIncome } from './economy'
 import { pushEvent } from './events'
 import type { Vec } from './math'
 import { planetGoal, type Goal } from './nav'
-import { capitalOf, civById, claimedTargets, populatedOf } from './query'
+import { capitalOf, civById, claimedTargets, colonyTargets, populatedOf } from './query'
 import { planetPos, planetVel } from './system'
 import type { Civ, Mission, Planet, Ship, World } from './types'
 
@@ -65,6 +65,13 @@ function colonizeGoal(w: World, ship: Ship): Goal | null {
   return planetGoal(w, ship, target.id, settle)
 }
 
+/** цель колонизации уже занята — перенацелить (вызывается и в пути, пока route не пуст) */
+export function checkColonize(w: World, ship: Ship): void {
+  const m = ship.mission as Of<'colonize'>
+  const target = w.planets.get(m.planetId)
+  if (!target || target.owner !== null) retarget(w, ship)
+}
+
 function retarget(w: World, ship: Ship): void {
   const m = ship.mission as Of<'colonize'>
   const civ = civById(w, ship.owner)
@@ -72,7 +79,17 @@ function retarget(w: World, ship: Ship): void {
     ship.alive = false
     return
   }
-  const next = bestColonyTarget(w, civ, claimedTargets(w, civ))
+  let next: Planet | null = null
+  let bestV = -Infinity
+  for (const p of colonyTargets(w, civ)) {
+    if (p.systemId !== ship.systemId) continue
+    const v = colonyValue(w, civ, p)
+    if (v > bestV) {
+      next = p
+      bestV = v
+    }
+  }
+  next ??= bestColonyTarget(w, civ, claimedTargets(w, civ))
   if (next) {
     m.planetId = next.id
     ship.route = []

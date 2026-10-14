@@ -1,6 +1,6 @@
 import { MOVE, SHIP_KINDS, SIM_DT, type ShipKind } from './config'
 import { TAU, ZERO } from './math'
-import { missionGoal } from './missions'
+import { checkColonize, missionGoal } from './missions'
 import { advanceTransit, avoidStar, gateGoal, shipSpeed, steer } from './nav'
 import { planetPos, planetVel } from './system'
 import type { Civ, Mission, Planet, Ship, World } from './types'
@@ -45,6 +45,7 @@ export function stepShips(w: World): void {
       advanceTransit(w, ship)
       continue
     }
+    if (ship.route.length && ship.mission.type === 'colonize') checkColonize(w, ship)
     const goal = ship.route.length ? gateGoal(w, ship) : missionGoal(w, ship)
     if (!goal) continue
     const sys = w.galaxy.systems[ship.systemId]
