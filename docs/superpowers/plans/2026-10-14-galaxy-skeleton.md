@@ -19,7 +19,7 @@
 - Каждый корабль — отдельная сущность симуляции; никакой агрегации «флот = число».
 - Тексты интерфейса на русском; шрифты Russo One (заголовки) и JetBrains Mono (данные).
 - Перед каждым коммитом — `npm run codemap` (обновляет `docs/CODEMAP.md`, карту кода для агентов); `scripts/codemap.mjs` уже лежит в репозитории, задача 1 его не удаляет.
-- Каждая задача: сначала падающий тест, потом код; весь `npm test` зелёный перед коммитом; коммит в конце задачи с трейлером `Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>`.
+- Каждая задача: сначала падающий тест, потом код; весь `npm test` зелёный перед коммитом; коммит в конце задачи — без строки `Co-Authored-By` и любых упоминаний Claude/ИИ: автор только аккаунт владельца.
 - Работа идёт в ветке `galaxy`. На GitHub ничего не отправлять (`git push` запрещён без согласия владельца).
 - Файлы с кириллицей сохраняются в UTF-8. В репозитории включён autocrlf — предупреждения git про CRLF нормальны.
 
@@ -230,9 +230,7 @@ Expected: установка без ошибок; `tsc` без ошибок; `vi
 ```bash
 rm -rf dist
 git add -A
-git commit -m "Scaffold ОРБИТА 2: TypeScript, Vite, Vitest, React, PixiJS
-
-Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>"
+git commit -m "Scaffold ОРБИТА 2: TypeScript, Vite, Vitest, React, PixiJS"
 ```
 
 ---
@@ -633,9 +631,7 @@ Expected: PASS (9 тестов), `tsc` без ошибок.
 
 ```bash
 git add src/sim tests/sim
-git commit -m "sim: config, math, seeded rng, names
-
-Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>"
+git commit -m "sim: config, math, seeded rng, names"
 ```
 
 ---
@@ -764,9 +760,7 @@ Expected: PASS (3 теста).
 
 ```bash
 git add src/sim/spatial.ts tests/sim/spatial.test.ts
-git commit -m "sim: spatial grid for neighbour queries
-
-Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>"
+git commit -m "sim: spatial grid for neighbour queries"
 ```
 
 ---
@@ -1323,9 +1317,7 @@ Expected: PASS (все тесты задач 2–4), `tsc` без ошибок.
 
 ```bash
 git add src/sim/types.ts src/sim/system.ts tests/sim/system.test.ts
-git commit -m "sim: world types and star system generation
-
-Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>"
+git commit -m "sim: world types and star system generation"
 ```
 
 ---
@@ -1697,9 +1689,7 @@ Expected: PASS, `tsc` без ошибок.
 
 ```bash
 git add src/sim/galaxy.ts tests/sim/galaxy.test.ts
-git commit -m "sim: galaxy generation with corridors, roles and gates
-
-Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>"
+git commit -m "sim: galaxy generation with corridors, roles and gates"
 ```
 
 ---
@@ -2076,9 +2066,7 @@ Expected: PASS (все тесты), `tsc` без ошибок.
 
 ```bash
 git add src/sim tests
-git commit -m "sim: world creation, civilizations, population growth
-
-Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>"
+git commit -m "sim: world creation, civilizations, population growth"
 ```
 
 ---
@@ -2401,9 +2389,7 @@ Expected: PASS. Если какой-то корабль из 20 не прист�
 
 ```bash
 git add src/sim tests
-git commit -m "sim: in-system steering, star avoidance, ship separation
-
-Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>"
+git commit -m "sim: in-system steering, star avoidance, ship separation"
 ```
 
 ---
@@ -2721,9 +2707,7 @@ Expected: PASS.
 
 ```bash
 git add src/sim tests
-git commit -m "sim: gates, corridor transit, galaxy pathfinding
-
-Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>"
+git commit -m "sim: gates, corridor transit, galaxy pathfinding"
 ```
 
 ---
@@ -3102,9 +3086,7 @@ Expected: PASS.
 
 ```bash
 git add src/sim/economy.ts tests/sim/economy.test.ts
-git commit -m "sim: economy ledger, purchase rule, price and income formulas
-
-Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>"
+git commit -m "sim: economy ledger, purchase rule, price and income formulas"
 ```
 
 ---
@@ -3578,9 +3560,7 @@ Expected: PASS.
 
 ```bash
 git add src/sim tests
-git commit -m "sim: per-step economy, envelopes, debt stages, event log
-
-Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>"
+git commit -m "sim: per-step economy, envelopes, debt stages, event log"
 ```
 
 ---
@@ -3851,9 +3831,7 @@ Expected: PASS.
 
 ```bash
 git add src/sim tests
-git commit -m "sim: infrastructure, stations, port, shipyard, research
-
-Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>"
+git commit -m "sim: infrastructure, stations, port, shipyard, research"
 ```
 
 ---
@@ -4372,9 +4350,7 @@ Expected: PASS, включая тесты задачи 10: там «шахтёр
 
 ```bash
 git add src/sim tests
-git commit -m "sim: colonization, mining, trade missions; asteroid regrowth
-
-Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>"
+git commit -m "sim: colonization, mining, trade missions; asteroid regrowth"
 ```
 
 ---
@@ -4816,9 +4792,7 @@ Expected: PASS. Тесты, которые используют `quietWorld`, н
 
 ```bash
 git add src/sim tests
-git commit -m "sim: purchase options with payback scoring, temporary economic bot
-
-Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>"
+git commit -m "sim: purchase options with payback scoring, temporary economic bot"
 ```
 
 ---
@@ -5128,9 +5102,7 @@ Expected: тесты PASS; `stress` — средний шаг ≤ 6 мс; `balan
 git add src/sim scripts tests
 git commit -m "sim: long-run invariants, balance and stress scripts, tuned numbers
 
-<таблица ИТОГ из npm run balance>
-
-Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>"
+<таблица ИТОГ из npm run balance>"
 ```
 
 ---
@@ -5450,9 +5422,7 @@ Expected: PASS.
 
 ```bash
 git add src/app/loop.ts src/render/camera.ts tests/app tests/render
-git commit -m "app: fixed-step clock; render: camera math and LOD
-
-Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>"
+git commit -m "app: fixed-step clock; render: camera math and LOD"
 ```
 
 ---
@@ -5895,9 +5865,7 @@ Expected: «ошибок нет». Открыть `artifacts/galaxy.png` (инс
 
 ```bash
 git add src scripts tests package.json .gitignore
-git commit -m "render: PixiJS bootstrap, galaxy layer, starfield, screenshot script
-
-Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>"
+git commit -m "render: PixiJS bootstrap, galaxy layer, starfield, screenshot script"
 ```
 
 ---
@@ -6181,9 +6149,7 @@ Expected: «ошибок нет» трижды. Открыть снимки и �
 
 ```bash
 git add src/render
-git commit -m "render: system view with star, orbits, planets, belts, gates
-
-Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>"
+git commit -m "render: system view with star, orbits, planets, belts, gates"
 ```
 
 ---
@@ -6413,9 +6379,7 @@ Expected: «ошибок нет». На `ships-system.png` видны мелки
 
 ```bash
 git add src/render
-git commit -m "render: per-ship particles, transit dots, income popups
-
-Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>"
+git commit -m "render: per-ship particles, transit dots, income popups"
 ```
 
 ---
@@ -7014,9 +6978,7 @@ Expected: PASS.
 
 ```bash
 git add src tests
-git commit -m "app: picking, camera controller, mouse and keyboard input
-
-Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>"
+git commit -m "app: picking, camera controller, mouse and keyboard input"
 ```
 
 ---
@@ -7622,9 +7584,7 @@ Expected: «ошибок нет». На `artifacts/hud.png`: слева свер
 
 ```bash
 git add src tests
-git commit -m "ui: HUD shell — time, breadcrumbs, civ bar, toasts, event feed
-
-Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>"
+git commit -m "ui: HUD shell — time, breadcrumbs, civ bar, toasts, event feed"
 ```
 
 ---
@@ -8140,9 +8100,7 @@ Expected: «ошибок нет»; на снимке справа миникар
 
 ```bash
 git add src tests
-git commit -m "ui: planet/system/civ/ship cards, minimap, hover tooltips
-
-Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>"
+git commit -m "ui: planet/system/civ/ship cards, minimap, hover tooltips"
 ```
 
 ---
@@ -8302,9 +8260,7 @@ Expected: PASS.
 
 ```bash
 git add src/app tests/app
-git commit -m "app: follow-cam director picks the most important fresh event
-
-Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>"
+git commit -m "app: follow-cam director picks the most important fresh event"
 ```
 
 ---
@@ -8506,9 +8462,7 @@ Expected: всё зелёное; `smoke` печатает частоту кад�
 ```bash
 rm -rf dist
 git add src scripts README.md
-git commit -m "Smoke test, fps overlay, stress view, README for ОРБИТА 2
-
-Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>"
+git commit -m "Smoke test, fps overlay, stress view, README for ОРБИТА 2"
 ```
 
 - [ ] **Step 6: Показать владельцу**

@@ -4,6 +4,7 @@ dist/
 *.dc.html
 .claude/*
 !.claude/agents/
+!.claude/settings.json
 .superpowers/
 artifacts/
 __pycache__/
