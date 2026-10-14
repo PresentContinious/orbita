@@ -3,6 +3,7 @@ import type { Vec } from './math'
 import type { Rng } from './rng'
 import type { Setup } from './setup'
 import type { SpatialGrid } from './spatial'
+import type { WeaponKind } from './classes'
 
 export type { Vec }
 export type Zone = 'hot' | 'temperate' | 'cold'
@@ -414,6 +415,8 @@ export type ProjectileKind = 'missile' | 'decoy' | 'torpedo' | 'beam'
 
 export interface Projectile {
   kind: ProjectileKind
+  /** источник урона для applyHit: ракета и приманка — missile, торпеды — torpedo/lightTorpedo, луч — beam */
+  weapon: WeaponKind
   owner: number
   shooterId: number
   targetId: number

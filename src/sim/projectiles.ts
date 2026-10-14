@@ -28,7 +28,7 @@ let maxHitR = 0
 for (const k of Object.keys(SHIP_KINDS) as ShipKind[]) maxHitR = Math.max(maxHitR, radiusOf(k) + PROJ.hitPad)
 /** сетки строятся до движения — запас на смещение за шаг */
 const GRID_PAD = PROJ.missile.speed * SIM_DT
-const TORP_R = PROJ.hitPad * 2
+const TORP_R = PROJ.torpHitR
 
 export interface Hit {
   kind: 'ship' | 'debris' | 'rock' | 'torpedo'
@@ -43,7 +43,7 @@ const near: number[] = []
 function blank(kind: ProjectileKind): Projectile {
   return {
     kind, owner: 0, shooterId: 0, targetId: 0, x: 0, y: 0, vx: 0, vy: 0, heading: 0, speed: 0, turn: 0,
-    damage: 0, hp: 0, bornT: 0, life: 0, systemId: 0, alive: false, dealt: 0, dealtTo: 0, length: 0,
+    weapon: 'missile', damage: 0, hp: 0, bornT: 0, life: 0, systemId: 0, alive: false, dealt: 0, dealtTo: 0, length: 0,
   }
 }
 
@@ -63,7 +63,7 @@ export function allocProjectile(w: World, kind: ProjectileKind): Projectile | nu
 
 function launch(
   w: World, p: Projectile, shooter: Ship, targetId: number, x: number, y: number, heading: number,
-  speed: number, turnDeg: number, life: number, hp: number, damage: number,
+  speed: number, turnDeg: number, life: number, hp: number, damage: number, weapon: WeaponKind,
 ): void {
   p.owner = shooter.owner
   p.shooterId = shooter.id
@@ -83,6 +83,7 @@ function launch(
   p.dealt = 0
   p.dealtTo = 0
   p.length = 0
+  p.weapon = weapon
   p.alive = true
 }
 
@@ -95,14 +96,14 @@ export function fireMissile(w: World, shooter: Ship, target: Ship, damage: numbe
   const m = allocProjectile(w, 'missile')
   if (m) {
     const M = PROJ.missile
-    launch(w, m, shooter, target.id, shooter.pos.x + cx * r, shooter.pos.y + cy * r, h, M.speed, M.turn, M.life, M.hp, damage)
+    launch(w, m, shooter, target.id, shooter.pos.x + cx * r, shooter.pos.y + cy * r, h, M.speed, M.turn, M.life, M.hp, damage, 'missile')
   }
   const D = PROJ.decoy
   for (let i = 0; i < D.count; i++) {
     const d = allocProjectile(w, 'decoy')
     if (!d) return
     const off = (i - (D.count - 1) / 2) * D.spread
-    launch(w, d, shooter, target.id, shooter.pos.x + cx * r - cy * off, shooter.pos.y + cy * r + cx * off, h, D.speed, D.turn, D.life, D.hp, D.damage)
+    launch(w, d, shooter, target.id, shooter.pos.x + cx * r - cy * off, shooter.pos.y + cy * r + cx * off, h, D.speed, D.turn, D.life, D.hp, D.damage, 'missile')
   }
 }
 
@@ -113,7 +114,7 @@ export function fireTorpedo(w: World, shooter: Ship, target: Ship, light: boolea
   const dmg = (light ? CLASSES.torpedo : CLASSES.bomber).weapons[0].damage
   const h = Math.atan2(target.pos.y - shooter.pos.y, target.pos.x - shooter.pos.x)
   const r = radiusOf(shooter.kind)
-  launch(w, p, shooter, target.id, shooter.pos.x + Math.cos(h) * r, shooter.pos.y + Math.sin(h) * r, h, T.speed, T.turn, T.life, T.hp, dmg)
+  launch(w, p, shooter, target.id, shooter.pos.x + Math.cos(h) * r, shooter.pos.y + Math.sin(h) * r, h, T.speed, T.turn, T.life, T.hp, dmg, light ? 'lightTorpedo' : 'torpedo')
 }
 
 export function fireBeam(w: World, shooter: Ship, target: Ship, _weaponIdx: number): Projectile | null {
@@ -121,7 +122,7 @@ export function fireBeam(w: World, shooter: Ship, target: Ship, _weaponIdx: numb
   if (!p) return null
   const B = PROJ.beam
   const h = Math.atan2(target.pos.y - shooter.pos.y, target.pos.x - shooter.pos.x)
-  launch(w, p, shooter, target.id, shooter.pos.x, shooter.pos.y, h, 0, B.aim, B.steps * SIM_DT, 0, B.perStep)
+  launch(w, p, shooter, target.id, shooter.pos.x, shooter.pos.y, h, 0, B.aim, B.steps * SIM_DT, 0, B.perStep, 'beam')
   p.length = B.length
   return p
 }
@@ -294,8 +295,8 @@ function retarget(w: World, p: Projectile): Ship | undefined {
 }
 
 /** результат последней трассировки (scratch) → урон кораблю или торпеде; камень и обломок просто гасят */
-function strike(w: World, p: Projectile, source: WeaponKind | 'beam', dmg: number): void {
-  if (scratch.kind === 'ship') applyHit(w, w.ships[scratch.index], dmg, source, p.shooterId)
+function strike(w: World, p: Projectile, dmg: number): void {
+  if (scratch.kind === 'ship') applyHit(w, w.ships[scratch.index], dmg, p.weapon, p.shooterId)
   else if (scratch.kind === 'torpedo') hitProjectile(w, w.projectiles[scratch.index], dmg)
 }
 
@@ -326,7 +327,7 @@ function stepBeam(w: World, p: Projectile): void {
       }
       p.dealt += p.damage
     }
-    strike(w, p, 'beam', p.damage)
+    strike(w, p, p.damage)
   }
   // луч живёт `steps` шагов подряд: первый вызов — в момент выстрела
   if (w.t - p.bornT + SIM_DT + EPS >= p.life) {
@@ -359,9 +360,8 @@ export function stepProjectiles(w: World): void {
     }
     const nx = p.x + p.vx * SIM_DT
     const ny = p.y + p.vy * SIM_DT
-    if (firstForeignOnSegment(w, p.systemId, p.owner, p.x, p.y, nx, ny, scratch, false)) {
-      const src: WeaponKind = p.kind === 'torpedo' ? (p.speed === PROJ.lightTorpedo.speed ? 'lightTorpedo' : 'torpedo') : 'missile'
-      strike(w, p, src, p.damage)
+    if (firstForeignOnSegment(w, p.systemId, p.owner, p.x, p.y, nx, ny, scratch, p.kind !== 'torpedo')) {
+      strike(w, p, p.damage)
       p.alive = false
       continue
     }

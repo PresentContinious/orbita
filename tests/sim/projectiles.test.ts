@@ -134,6 +134,22 @@ describe('снаряды-объекты', () => {
     expect(foe.combat!.hull).toBe(1500 - 100 - 3 * 10)
   })
 
+  it('ракета на пути чужой торпеды гасит её; торпеды друг друга не гасят', () => {
+    const { w, put } = arena()
+    const missileShooter = put('a', 'frigate', X, Y)
+    const torpShooter = put('b', 'bomber', X + 200, Y)
+    const torpTarget = put('a', 'battleship', X - 300, Y)
+    const missileTarget = put('b', 'battleship', X + 300, Y)
+    fireTorpedo(w, torpShooter, torpTarget, false)
+    const torp = w.projectiles.find((p) => p.alive && p.kind === 'torpedo')!
+    torp.x = X + 40
+    fireMissile(w, missileShooter, missileTarget, 100)
+    step(w, 5)
+    expect(torp.alive).toBe(false)
+    expect(missileTarget.combat!.hull).toBe(1500)
+    expect(torp.weapon).toBe('torpedo')
+  })
+
   it('торпеда поворачивает не быстрее 25°/с и живёт 3 с', () => {
     const { w, put } = arena()
     const shooter = put('a', 'bomber' as CombatKind, X, Y)
