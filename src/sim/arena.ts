@@ -1,13 +1,14 @@
 // Арена: мир из одной системы с двумя флотами по строке состава; прогон без экрана (спека 2А, §13.2).
 import { COMBAT_KINDS, DEFAULT_WING, isCapital, isCraft, radiusOf, type CombatKind } from './classes'
-import { BATTLE } from './combat-config'
+import { setHostile } from './battle'
+import { BATTLE, FRAME } from './combat-config'
 import { SHIP_KINDS, SIM_DT } from './config'
 import { earn } from './economy'
 import { anchorAbs, assignSlots, createFleet, fleetById, frameOf, slotLocal, slotWorld } from './fleet'
 import { buildGrids, shipById, spawnWarship } from './ships'
 import { planetPos, planetVel } from './system'
 import type { Vec } from './math'
-import type { Fleet, Planet, Trait, World } from './types'
+import type { Battle, BattleLogEntry, BattleMetrics, Fleet, Planet, Trait, World } from './types'
 import { createWorld, stepWorld } from './world'
 
 export type Terrain = 'empty' | 'belt' | 'orbit' | 'gate'
@@ -47,6 +48,13 @@ export interface ArenaResult {
   /** случаев |Δvel| за шаг > accel·dt */
   minSpeedViolations: number
   positionsHash: string
+  /** бой арены (первый в мире): фаза в конце прогона, вердикт, факторы, метрики §13.2; null — боя не было */
+  phase: Battle['phase'] | null
+  verdict: string | null
+  factors: string[]
+  metrics: BattleMetrics | null
+  /** журнал боя целиком (для сравнения прогонов) */
+  log: BattleLogEntry[]
 }
 
 const CODES: Record<string, CombatKind> = { bb: 'battleship', cv: 'carrier', ff: 'frigate', co: 'corvette', tb: 'torpedo', tr: 'trooper', su: 'supply', sc: 'scout' }
@@ -195,13 +203,26 @@ export function createArena(spec: ArenaSpec): World {
     w.admirals.find((a) => a.id === fleet.admiralId)!.trait = side.trait
   }
   rosters.set(w, roster)
+  setHostile(w, civA.id, civB.id, Infinity)
 
   // якоря: A — нападающий, на BATTLE.detect + 300 от B
   const gap = BATTLE.detect + 300
   const tp = planetPos(target, w.t)
   const out = Math.atan2(tp.y, tp.x)
   const tangent = out + Math.PI / 2
-  const pad = target.radius + BATTLE.orbitPad
+  // защитник стоит не ближе кольца стоянки (как в anchorTarget): глубокие ряды рамки не должны попасть в тело планеты
+  let pad = target.radius + BATTLE.orbitPad
+  if (spec.terrain !== 'orbit') {
+    assignSlots(w, fleetB)
+    let depth = 0
+    for (const id of fleetB.shipIds) {
+      const sl = shipById(w, id)?.combat?.slot
+      if (sl && sl.kind !== 'oval') depth = Math.max(depth, -sl.x)
+    }
+    const hold = target.radius + Math.max(BATTLE.orbitPad, FRAME.planetSlotPad + depth)
+    // кольцо стоянки должно оставаться внутри системы отсчёта планеты, иначе рамка гоняется за движущейся планетой
+    if (hold < target.radius * FRAME.planetFrameMul + FRAME.planetFramePad - 1) pad = hold
+  }
   let anchorB: Vec = { x: tp.x + Math.cos(out) * pad, y: tp.y + Math.sin(out) * pad }
   let anchorA: Vec = { x: anchorB.x + Math.cos(tangent) * gap, y: anchorB.y + Math.sin(tangent) * gap }
   if (spec.terrain === 'orbit') {
@@ -224,7 +245,8 @@ export function createArena(spec: ArenaSpec): World {
   let maxLen = 1
   for (const s of w.ships) maxLen = Math.max(maxLen, SHIP_KINDS[s.kind].length)
   const spacing = 4 * maxLen
-  place(w, fleetA, toB, spacing)
+  // нападающий смотрит туда, куда идёт (на планету-цель): первый поворот рамки не складывается с развёртыванием
+  place(w, fleetA, spec.terrain === 'empty' ? Math.atan2(tp.y - anchorA.y, tp.x - anchorA.x) : toB, spacing)
   place(w, fleetB, toB + Math.PI, spacing)
   // в системе отсчёта планеты якорь хранится относительно неё (иначе слоты считались бы со сдвигом)
   if (fleetB.frame === target.id) fleetB.anchor = { x: anchorB.x - tp.x, y: anchorB.y - tp.y }
@@ -337,5 +359,14 @@ export function runArena(w: World, steps: number, onStep?: (w: World) => void): 
       else if (s.owner === roster.owners[1]) alive[1]++
     }
   }
-  return { steps, durationS: w.t - t0, battleId, losses, alive, minHullDist: gaps.hull, minCapitalDist: gaps.capital, minHullRatio: gaps.ratio, pushOuts, capitalOffSlotT: capSteps ? offSlot / capSteps : 0, minSpeedViolations: violations, positionsHash: hashOf(w) }
+  const battle = battleId === null ? null : (w.battles.find((x) => x.id === battleId) ?? null)
+  return {
+    steps, durationS: w.t - t0, battleId, losses, alive, minHullDist: gaps.hull, minCapitalDist: gaps.capital, minHullRatio: gaps.ratio, pushOuts,
+    capitalOffSlotT: capSteps ? offSlot / capSteps : 0, minSpeedViolations: violations, positionsHash: hashOf(w),
+    phase: battle ? battle.phase : null,
+    verdict: battle ? battle.verdict : null,
+    factors: battle ? battle.factors : [],
+    metrics: battle ? battle.metrics : null,
+    log: battle ? battle.log : [],
+  }
 }

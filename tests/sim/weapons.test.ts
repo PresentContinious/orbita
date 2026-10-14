@@ -27,7 +27,7 @@ function setup(seed = 1) {
   const fleetB = createFleet(w, b, home, { type: 'defend', planetId: home.id })
   const battle = {
     id: BID, log: [], damage: {}, rng: w.rng.fork('battle:' + BID), metrics: { lastEventT: 0 },
-    sides: [{ fleetIds: [fleetA.id] }, { fleetIds: [fleetB.id] }],
+    phase: 'over', sides: [{ fleetIds: [fleetA.id], hullDealt: [] }, { fleetIds: [fleetB.id], hullDealt: [] }],
   } as unknown as Battle
   w.battles.push(battle)
   fleetA.battleId = BID

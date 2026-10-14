@@ -3,7 +3,7 @@
 import { CLASSES, isCapital, isCraft, isCombatKind, type WeaponKind } from './classes'
 import { BATTLE, DAMAGE, PROJ } from './combat-config'
 import { SHIP_KINDS, SIM_DT, type ShipKind } from './config'
-import { battleOf, combatRng, logBattle } from './battle'
+import { battleOf, combatRng, logBattle, noteHullLoss, noteMissileHit } from './battle'
 import { earn } from './economy'
 import { pushEvent } from './events'
 import { fleetById, removeFromFleet } from './fleet'
@@ -53,6 +53,7 @@ function hullLoss(w: World, target: Ship, amount: number, killerKey: string, sou
   if (b) {
     const key = killerKey + '→' + target.kind
     b.damage[key] = (b.damage[key] ?? 0) + dealt
+    noteHullLoss(w, b, target, dealt)
   }
   if (c.hull <= 0) killShip(w, target, source, shooterId)
 }
@@ -64,6 +65,7 @@ export function applyHit(w: World, target: Ship, damage: number, source: DamageS
     killShip(w, target, source, shooterId)
     return
   }
+  if (source === 'missile') noteMissileHit(w, target, damage)
   let rest = damage
   if (c.shield > 0) {
     const absorbed = Math.min(c.shield, rest)

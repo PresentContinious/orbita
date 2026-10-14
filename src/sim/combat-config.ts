@@ -1,4 +1,5 @@
 // Все числа боя (спека 2А). Арена крутит их; в коде боя литералов из спеки быть не должно.
+import type { WeaponKind } from './classes'
 import type { Trait } from './types'
 
 /** деньги войны (раздел 9) */
@@ -105,8 +106,30 @@ export const BATTLE = {
   rankBonus: 0.03,
   matrixAirborne: 0.6,
   matrixCloseCoef: 0.5,
-  matrixPdK: 0.1,
+  /** калибровка по контрольной «6 корветов — долетает 25–40 % из залпа 12» (на арене уточняется, задача 14) */
+  matrixPdK: 0.35,
   matrixPdMin: 0.2,
+  /** торпеды катера: боезапас растягивается на этот срок боя, с */
+  matrixBoatT: 120,
+  /** исход = (T_мой / T_врага)^matrixExp: корень — Ланчестер, контрольные 0.3 / 1.0 / 0.8–1.2 из раздела 8.5 */
+  matrixExp: 0.5,
+  outcomeCap: 10,
+  orbitShield: 1.5,
+  /** давление: добавка к знаменателю и потолок, чтобы 0/0 и x/0 не ломали числа */
+  pressureEps: 1,
+  pressureCap: 9,
+  /** метрики: капитальный дальше этого от слота — «вне слота»; медленнее — «стоит» */
+  offSlot: 15,
+  slowSpeed: 3,
+  /** вердикт: перевес в силах, победа по остатку сил, зенитки (доля дошедших и минимум пущенных) */
+  verdictNumber: 1.5,
+  verdictWin: 1.2,
+  verdictFlak: 0.3,
+  verdictFlakMin: 4,
+  leaderAt: 60,
+  /** пока рамки сами не идут на D* (адмирал, задача 10): обе стоят медленнее settleSpeed дольше settleT — «линия» на фактической дистанции */
+  settleSpeed: 0.5,
+  settleT: 10,
   volleyMinCorvettes: 3,
   volleyArrivalMin: 0.4,
   screenCorvetteMul: 2,
@@ -114,6 +137,24 @@ export const BATTLE = {
   strengthIcon: 1000,
   bigBattle: 20,
 }
+
+/** множители оружия по классу цели в матрице исхода (раздел 8.5, шаг 2) */
+export const MATRIX_MUL: Record<WeaponKind, { capital: number; small: number; craft: number }> = {
+  beam: { capital: 1, small: 0.3, craft: 0 },
+  turret: { capital: 0.25, small: 0.35, craft: 0.25 },
+  flak: { capital: 0.15, small: 0.15, craft: 0.4 },
+  autocannon: { capital: 1, small: 1, craft: 1 },
+  missile: { capital: 1, small: 0.2, craft: 0 },
+  lightTorpedo: { capital: 1, small: 0, craft: 0 },
+  torpedo: { capital: 1, small: 0, craft: 0 },
+  gun: { capital: 1, small: 1, craft: 2 },
+}
+/** оружие, не бьющее по цели со щитом */
+export const MATRIX_SHIELD_BLOCK: WeaponKind[] = ['autocannon', 'gun']
+/** оружие ближнего боя: вне дальности считается с matrixCloseCoef (оно «подходит само») */
+export const MATRIX_CLOSE: WeaponKind[] = ['flak', 'autocannon', 'lightTorpedo']
+/** оружие, которое режет ПВО врага */
+export const MATRIX_PD: WeaponKind[] = ['missile', 'lightTorpedo', 'torpedo']
 
 export const TRAITS: Record<
   Trait,

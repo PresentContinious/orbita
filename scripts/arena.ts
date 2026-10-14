@@ -30,6 +30,15 @@ for (let i = 0; i < n; i++) {
     `зерно ${seed0 + i}: бой ${r.battleId ?? '-'}; живых ${r.alive[0]}:${r.alive[1]}; потери ${r.losses[0]}:${r.losses[1]}; ` +
       `дистанция корпусов ${r.minHullDist.toFixed(1)} (х${r.minHullRatio.toFixed(2)}); капитальные ${r.minCapitalDist.toFixed(1)}; push-out ${r.pushOuts}; вне слота ${(r.capitalOffSlotT * 100).toFixed(1)}%; нарушений скорости ${r.minSpeedViolations}; ${(performance.now() - t0).toFixed(0)} мс`,
   )
+  if (r.metrics) {
+    const m = r.metrics
+    console.log(
+      `  фаза ${r.phase}; факторы [${r.factors.join(', ')}]; ракет ${m.missilesFired}/${m.missilesHit}; ` +
+        `давление ×${m.pressureFlips}; лидер на 60 с ${m.leaderAt60 === null ? '-' : m.leaderAt60 === 0 ? 'A' : 'B'}; тишина ≤ ${m.maxQuiet.toFixed(0)} с; смен D* ${m.dStarChanges}; ` +
+        `первый корвет погиб ${m.corvetteFirstDeathT === null ? '-' : m.corvetteFirstDeathT.toFixed(0) + ' с'}`,
+    )
+    if (r.verdict) console.log('  вердикт: ' + r.verdict)
+  }
 }
 const avg = (f: (r: ArenaResult) => number): number => results.reduce((s, r) => s + f(r), 0) / results.length
 console.log(
