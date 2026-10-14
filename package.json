@@ -8,7 +8,8 @@
     "build": "vite build",
     "preview": "vite preview",
     "test": "vitest run",
-    "codemap": "node scripts/codemap.mjs"
+    "codemap": "node scripts/codemap.mjs",
+    "panel": "python tools/panel/panel.py"
   },
   "dependencies": {
     "react": "^18.3.1",

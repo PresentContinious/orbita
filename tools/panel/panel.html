@@ -1,0 +1,917 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Панель агентов · ОРБИТА</title>
+<link rel="icon" href="data:,">
+<style>
+:root {
+  --fondo: #f4f5f7;
+  --tarjeta: #ffffff;
+  --texto: #1d2330;
+  --suave: #6b7280;
+  --borde: #e2e5ea;
+  --acento: #2563eb;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; }
+body { background: var(--fondo); color: var(--texto); font: 14px/1.45 "Segoe UI", system-ui, -apple-system, sans-serif; }
+header { position: sticky; top: 0; z-index: 5; display: flex; align-items: center; gap: 18px; padding: 10px 20px; background: var(--tarjeta); border-bottom: 1px solid var(--borde); }
+header h1 { margin: 0; font-size: 17px; font-weight: 600; }
+header label { color: var(--suave); font-size: 13px; }
+header select { margin-left: 6px; padding: 4px 8px; border: 1px solid var(--borde); border-radius: 6px; background: #fff; font: inherit; color: var(--texto); }
+#estado { margin-left: auto; color: var(--suave); font-size: 12px; }
+#estado.error { color: #b91c1c; }
+main { display: grid; grid-template-columns: 290px minmax(0, 1fr); gap: 16px; padding: 16px 20px 28px; align-items: start; }
+#lista { position: sticky; top: 62px; max-height: calc(100vh - 78px); overflow-y: auto; padding-right: 2px; }
+.ses { margin-bottom: 8px; padding: 9px 12px 10px; background: var(--tarjeta); border: 1px solid var(--borde); border-radius: 8px; cursor: pointer; }
+.ses:hover { border-color: #c4cad3; }
+.ses.sel { border-color: var(--acento); box-shadow: inset 0 0 0 1px var(--acento); }
+.ses-cab { display: flex; align-items: center; gap: 6px; color: var(--suave); font-size: 12px; }
+.ses-tok { margin-left: auto; color: var(--texto); font-weight: 600; font-variant-numeric: tabular-nums; }
+.ses-tit { margin-top: 3px; font-weight: 600; font-size: 13px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ses-txt { margin-top: 2px; color: var(--suave); font-size: 12.5px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.ses-pie { margin-top: 4px; color: var(--suave); font-size: 12px; }
+.punto { width: 8px; height: 8px; border-radius: 50%; background: #c7ccd4; flex: none; }
+.punto.vivo { background: #16a34a; box-shadow: 0 0 0 3px rgba(22, 163, 74, .18); }
+.mini { height: 4px; margin-top: 6px; background: #eef0f3; border-radius: 2px; overflow: hidden; }
+.mini i { display: block; height: 100%; background: #94a3b8; border-radius: 2px; }
+.bloque { background: var(--tarjeta); border: 1px solid var(--borde); border-radius: 10px; padding: 14px 16px; margin-bottom: 14px; }
+.cab h2 { margin: 0 0 2px; font-size: 18px; font-weight: 600; }
+.cab .prompt { color: var(--suave); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.cab .meta { margin-top: 6px; color: var(--suave); font-size: 13px; }
+.cifras { display: flex; flex-wrap: wrap; gap: 8px 22px; margin-top: 10px; }
+.cifra b { display: block; font-size: 20px; font-weight: 600; font-variant-numeric: tabular-nums; }
+.cifra span { color: var(--suave); font-size: 12px; }
+.cifra.total b { color: var(--acento); }
+h3 { margin: 0 0 8px; font-size: 13px; font-weight: 600; color: #374151; }
+h3 small { font-weight: 400; color: var(--suave); }
+.barra { display: flex; flex-direction: column; gap: 2px; border-radius: 6px; overflow: hidden; background: #eef0f3; }
+.fila { display: flex; width: 100%; }
+.fila.alta { height: 26px; }
+.fila.baja { height: 8px; }
+.seg { height: 100%; min-width: 0; box-shadow: inset -1px 0 0 rgba(255, 255, 255, .75); cursor: pointer; }
+.seg:hover { filter: brightness(1.12); }
+.leyenda { display: flex; flex-wrap: wrap; gap: 6px 16px; margin-top: 9px; font-size: 12.5px; }
+.chip { display: inline-flex; align-items: center; gap: 6px; }
+.chip i { width: 10px; height: 10px; border-radius: 3px; flex: none; }
+.chip em { font-style: normal; color: var(--suave); font-variant-numeric: tabular-nums; }
+.separa { height: 14px; }
+table.arbol { width: 100%; border-collapse: collapse; table-layout: fixed; font-size: 13px; }
+.arbol th { text-align: left; font-weight: 600; color: var(--suave); font-size: 12px; padding: 6px 8px; border-bottom: 1px solid var(--borde); }
+.arbol td { padding: 7px 8px; border-bottom: 1px solid #eef0f3; vertical-align: middle; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.arbol .num { text-align: right; font-variant-numeric: tabular-nums; }
+.arbol tr.clic { cursor: pointer; }
+.arbol tr.clic:hover td { background: #f7f8fa; }
+.arbol tr.wf td { background: #fafbfc; font-weight: 600; }
+.arbol tr.wf:hover td { background: #f3f4f6; }
+.arbol tr.abierto td { background: #eef4ff; }
+.nombre { display: flex; align-items: center; gap: 7px; min-width: 0; }
+.nombre span { overflow: hidden; text-overflow: ellipsis; }
+.sangria { padding-left: 22px; }
+.flecha { width: 12px; flex: none; color: var(--suave); font-size: 11px; }
+.color { width: 10px; height: 10px; border-radius: 3px; flex: none; }
+.id { color: var(--suave); font-weight: 400; font-size: 11.5px; }
+.gris { color: var(--suave); }
+.tok .mini { margin-top: 3px; height: 3px; }
+.pill { display: inline-flex; align-items: center; gap: 5px; padding: 1px 9px; border-radius: 999px; font-size: 12px; font-weight: 600; }
+.pill.hecho { background: #dcfce7; color: #166534; }
+.pill.activo { background: #dbeafe; color: #1d4ed8; }
+.pill.activo::before { content: ""; width: 6px; height: 6px; border-radius: 50%; background: #2563eb; animation: latido 1.2s ease-in-out infinite; }
+.pill.parado { background: #f1f2f4; color: #4b5563; }
+.pill.fallo { background: #fee2e2; color: #b91c1c; }
+.pill.cancelado { background: #ffedd5; color: #c2410c; }
+.pill.espera { background: #fef3c7; color: #92400e; }
+@keyframes latido { 50% { opacity: .25; } }
+tr.detalle td { white-space: normal; background: #fbfcfe; padding: 4px 14px 12px 38px; }
+.msg { padding: 8px 0; border-bottom: 1px dashed #e5e7eb; }
+.msg:last-child { border-bottom: 0; }
+.msg-cab { font-size: 11.5px; color: var(--suave); margin-bottom: 2px; }
+.msg-cab b { color: #374151; }
+.msg.user .msg-cab b { color: #7c3aed; }
+.msg-txt { white-space: pre-wrap; word-break: break-word; font-size: 13px; }
+.vacio { color: var(--suave); padding: 30px 0; text-align: center; }
+.nota { color: var(--suave); font-size: 12px; margin-top: 8px; }
+.pestanas { display: inline-flex; border: 1px solid var(--borde); border-radius: 8px; overflow: hidden; }
+.pestanas button { border: 0; background: #fff; padding: 5px 16px; font: inherit; font-size: 13px; color: #374151; cursor: pointer; }
+.pestanas button + button { border-left: 1px solid var(--borde); }
+.pestanas button.sel { background: var(--acento); color: #fff; }
+#derecha { min-width: 0; }
+.esq-barra { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 20px; margin-bottom: 10px; }
+.interruptor { display: inline-flex; align-items: center; gap: 7px; cursor: pointer; font-size: 13px; font-weight: 600; color: #374151; }
+.interruptor input { width: 15px; height: 15px; margin: 0; accent-color: var(--acento); }
+.esq-leyenda { display: flex; flex-wrap: wrap; gap: 4px 14px; font-size: 12px; color: var(--suave); }
+.esq-leyenda .chip i { width: 16px; height: 11px; border-radius: 3px; border: 1.5px solid; }
+.esq-leyenda svg { flex: none; }
+.zoom { margin-left: auto; display: inline-flex; gap: 4px; }
+.zoom button { min-width: 32px; padding: 3px 8px; border: 1px solid var(--borde); border-radius: 6px; background: #fff; font: inherit; font-size: 13px; color: #374151; cursor: pointer; }
+.zoom button:hover, .cerrar:hover { border-color: #c4cad3; background: #f7f8fa; }
+.lienzo { overflow: auto; max-height: calc(100vh - 200px); min-height: 200px; border: 1px solid #eef0f3; border-radius: 8px; background: #fafbfc; cursor: grab; }
+.lienzo.arrastre { cursor: grabbing; user-select: none; }
+.lienzo svg { display: block; }
+.lienzo svg text { font-family: "Segoe UI", system-ui, -apple-system, sans-serif; }
+.nodo, .grupo-cab { cursor: pointer; }
+.nodo:hover .caja { stroke-width: 2.4; }
+.nodo.sel .caja { stroke: var(--acento); stroke-width: 2.6; }
+.grupo-cab:hover .grupo-tit { text-decoration: underline; }
+.halo { fill: none; stroke: #22c55e; stroke-width: 6; opacity: .55; animation: halo 1.6s ease-in-out infinite; animation-delay: var(--fase, 0s); }
+@keyframes halo { 50% { opacity: .08; } }
+.arista { fill: none; stroke: #a3abb7; stroke-width: 1.4; }
+.arista.espera { stroke: #b9c0ca; stroke-dasharray: 4 4; }
+.arista.vuelta { stroke: #ea580c; stroke-width: 1.8; }
+.arista.vivo { stroke: #16a34a; stroke-width: 1.8; stroke-dasharray: 6 5; animation: flujo .9s linear infinite; animation-delay: var(--fase2, 0s); }
+.arista.vuelta.vivo { stroke: #ea580c; stroke-width: 2; }
+@keyframes flujo { to { stroke-dashoffset: -11; } }
+.pe { display: inline-flex; align-items: center; gap: 5px; padding: 0 9px; border: 1px solid #d5dae1; border-radius: 999px; background: #f4f5f7; color: #4b5563; font-size: 12px; font-weight: 600; }
+.pe.activo { background: #ecfdf3; border-color: #86efac; color: #15803d; }
+.pe.activo::before { content: ""; width: 6px; height: 6px; border-radius: 50%; background: #16a34a; animation: latido 1.2s ease-in-out infinite; }
+.pe.parado, .pe.cancelado { background: #fffbeb; border-color: #fcd34d; color: #b45309; }
+.pe.fallo, .pe.bloq { background: #fef2f2; border-color: #fca5a5; color: #b91c1c; }
+.globo { position: fixed; z-index: 20; max-width: 400px; padding: 9px 12px; background: #fff; border: 1px solid #d5dae1; border-radius: 8px; box-shadow: 0 6px 20px rgba(15, 23, 42, .14); font-size: 12.5px; pointer-events: none; }
+.globo b { font-size: 13px; }
+.globo .linea { color: var(--suave); margin-top: 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.globo .linea.rojo { color: #b91c1c; font-weight: 600; }
+.cajon { position: fixed; z-index: 15; top: 53px; right: 0; bottom: 0; width: min(460px, 100vw); background: #fff; border-left: 1px solid var(--borde); box-shadow: -8px 0 24px rgba(15, 23, 42, .08); overflow-y: auto; padding: 14px 18px 24px; }
+.cajon-cab { display: flex; align-items: flex-start; gap: 10px; }
+.cajon-cab h3 { flex: 1; margin: 2px 0 0; font-size: 15px; word-break: break-word; }
+.cajon .meta { color: var(--suave); font-size: 12.5px; margin: 8px 0 12px; }
+.cajon h4 { margin: 14px 0 2px; font-size: 13px; font-weight: 600; color: #374151; }
+.cerrar { border: 1px solid var(--borde); background: #fff; border-radius: 6px; padding: 3px 10px; font: inherit; font-size: 12.5px; cursor: pointer; }
+.limite { display: inline-flex; align-items: center; gap: 8px; font-size: 12.5px; color: #374151; cursor: help; }
+.limite .tubo { width: 120px; height: 8px; border-radius: 4px; background: #eef0f3; overflow: hidden; }
+.limite .tubo i { display: block; height: 100%; border-radius: 4px; background: #16a34a; }
+.limite.medio .tubo i { background: #f59e0b; }
+.limite.alto .tubo i, .limite.agotado .tubo i { background: #dc2626; }
+.limite.agotado { color: #b91c1c; font-weight: 600; }
+body.vista-tareas main { grid-template-columns: minmax(0, 1fr); }
+body.vista-tareas #lista { display: none; }
+.tg { margin-bottom: 14px; }
+.tg h2 { margin: 0 0 10px; font-size: 15px; font-weight: 600; }
+.tarea { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 4px 16px; padding: 10px 0; border-top: 1px solid #eef0f3; }
+.tarea:first-of-type { border-top: 0; }
+.tarea b { font-size: 14px; font-weight: 600; }
+.tarea .que { grid-column: 1; color: #4b5563; font-size: 13px; }
+.tarea .est { grid-row: 1 / span 2; grid-column: 2; align-self: start; text-align: right; }
+.tarea .por { display: block; margin-top: 4px; color: var(--suave); font-size: 12px; max-width: 260px; }
+@media (max-width: 900px) {
+  main { grid-template-columns: minmax(0, 1fr); padding: 12px 16px; }
+  #lista { position: static; max-height: 260px; }
+  header { flex-wrap: wrap; padding: 10px 16px; }
+  .cajon { top: 0; }
+  .lienzo { max-height: 70vh; }
+}
+</style>
+</head>
+<body>
+<header>
+  <h1>Панель агентов · ОРБИТА</h1>
+  <nav class="pestanas" id="pestanas"><button type="button" data-vista="tareas">Задачи</button><button type="button" data-vista="tabla">Таблица</button><button type="button" data-vista="esquema">Схема</button></nav>
+  <label>Считать
+    <select id="modo">
+      <option value="todo">все токены</option>
+      <option value="sin_lectura">без чтения кэша</option>
+      <option value="salida">только выход</option>
+    </select>
+  </label>
+  <span id="limite" class="limite" hidden></span>
+  <span id="estado">загрузка…</span>
+</header>
+<main>
+  <aside id="lista"><div class="vacio">загрузка…</div></aside>
+  <div id="derecha">
+    <section id="tareas" hidden><div class="vacio">загрузка…</div></section>
+    <section id="contenido"><div class="vacio">загрузка…</div></section>
+    <section id="esquema" hidden>
+      <div class="bloque cab" id="esqCab"><div class="vacio">загрузка…</div></div>
+      <div class="bloque">
+        <div class="esq-barra">
+          <label class="interruptor"><input type="checkbox" id="historia"> Показать всю историю</label>
+          <span class="esq-leyenda">
+            <span class="chip"><i style="background:#ecfdf3;border-color:#16a34a"></i>работает</span>
+            <span class="chip"><i style="background:#f4f5f7;border-color:#c3c9d2"></i>готов</span>
+            <span class="chip"><i style="background:#fffbeb;border-color:#f59e0b"></i>остановлен</span>
+            <span class="chip"><i style="background:#fff;border-color:#dc2626"></i>заблокирован</span>
+            <span class="chip"><svg width="22" height="12"><path d="M1,6 H21" stroke="#16a34a" stroke-width="1.8" stroke-dasharray="6 5"/></svg>идёт сейчас</span>
+            <span class="chip"><svg width="22" height="12"><path d="M2,2 Q20,2 20,10" fill="none" stroke="#ea580c" stroke-width="1.8"/></svg>круг исправлений</span>
+            <span class="chip"><svg width="22" height="12"><path d="M1,6 H21" stroke="#b9c0ca" stroke-width="1.4" stroke-dasharray="4 4"/></svg>ждал остальных</span>
+          </span>
+          <span class="zoom"><button type="button" data-z="-1" title="мельче">−</button><button type="button" data-z="0" title="обычный размер">100%</button><button type="button" data-z="1" title="крупнее">+</button></span>
+        </div>
+        <div class="lienzo" id="lienzo"></div>
+        <div class="nota">Наведите на прямоугольник: подробности. Клик: последние 10 сообщений. Клик по заголовку конвейера: свернуть или развернуть. Схему можно тянуть мышью.</div>
+      </div>
+    </section>
+  </div>
+</main>
+<aside class="cajon" id="cajon" hidden></aside>
+<div class="globo" id="globo" hidden></div>
+<script>
+const ESTADOS = { hecho: 'готов', activo: 'работает', parado: 'остановлен', fallo: 'ошибка', cancelado: 'прерван', espera: 'ждёт' };
+const TONOS = [212, 152, 28, 270, 340, 190, 45, 0, 100, 240];
+const PALETA = ['#2563eb', '#16a34a', '#ea580c', '#9333ea', '#db2777', '#0891b2', '#ca8a04', '#dc2626', '#4f46e5', '#65a30d', '#0d9488', '#c026d3'];
+const abiertos = new Set();
+const cerrados = new Set();
+let lista = [];
+let datos = null;
+let sel = null;
+try { sel = decodeURIComponent(location.hash.slice(1)) || null; } catch (e) { sel = null; }
+let jsonLista = '';
+let jsonSesion = '';
+let ocupado = false;
+let modo = 'todo';
+try { modo = localStorage.getItem('panel_modo') || 'todo'; } catch (e) {}
+
+function val(t) {
+  if (!t) return 0;
+  if (modo === 'salida') return t.salida || 0;
+  if (modo === 'sin_lectura') return (t.total || 0) - (t.cache_lectura || 0);
+  return t.total || 0;
+}
+function esc(s) {
+  return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+}
+function fmt(n) {
+  n = n || 0;
+  if (n < 1000) return String(n);
+  if (n < 1e6) return (n / 1e3).toFixed(n < 1e4 ? 1 : 0).replace('.', ',') + ' тыс.';
+  if (n < 1e9) return (n / 1e6).toFixed(n < 1e7 ? 2 : 1).replace('.', ',') + ' млн';
+  return (n / 1e9).toFixed(2).replace('.', ',') + ' млрд';
+}
+function exacto(n) { return (n || 0).toLocaleString('ru-RU'); }
+function pct(x) { return (x * 100).toFixed(x < 0.1 ? 1 : 0).replace('.', ',') + '%'; }
+function dos(v) { return String(v).padStart(2, '0'); }
+function fecha(iso) {
+  const d = new Date(iso || '');
+  return isNaN(d) ? '—' : dos(d.getDate()) + '.' + dos(d.getMonth() + 1) + ' ' + dos(d.getHours()) + ':' + dos(d.getMinutes());
+}
+function hora(iso) {
+  const d = new Date(iso || '');
+  return isNaN(d) ? '' : dos(d.getHours()) + ':' + dos(d.getMinutes()) + ':' + dos(d.getSeconds());
+}
+function dur(s) {
+  s = Math.max(0, Math.round(s || 0));
+  if (s < 60) return s + ' с';
+  const m = Math.floor(s / 60);
+  if (m < 60) return m + ' мин' + (m < 10 && s % 60 ? ' ' + (s % 60) + ' с' : '');
+  return Math.floor(m / 60) + ' ч ' + dos(m % 60) + ' мин';
+}
+function pill(e) { return '<span class="pill ' + esc(e) + '">' + esc(ESTADOS[e] || e) + '</span>'; }
+function clave(w, a) { return 'ag:' + (w ? w.id + '/' : '') + a.id; }
+
+function colores(d) {
+  const c = { chat: 'hsl(220,9%,58%)' };
+  d.workflows.forEach((w, i) => {
+    const h = TONOS[i % TONOS.length];
+    c['wf:' + w.id] = 'hsl(' + h + ',58%,45%)';
+    w.agentes.forEach((a, j) => { c[clave(w, a)] = 'hsl(' + h + ',56%,' + (36 + (j % 6) * 7) + '%)'; });
+  });
+  c['wf:sueltos'] = 'hsl(320,45%,48%)';
+  d.agentes.forEach((a, j) => { c[clave(null, a)] = 'hsl(320,45%,' + (38 + (j % 6) * 7) + '%)'; });
+  return c;
+}
+
+function grupos(d) {
+  const g = [{ k: 'chat', nombre: 'Основной чат', partes: [{ k: 'chat', nombre: 'Основной чат', t: val(d.chat.tokens) }] }];
+  d.workflows.forEach(w => g.push({ k: 'wf:' + w.id, nombre: w.nombre, partes: w.agentes.map(a => ({ k: clave(w, a), nombre: w.nombre + ' / ' + a.etiqueta, t: val(a.tokens) })) }));
+  if (d.agentes.length) g.push({ k: 'wf:sueltos', nombre: 'Отдельные агенты', partes: d.agentes.map(a => ({ k: clave(null, a), nombre: a.etiqueta, t: val(a.tokens) })) });
+  g.forEach(x => { x.t = x.partes.reduce((s, p) => s + p.t, 0); });
+  return g;
+}
+
+function seg(k, t, total, color, nombre) {
+  if (!t) return '';
+  return '<div class="seg" data-k="' + esc(k) + '" style="width:' + (t / total * 100) + '%;background:' + color + '" title="' + esc(nombre + ': ' + exacto(t) + ' (' + pct(t / total) + ')') + '"></div>';
+}
+
+function barraParticipantes(d, col) {
+  const g = grupos(d);
+  const total = g.reduce((s, x) => s + x.t, 0) || 1;
+  let alta = '', baja = '', ley = '';
+  g.forEach(x => {
+    baja += seg(x.k, x.t, total, col[x.k], x.nombre);
+    x.partes.forEach(p => { alta += seg(p.k, p.t, total, col[p.k], p.nombre); });
+    ley += '<span class="chip"><i style="background:' + col[x.k] + '"></i>' + esc(x.nombre) + ' <em>' + fmt(x.t) + ' · ' + pct(x.t / total) + '</em></span>';
+  });
+  return '<h3>Токены по участникам <small>верхняя полоса: чат и конвейеры, нижняя: каждый агент</small></h3>' +
+    '<div class="barra"><div class="fila baja">' + baja + '</div><div class="fila alta">' + alta + '</div></div>' +
+    '<div class="leyenda">' + ley + '</div>';
+}
+
+function barraHerramientas(d) {
+  const hs = (d.herramientas || []).filter(h => h.tokens_aprox > 0);
+  const total = hs.reduce((s, h) => s + h.tokens_aprox, 0);
+  if (!total) return '<h3>Инструменты</h3><div class="gris">вызовов инструментов нет</div>';
+  const grandes = hs.filter(h => h.tokens_aprox / total >= 0.01);
+  const resto = hs.filter(h => h.tokens_aprox / total < 0.01);
+  const partes = grandes.map((h, i) => ({ nombre: h.nombre === '?' ? 'неизвестно' : h.nombre, t: h.tokens_aprox, llamadas: h.llamadas, color: PALETA[i % PALETA.length], extra: h.imagenes ? ', изображений ' + h.imagenes : '' }));
+  if (resto.length) partes.push({ nombre: 'прочее (' + resto.length + ')', t: resto.reduce((s, h) => s + h.tokens_aprox, 0), llamadas: resto.reduce((s, h) => s + h.llamadas, 0), color: '#a3a9b3', extra: ': ' + resto.map(h => h.nombre).join(', ') });
+  let fila = '', ley = '';
+  partes.forEach(p => {
+    fila += '<div class="seg" style="width:' + (p.t / total * 100) + '%;background:' + p.color + '" title="' + esc(p.nombre + ': ≈' + exacto(p.t) + ' ток., вызовов ' + p.llamadas + p.extra) + '"></div>';
+    ley += '<span class="chip" title="' + esc(p.extra.replace(/^[:,]\s*/, '')) + '"><i style="background:' + p.color + '"></i>' + esc(p.nombre) + ' <em>' + p.llamadas + ' выз. · ≈' + fmt(p.t) + ' · ' + pct(p.t / total) + '</em></span>';
+  });
+  return '<h3>Инструменты <small>доля по размеру результатов, aprox.</small></h3>' +
+    '<div class="barra"><div class="fila alta">' + fila + '</div></div><div class="leyenda">' + ley + '</div>';
+}
+
+function listaMensajes(n) {
+  const ms = n.mensajes || [];
+  return ms.length ? ms.map(m => '<div class="msg ' + esc(m.rol) + '"><div class="msg-cab"><b>' + (m.rol === 'user' ? 'запрос' : 'ответ') + '</b> ' + esc(hora(m.hora)) + '</div><div class="msg-txt">' + esc(m.texto) + '</div></div>').join('') : '<div class="gris">текстовых сообщений нет</div>';
+}
+
+function mensajes(n, k) {
+  return '<tr class="detalle" data-det="' + esc(k) + '"><td colspan="7">' + listaMensajes(n) + '</td></tr>';
+}
+
+function texto(n) {
+  if (n.ultimo_texto) return '<span title="' + esc(n.ultimo_texto) + '">' + esc(n.ultimo_texto) + '</span>';
+  if (n.ultima_accion) return '<span class="gris" title="' + esc(n.ultima_accion) + '">' + esc(n.ultima_accion) + '</span>';
+  return '';
+}
+
+function celdaTokens(t, max, color) {
+  const v = val(t);
+  return '<td class="num tok" title="' + esc('вход ' + exacto(t.entrada) + ', запись кэша ' + exacto(t.cache_escritura) + ', чтение кэша ' + exacto(t.cache_lectura) + ', выход ' + exacto(t.salida)) + '">' + fmt(v) +
+    '<div class="mini"><i style="width:' + (v / max * 100) + '%;background:' + color + '"></i></div></td>';
+}
+
+function filaNodo(k, n, nombre, fase, col, max, sangria, extra) {
+  const ab = abiertos.has(k);
+  let h = '<tr class="clic' + (ab ? ' abierto' : '') + '" data-k="' + esc(k) + '"><td><div class="nombre' + (sangria ? ' sangria' : '') + '"><i class="color" style="background:' + col[k] + '"></i><span title="' + esc(nombre + (extra || '')) + '">' + esc(nombre) + '</span></div></td>' +
+    '<td title="' + esc(fase) + '">' + esc(fase) + '</td><td>' + pill(n.estado) + '</td>' + celdaTokens(n.tokens, max, col[k]) +
+    '<td class="num">' + dur(n.duracion_s) + '</td><td class="num">' + (n.llamadas || 0) + '</td><td>' + texto(n) + '</td></tr>';
+  if (ab) h += mensajes(n, k);
+  return h;
+}
+
+function filaGrupo(id, nombre, sub, estado, t, durS, llamadas, desc, col, max) {
+  const cerrado = cerrados.has(id);
+  return '<tr class="clic wf" data-wf="' + esc(id) + '"><td><div class="nombre"><span class="flecha">' + (cerrado ? '▸' : '▾') + '</span><i class="color" style="background:' + col['wf:' + id] + '"></i><span title="' + esc(nombre) + '">' + esc(nombre) + ' <span class="id">' + esc(id === 'sueltos' ? '' : id) + '</span></span></div></td>' +
+    '<td class="gris">' + esc(sub) + '</td><td>' + (estado ? pill(estado) : '') + '</td>' + celdaTokens(t, max, col['wf:' + id]) +
+    '<td class="num">' + (durS ? dur(durS) : '') + '</td><td class="num">' + llamadas + '</td><td class="gris" title="' + esc(desc) + '">' + esc(desc) + '</td></tr>';
+}
+
+function sumaTokens(ns) {
+  const t = { entrada: 0, cache_escritura: 0, cache_lectura: 0, salida: 0, total: 0 };
+  ns.forEach(n => { for (const k in t) t[k] += (n.tokens && n.tokens[k]) || 0; });
+  return t;
+}
+
+function arbol(d, col) {
+  const nodos = [d.chat].concat(...d.workflows.map(w => w.agentes), d.agentes);
+  const max = Math.max(1, ...nodos.map(n => val(n.tokens)), ...d.workflows.map(w => val(w.tokens)));
+  let h = '<table class="arbol"><colgroup><col style="width:25%"><col style="width:9%"><col style="width:10%"><col style="width:10%"><col style="width:8%"><col style="width:6%"><col></colgroup>' +
+    '<thead><tr><th>Участник</th><th>Фаза</th><th>Статус</th><th class="num">Токены</th><th class="num">Время</th><th class="num">Вызовы</th><th>Последний текст</th></tr></thead><tbody>';
+  h += filaNodo('chat', d.chat, 'Основной чат', '', col, max, false, '');
+  d.workflows.forEach(w => {
+    h += filaGrupo(w.id, w.nombre, 'агентов: ' + w.agentes.length, w.estado, w.tokens, w.duracion_s, w.llamadas, w.descripcion, col, max);
+    if (!cerrados.has(w.id)) w.agentes.forEach(a => { h += filaNodo(clave(w, a), a, a.etiqueta, a.fase, col, max, true, ' (' + a.id + ')'); });
+  });
+  if (d.agentes.length) {
+    h += filaGrupo('sueltos', 'Отдельные агенты', 'агентов: ' + d.agentes.length, '', sumaTokens(d.agentes), 0, d.agentes.reduce((s, a) => s + a.llamadas, 0), 'запущены из чата без конвейера', col, max);
+    if (!cerrados.has('sueltos')) d.agentes.forEach(a => { h += filaNodo(clave(null, a), a, a.etiqueta, a.tipo, col, max, true, ' (' + a.id + ')'); });
+  }
+  return h + '</tbody></table>';
+}
+
+function pintarLista() {
+  const cont = document.getElementById('lista');
+  if (!lista.length) { cont.innerHTML = '<div class="vacio">сессий нет</div>'; return; }
+  const max = Math.max(1, ...lista.map(s => val(s.tokens)));
+  cont.innerHTML = lista.map(s => '<div class="ses' + (s.id === sel ? ' sel' : '') + '" data-s="' + esc(s.id) + '" title="' + esc(s.id) + '">' +
+    '<div class="ses-cab"><span class="punto' + (s.activa ? ' vivo' : '') + '"></span>' + fecha(s.inicio) + '<span class="ses-tok">' + fmt(val(s.tokens)) + '</span></div>' +
+    (s.titulo ? '<div class="ses-tit">' + esc(s.titulo) + '</div>' : '') +
+    '<div class="ses-txt">' + esc(s.prompt || s.id) + '</div>' +
+    '<div class="ses-pie">агентов ' + s.agentes + ' · конвейеров ' + s.workflows + '</div>' +
+    '<div class="mini"><i style="width:' + (val(s.tokens) / max * 100) + '%"></i></div></div>').join('');
+}
+
+function pintarTabla() {
+  const cont = document.getElementById('contenido');
+  const d = datos;
+  if (!d) { cont.innerHTML = '<div class="vacio">' + (sel ? 'сессия не найдена' : 'выберите сессию') + '</div>'; return; }
+  const col = colores(d);
+  const t = d.totales.tokens;
+  const cifras = [['total', 'всего · ' + (modo === 'todo' ? 'все токены' : modo === 'salida' ? 'только выход' : 'без чтения кэша'), val(t)], ['', 'вход', t.entrada], ['', 'запись кэша', t.cache_escritura], ['', 'чтение кэша', t.cache_lectura], ['', 'выход', t.salida]];
+  let h = '<div class="bloque cab"><h2>' + esc(d.titulo || d.prompt || d.id) + '</h2>' +
+    (d.titulo && d.prompt ? '<div class="prompt" title="' + esc(d.prompt) + '">' + esc(d.prompt) + '</div>' : '') +
+    '<div class="meta">' + (d.activa ? pill('activo') + ' ' : '') + 'начало ' + fecha(d.inicio) + ' · длительность ' + dur(d.duracion_s) + ' · агентов ' + d.totales.agentes + ' · конвейеров ' + d.totales.workflows + ' · <span class="id">' + esc(d.id) + '</span></div>' +
+    '<div class="cifras">' + cifras.map(c => '<div class="cifra ' + c[0] + '" title="' + exacto(c[2]) + '"><b>' + fmt(c[2]) + '</b><span>' + c[1] + '</span></div>').join('') + '</div></div>';
+  h += '<div class="bloque">' + barraParticipantes(d, col) + '<div class="separa"></div>' + barraHerramientas(d) + '</div>';
+  h += '<div class="bloque">' + arbol(d, col) +
+    '<div class="nota">«работает»: файл агента менялся за последние 2 минуты. Клик по строке: последние 10 сообщений.' + (d.totales.malas ? ' Пропущено битых строк: ' + d.totales.malas + '.' : '') + '</div></div>';
+  cont.innerHTML = h;
+}
+
+const NW = 212, NH = 46, CG = 64, RG = 24, PAD = 16, CAB = 42, FCAB = 22, X0 = 236, CW = 176, CERR = 44;
+const ASPECTO = {
+  activo: ['#ecfdf3', '#16a34a', '#14532d'],
+  hecho: ['#f4f5f7', '#c3c9d2', '#374151'],
+  espera: ['#f4f5f7', '#c3c9d2', '#374151'],
+  parado: ['#fffbeb', '#f59e0b', '#78350f'],
+  cancelado: ['#fffbeb', '#f59e0b', '#78350f'],
+  fallo: ['#fef2f2', '#dc2626', '#7f1d1d'],
+};
+const PALABRA = { activo: ['работает', '#15803d'], parado: ['остановлен', '#b45309'], cancelado: ['прерван', '#b45309'], fallo: ['ошибка', '#b91c1c'], espera: ['ждёт', '#6b7280'] };
+const ZOOMS = [0.5, 0.67, 0.8, 1, 1.25, 1.5];
+const wfAbiertos = new Set();
+const wfPlegados = new Set();
+let vista = 'tareas';
+try { const v = localStorage.getItem('panel_vista'); vista = ['tabla', 'esquema', 'tareas'].includes(v) ? v : 'tareas'; } catch (e) {}
+let zoom = 1;
+try { zoom = ZOOMS.includes(+localStorage.getItem('panel_zoom')) ? +localStorage.getItem('panel_zoom') : 1; } catch (e) {}
+let historia = false;
+let selNodo = null;
+let mapa = {};
+let suprimirClic = false;
+let cajonHtml = '';
+
+function corta(s, n) { s = String(s == null ? '' : s); return s.length > n ? s.slice(0, Math.max(1, n - 1)) + '…' : s; }
+let regla = null;
+function medida(s, px, peso) {
+  try {
+    regla = regla || document.createElement('canvas').getContext('2d');
+    regla.font = (peso || 400) + ' ' + px + 'px "Segoe UI", system-ui, -apple-system, sans-serif';
+    return regla.measureText(String(s)).width;
+  } catch (e) { return String(s).length * px * 0.58; }
+}
+function cabe(s, px, peso, max) {
+  s = String(s == null ? '' : s);
+  if (medida(s, px, peso) <= max) return s;
+  let n = s.length;
+  while (n > 1 && medida(s.slice(0, n - 1) + '…', px, peso) > max) n--;
+  return s.slice(0, Math.max(1, n - 1)) + '…';
+}
+function chip(e) { return '<span class="pe ' + esc(e) + '">' + esc(e === 'bloq' ? 'заблокирован' : ESTADOS[e] || e) + '</span>'; }
+function legible(s) { return String(s || '').split(':').join(' · '); }
+function hace(n) { return n && n.mtime ? Math.max(0, Date.now() / 1000 - n.mtime) : null; }
+function estiloBorde(w) {
+  if ((w.bloqueados || []).length || w.estado === 'fallo') return ['#dc2626', 2];
+  if (w.estado === 'activo') return ['#16a34a', 1.6];
+  if (w.estado === 'parado' || w.estado === 'cancelado') return ['#f59e0b', 1.6];
+  return ['#d5dae1', 1.2];
+}
+function abierto(w) { return w.estado === 'activo' ? !wfPlegados.has(w.id) : wfAbiertos.has(w.id); }
+
+function rejilla(ags) {
+  const pos = {};
+  ags.forEach((a, i) => { pos[a.id] = { col: i % 4, y: Math.floor(i / 4) }; });
+  return { fases: ags.length ? Array(Math.min(4, ags.length)).fill('') : [], filas: Math.ceil(ags.length / 4), pos, aristas: [] };
+}
+
+function llenarMapa(d) {
+  mapa = { chat: { tipo: 'nodo', n: d.chat, titulo: 'Основной чат', wf: '' } };
+  d.workflows.forEach(w => {
+    mapa['wf:' + w.id] = { tipo: 'grupo', w };
+    w.agentes.forEach(a => { mapa[clave(w, a)] = { tipo: 'nodo', n: a, titulo: legible(a.etiqueta), wf: w.nombre }; });
+  });
+  d.agentes.forEach(a => { mapa[clave(null, a)] = { tipo: 'nodo', n: a, titulo: a.etiqueta, wf: 'отдельный агент' + (a.tipo ? ' · ' + a.tipo : '') }; });
+}
+
+function bloques(d) {
+  const vivos = d.workflows.filter(w => w.estado === 'activo').map(w => ({ w, sec: 'vivo' }));
+  const resto = d.workflows.filter(w => w.estado !== 'activo').reverse().map(w => ({ w, sec: 'fin' }));
+  const ags = historia ? d.agentes : d.agentes.filter(a => a.estado === 'activo');
+  if (ags.length) {
+    const vivo = ags.some(a => a.estado === 'activo');
+    const g = { id: 'sueltos', nombre: 'Отдельные агенты', descripcion: 'запущены из чата без конвейера', estado: vivo ? 'activo' : 'hecho', agentes: ags, sueltos: true, tokens: sumaTokens(ags), duracion_s: 0, bloqueados: [] };
+    mapa['wf:sueltos'] = { tipo: 'grupo', w: g };
+    (vivo ? vivos : resto).push({ w: g, sec: vivo ? 'vivo' : 'fin' });
+  }
+  return historia ? vivos.concat(resto) : vivos;
+}
+
+function nodoSvg(k, n, x, y, w, titulo, maxT) {
+  const a = ASPECTO[n.estado] || ASPECTO.hecho;
+  const v = val(n.tokens);
+  const pal = n.bloqueado ? ['заблокирован', '#b91c1c'] : PALABRA[n.estado];
+  const derecha = pal ? '<tspan font-weight="600" fill="' + pal[1] + '">' + pal[0] + '</tspan>' + (n.bloqueado || n.estado === 'espera' ? '' : ' ' + dur(n.duracion_s)) : dur(n.duracion_s);
+  let s = '<g class="nodo' + (selNodo === k ? ' sel' : '') + '" data-n="' + esc(k) + '">';
+  if (n.estado === 'activo') s += '<rect class="halo" x="' + (x - 3) + '" y="' + (y - 3) + '" width="' + (w + 6) + '" height="' + (NH + 6) + '" rx="12" filter="url(#difuso)"/>';
+  s += '<rect class="caja" x="' + x + '" y="' + y + '" width="' + w + '" height="' + NH + '" rx="9" fill="' + a[0] + '" stroke="' + (n.bloqueado ? '#dc2626' : a[1]) + '" stroke-width="' + (n.bloqueado || n.estado === 'activo' ? 2 : 1.2) + '"/>';
+  s += '<text x="' + (x + 11) + '" y="' + (y + 18) + '" font-size="12.5" font-weight="600" fill="' + a[2] + '">' + esc(cabe(titulo, 12.5, 600, w - 22)) + '</text>';
+  s += '<text x="' + (x + 11) + '" y="' + (y + 33) + '" font-size="11" fill="#6b7280">' + esc(fmt(v)) + '</text>';
+  s += '<text x="' + (x + w - 10) + '" y="' + (y + 33) + '" font-size="11" text-anchor="end" fill="#6b7280">' + derecha + '</text>';
+  if (v) s += '<rect x="' + (x + 11) + '" y="' + (y + NH - 7) + '" width="' + Math.max(2, (w - 22) * v / maxT).toFixed(1) + '" height="3" rx="1.5" fill="' + (n.bloqueado ? '#dc2626' : a[1]) + '" opacity=".75"/>';
+  return s + '</g>';
+}
+
+function arista(e, p, q, vivo) {
+  let d;
+  const px = p.x, py = p.y, qx = q.x, qy = q.y;
+  if (q.col > p.col) {
+    const x1 = px + NW, y1 = py + NH / 2, x2 = qx - 2, y2 = qy + NH / 2, dx = Math.max(24, (x2 - x1) / 2);
+    d = 'M' + x1 + ',' + y1 + ' C' + (x1 + dx) + ',' + y1 + ' ' + (x2 - dx) + ',' + y2 + ' ' + x2 + ',' + y2;
+  } else if (q.col < p.col && Math.abs(qy - (py + NH + RG)) < 1) {
+    const x1 = px + NW / 2, y1 = py + NH, gy = py + NH + RG / 2, x2 = qx + NW / 2, r = 7;
+    d = 'M' + x1 + ',' + y1 + ' V' + (gy - r) + ' Q' + x1 + ',' + gy + ' ' + (x1 - r) + ',' + gy + ' H' + (x2 + r) + ' Q' + x2 + ',' + gy + ' ' + x2 + ',' + (gy + r) + ' V' + (qy - 1);
+  } else if (q.col < p.col && q.y > p.y) {
+    const x1 = px, y1 = py + NH - 12, x2 = qx + NW + 2, y2 = qy + 12, dx = Math.max(30, (x1 - x2) / 2);
+    d = 'M' + x1 + ',' + y1 + ' C' + (x1 - dx) + ',' + y1 + ' ' + (x2 + dx) + ',' + y2 + ' ' + x2 + ',' + y2;
+  } else if (q.col < p.col) {
+    const x1 = px + NW / 2, y1 = py, x2 = qx + NW / 2, y2 = qy - 2, h = 34;
+    d = 'M' + x1 + ',' + y1 + ' C' + x1 + ',' + (y1 - h) + ' ' + x2 + ',' + (y2 - h) + ' ' + x2 + ',' + y2;
+  } else {
+    const izq = q.col > 0, x1 = izq ? px : px + NW, x2 = izq ? qx - 2 : qx + NW + 2, y1 = py + NH / 2, y2 = qy + NH / 2, b = izq ? -30 : 30;
+    d = 'M' + x1 + ',' + y1 + ' C' + (x1 + b) + ',' + y1 + ' ' + (x2 + b) + ',' + y2 + ' ' + x2 + ',' + y2;
+  }
+  const marca = e.tipo === 'vuelta' ? 'fl-n' : vivo ? 'fl-v' : 'fl-g';
+  return '<path class="arista ' + e.tipo + (vivo ? ' vivo' : '') + '" d="' + d + '" marker-end="url(#' + marca + ')"/>';
+}
+
+function infoGrupo(w) {
+  const bloq = w.bloqueados || [];
+  const estado = bloq.length ? 'остановлен на блокировке: ' + corta(bloq.join(', '), 14) : (PALABRA[w.estado] || [ESTADOS[w.estado] || w.estado])[0];
+  const resto = 'агентов ' + w.agentes.length + ' · ' + fmt(val(w.tokens)) + (w.duracion_s ? ' · ' + dur(w.duracion_s) : '');
+  const color = bloq.length ? '#b91c1c' : (PALABRA[w.estado] || [0, '#6b7280'])[1];
+  return { estado, resto, color, largo: medida(estado, 12, 600) + medida(' · ' + resto, 12) };
+}
+
+function anchoCerrado(w) {
+  return Math.ceil(14 + medida('▸ ' + w.nombre, 14, 600) + 36 + infoGrupo(w).largo + 14);
+}
+
+function cabeceraGrupo(w, bx, by, ancho, alto, plegado) {
+  const [borde, grosor] = estiloBorde(w);
+  const { estado, resto, color, largo } = infoGrupo(w);
+  const yt = by + (plegado ? 27 : 26);
+  const libre = ancho - 28 - largo - 30;
+  let s = '<rect x="' + bx + '" y="' + by + '" width="' + ancho + '" height="' + alto + '" rx="12" fill="#fff" stroke="' + borde + '" stroke-width="' + grosor + '"/>';
+  s += '<g class="grupo-cab" data-g="' + esc(w.id) + '"><rect x="' + bx + '" y="' + by + '" width="' + ancho + '" height="' + (plegado ? alto : CAB - 4) + '" rx="12" fill="transparent"/>';
+  s += '<text class="grupo-tit" x="' + (bx + 14) + '" y="' + yt + '" font-size="14" font-weight="600" fill="#1d2330">' + esc(cabe((plegado ? '▸ ' : '▾ ') + w.nombre, 14, 600, Math.max(80, libre))) + '</text>';
+  const derecha = '<tspan fill="' + color + '" font-weight="600">' + esc(estado) + '</tspan>' + esc(' · ' + resto);
+  s += '<text x="' + (bx + ancho - 14) + '" y="' + yt + '" font-size="12" text-anchor="end" fill="#6b7280">' + derecha + '</text>';
+  return s + '</g>';
+}
+
+function grupoAbierto(w, bx, by, maxT, minimo) {
+  const g = w.sueltos ? rejilla(w.agentes) : w.grafo;
+  const nc = Math.max(1, g.fases.length), nf = Math.max(1, g.filas);
+  const conFases = !w.sueltos && g.fases.some(f => f);
+  const ancho = Math.max(minimo, PAD * 2 + nc * NW + (nc - 1) * CG);
+  const arriba = by + CAB + (conFases ? FCAB : 0);
+  const alto = arriba - by + nf * NH + (nf - 1) * RG + PAD;
+  let s = cabeceraGrupo(w, bx, by, ancho, alto, false);
+  s += '<line x1="' + (bx + 1) + '" y1="' + (by + CAB - 4) + '" x2="' + (bx + ancho - 1) + '" y2="' + (by + CAB - 4) + '" stroke="#eef0f3"/>';
+  if (conFases) g.fases.forEach((f, i) => {
+    s += '<text x="' + (bx + PAD + i * (NW + CG) + NW / 2) + '" y="' + (by + CAB + 11) + '" font-size="11.5" text-anchor="middle" fill="#8a919c">' + esc(cabe(f || 'без фазы', 11.5, 400, NW + CG - 12)) + '</text>';
+  });
+  const pos = {};
+  w.agentes.forEach(a => {
+    const p = g.pos[a.id];
+    if (p) pos[a.id] = { col: p.col, y: arriba + p.y * (NH + RG), x: bx + PAD + p.col * (NW + CG), fila: p.y };
+  });
+  const porId = {};
+  w.agentes.forEach(a => { porId[a.id] = a; });
+  (g.aristas || []).forEach(e => {
+    const p = pos[e.de], q = pos[e.a];
+    if (p && q) s += arista(e, p, q, porId[e.a].estado === 'activo');
+  });
+  w.agentes.forEach(a => {
+    const p = pos[a.id];
+    if (!p) return;
+    const k = w.sueltos ? clave(null, a) : clave(w, a);
+    s += nodoSvg(k, a, p.x, p.y, NW, w.sueltos ? a.etiqueta : legible(a.etiqueta), maxT);
+  });
+  return { svg: s, ancho, alto };
+}
+
+function grupoCerrado(w, bx, by, ancho) {
+  return { svg: cabeceraGrupo(w, bx, by, ancho, CERR, true), ancho, alto: CERR };
+}
+
+function svgEsquema(d) {
+  llenarMapa(d);
+  const bl = bloques(d);
+  const todos = [d.chat].concat(...d.workflows.map(w => w.agentes), d.agentes);
+  const maxT = Math.max(1, ...todos.map(n => val(n.tokens)));
+  let y = 16, ancho = X0 + 520, cuerpo = '', sec = null;
+  const ramas = [];
+  const anchoCerr = Math.min(900, Math.max(520, ...bl.filter(b => !abierto(b.w)).map(b => anchoCerrado(b.w))));
+  bl.forEach(b => {
+    if (historia && b.sec !== sec) {
+      sec = b.sec;
+      cuerpo += '<text x="' + (X0 + 2) + '" y="' + (y + 11) + '" font-size="12" font-weight="600" fill="#8a919c">' + (sec === 'vivo' ? 'СЕЙЧАС РАБОТАЮТ' : 'ЗАВЕРШЁННЫЕ И ОСТАНОВЛЕННЫЕ') + '</text>';
+      y += 24;
+    }
+    const r = abierto(b.w) ? grupoAbierto(b.w, X0, y, maxT, anchoCerr) : grupoCerrado(b.w, X0, y, anchoCerr);
+    cuerpo += r.svg;
+    ramas.push({ y: y + (abierto(b.w) ? 22 : CERR / 2), vivo: b.w.estado === 'activo' });
+    ancho = Math.max(ancho, X0 + r.ancho + 20);
+    y += r.alto + 16;
+  });
+  const yc = 16 + (historia && bl.length ? 24 : 0);
+  if (!bl.length) {
+    const fin = d.workflows.length + (d.agentes.length ? 1 : 0);
+    cuerpo += '<text x="' + X0 + '" y="' + (yc + 20) + '" font-size="14" font-weight="600" fill="#374151">Сейчас ни один конвейер не работает.</text>';
+    cuerpo += '<text x="' + X0 + '" y="' + (yc + 40) + '" font-size="12.5" fill="#6b7280">' + (fin ? 'Прошлые конвейеры (' + fin + '): включите «Показать всю историю».' : 'В этой сессии конвейеров не было.') + '</text>';
+    y = yc + 70;
+  }
+  const tx = 16 + CW / 2, chatAbajo = yc + NH;
+  let lineas = '';
+  ramas.slice().sort((a, b) => a.vivo - b.vivo).forEach(r => {
+    lineas += '<path class="arista' + (r.vivo ? ' vivo' : '') + '" d="M' + tx + ',' + chatAbajo + ' V' + (r.y - 10) + ' Q' + tx + ',' + r.y + ' ' + (tx + 10) + ',' + r.y + ' H' + (X0 - 2) + '" marker-end="url(#' + (r.vivo ? 'fl-v' : 'fl-g') + ')"/>';
+  });
+  const chat = nodoSvg('chat', d.chat, 16, yc, CW, 'Основной чат', maxT);
+  const alto = Math.max(y + 8, yc + NH + 30);
+  const t = performance.now() / 1000;
+  return '<svg xmlns="http://www.w3.org/2000/svg" width="' + Math.round(ancho * zoom) + '" height="' + Math.round(alto * zoom) + '" viewBox="0 0 ' + Math.round(ancho) + ' ' + Math.round(alto) + '" style="--fase:-' + (t % 1.6).toFixed(2) + 's;--fase2:-' + (t % 0.9).toFixed(2) + 's">' +
+    '<defs><filter id="difuso" x="-20%" y="-60%" width="140%" height="220%"><feGaussianBlur stdDeviation="2.5"/></filter>' +
+    ['fl-g:#a3abb7', 'fl-n:#ea580c', 'fl-v:#16a34a'].map(m => { const [id, c] = m.split(':'); return '<marker id="' + id + '" viewBox="0 0 10 10" refX="9" refY="5" markerUnits="userSpaceOnUse" markerWidth="9" markerHeight="9" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="' + c + '"/></marker>'; }).join('') +
+    '</defs>' + lineas + cuerpo + chat + '</svg>';
+}
+
+function pintarEsquema() {
+  const cab = document.getElementById('esqCab');
+  const lz = document.getElementById('lienzo');
+  const d = datos;
+  if (!d) {
+    cab.innerHTML = '<div class="vacio">' + (sel ? 'сессия не найдена' : 'выберите сессию') + '</div>';
+    lz.innerHTML = '';
+    pintarCajon();
+    return;
+  }
+  const vivos = d.workflows.filter(w => w.estado === 'activo').length;
+  const ags = d.workflows.reduce((s, w) => s + w.agentes.filter(a => a.estado === 'activo').length, 0) + d.agentes.filter(a => a.estado === 'activo').length;
+  cab.innerHTML = '<h2>' + esc(d.titulo || d.prompt || d.id) + '</h2>' +
+    '<div class="meta">' + (d.activa ? chip('activo') + ' ' : '') + 'сейчас работают: конвейеров ' + vivos + ', агентов ' + ags + ' · всего конвейеров ' + d.totales.workflows + ' · токенов ' + fmt(val(d.totales.tokens)) + ' · начало ' + fecha(d.inicio) + ' · длительность ' + dur(d.duracion_s) + '</div>';
+  const sl = lz.scrollLeft, st = lz.scrollTop;
+  lz.innerHTML = svgEsquema(d);
+  lz.scrollLeft = sl;
+  lz.scrollTop = st;
+  pintarCajon();
+}
+
+function pintarCajon() {
+  const c = document.getElementById('cajon');
+  const it = vista === 'esquema' && selNodo && mapa[selNodo];
+  if (!it || it.tipo !== 'nodo') { c.hidden = true; cajonHtml = ''; return; }
+  const n = it.n, t = n.tokens || {}, h = hace(n);
+  const html = '<div class="cajon-cab"><h3>' + esc(it.titulo) + '</h3><button class="cerrar" type="button">Закрыть</button></div>' +
+    '<div class="meta">' + (it.wf ? esc(it.wf) + (n.fase ? ' · фаза ' + esc(n.fase) : '') + '<br>' : '') +
+    chip(n.estado) + (n.bloqueado ? ' ' + chip('bloq') : '') + ' ' + fmt(val(t)) + ' ток. · ' + dur(n.duracion_s) + ' · вызовов ' + (n.llamadas || 0) +
+    '<span id="cajonHace"></span><br>вход ' + exacto(t.entrada) + ', запись кэша ' + exacto(t.cache_escritura) + ', чтение кэша ' + exacto(t.cache_lectura) + ', выход ' + exacto(t.salida) + '</div>' +
+    (n.ultima_accion ? '<div class="meta">последний шаг: ' + esc(n.ultima_accion) + '</div>' : '') +
+    '<h4>Последние сообщения</h4>' + listaMensajes(n);
+  if (html !== cajonHtml) { c.innerHTML = html; cajonHtml = html; }
+  const span = document.getElementById('cajonHace'), txt = h != null ? ' · последняя запись ' + dur(h) + ' назад' : '';
+  if (span.textContent !== txt) span.textContent = txt;
+  c.hidden = false;
+}
+
+function globoHtml(k) {
+  const it = mapa[k];
+  if (!it) return '';
+  if (it.tipo === 'grupo') {
+    const w = it.w, bloq = w.bloqueados || [];
+    return '<b>' + esc(w.nombre) + '</b> ' + (bloq.length ? '<span class="pe bloq">остановлен на блокировке</span>' : chip(w.estado)) +
+      '<div class="linea">агентов ' + w.agentes.length + ' · ' + fmt(val(w.tokens)) + ' ток.' + (w.duracion_s ? ' · ' + dur(w.duracion_s) : '') + '</div>' +
+      (bloq.length ? '<div class="linea rojo">заблокированы заказы: ' + esc(bloq.join(', ')) + '</div>' : '') +
+      (w.descripcion ? '<div class="linea">' + esc(w.descripcion) + '</div>' : '') +
+      '<div class="linea">клик: ' + (abierto(w) ? 'свернуть' : 'развернуть') + '</div>';
+  }
+  const n = it.n, h = hace(n);
+  return '<b>' + esc(it.titulo) + '</b> ' + chip(n.estado) + (n.bloqueado ? ' ' + chip('bloq') : '') +
+    '<div class="linea">' + (it.wf ? esc(it.wf) + (n.fase ? ' · ' + esc(n.fase) : '') + '<br>' : '') + fmt(val(n.tokens)) + ' ток. · ' + dur(n.duracion_s) + (h != null ? ' · последняя запись ' + dur(h) + ' назад' : '') + '</div>' +
+    (n.ultima_accion ? '<div class="linea">последний шаг: ' + esc(n.ultima_accion) + '</div>' : '') +
+    (n.ultimo_texto ? '<div class="linea">последний текст: ' + esc(n.ultimo_texto) + '</div>' : '');
+}
+
+function pintarSesion() {
+  if (vista === 'esquema') pintarEsquema(); else pintarTabla();
+}
+
+function ponerVista(v) {
+  vista = v;
+  try { localStorage.setItem('panel_vista', v); } catch (e) {}
+  document.querySelectorAll('#pestanas button').forEach(b => b.classList.toggle('sel', b.dataset.vista === v));
+  document.getElementById('contenido').hidden = v !== 'tabla';
+  document.getElementById('esquema').hidden = v !== 'esquema';
+  document.getElementById('tareas').hidden = v !== 'tareas';
+  document.body.classList.toggle('vista-tareas', v === 'tareas');
+  document.getElementById('globo').hidden = true;
+  if (v === 'tareas') { refrescarTareas(); return; }
+  if (jsonSesion) pintarSesion();
+  pintarCajon();
+}
+
+let jsonTareas = null;
+
+function horaEpoca(s) {
+  const d = new Date(s * 1000);
+  return String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0');
+}
+
+async function refrescarLimite() {
+  const el = document.getElementById('limite');
+  try {
+    const d = JSON.parse(await pedir('/api/limite'));
+    if (!d.conocido) { el.hidden = true; return; }
+    el.hidden = false;
+    if (d.agotado) {
+      el.className = 'limite agotado';
+      el.innerHTML = 'Лимит исчерпан · сброс в ' + horaEpoca(d.reinicio);
+      el.title = '';
+      return;
+    }
+    const p = d.porcentaje[modo] != null ? d.porcentaje[modo] : d.porcentaje.todo;
+    const pc = Math.max(0, Math.min(100, p || 0));
+    el.className = 'limite' + (pc >= 85 ? ' alto' : pc >= 60 ? ' medio' : '');
+    el.innerHTML = 'Лимит ~' + pc + '% <span class="tubo"><i style="width:' + pc + '%"></i></span> сброс ~' + horaEpoca(d.reinicio);
+    el.title = 'Оценка. Точного остатка Claude Code не сохраняет. Окно 5 часов началось в ' + horaEpoca(d.inicio) +
+      '. Потрачено ' + fmt(d.actual[modo] || d.actual.todo) + ' токенов; в прошлом окне лимит кончился на ' + fmt(d.previa[modo] || d.previa.todo) +
+      '. Сюда не входят токены с других устройств и из других проектов.';
+  } catch (e) {
+    el.hidden = true;
+  }
+}
+
+async function refrescarTareas() {
+  try {
+    const t = await pedir('/api/tareas');
+    if (t === jsonTareas) return;
+    jsonTareas = t;
+    const d = JSON.parse(t);
+    document.getElementById('tareas').innerHTML = d.grupos.map(g =>
+      '<div class="bloque tg"><h2>' + esc(g.nombre) + '</h2>' + g.tareas.map(x =>
+        '<div class="tarea"><b>' + esc(x.nombre) + '</b><span class="est"><span class="pill ' + esc(x.clase) + '">' + esc(x.estado) + '</span>' +
+        (x.motivo ? '<span class="por">' + esc(x.motivo) + '</span>' : '') + '</span>' +
+        '<span class="que">' + esc(x.que) + '</span></div>').join('') + '</div>').join('') ||
+      '<div class="vacio">задач нет</div>';
+  } catch (e) {
+    document.getElementById('tareas').innerHTML = '<div class="vacio">нет связи с panel.py</div>';
+  }
+}
+
+async function pedir(url) {
+  const r = await fetch(url, { cache: 'no-store' });
+  if (!r.ok) throw new Error(r.status);
+  return r.text();
+}
+
+async function refrescar(forzar) {
+  if (ocupado) return;
+  ocupado = true;
+  const est = document.getElementById('estado');
+  try {
+    const tl = await pedir('/api/sesiones');
+    const nuevaLista = forzar || tl !== jsonLista;
+    if (nuevaLista) { jsonLista = tl; lista = JSON.parse(tl); }
+    if (!sel && lista.length) { sel = lista[0].id; history.replaceState(null, '', '#' + encodeURIComponent(sel)); }
+    let ts = '';
+    if (sel) { try { ts = await pedir('/api/sesion/' + encodeURIComponent(sel)); } catch (e) { ts = 'null'; } }
+    if (forzar || ts !== jsonSesion) { jsonSesion = ts; datos = ts && ts !== 'null' ? JSON.parse(ts) : null; pintarSesion(); }
+    else if (vista === 'esquema') pintarCajon();
+    if (nuevaLista) pintarLista();
+    est.className = '';
+    est.textContent = 'обновлено ' + hora(new Date().toISOString()) + ' · каждые 5 с';
+  } catch (e) {
+    est.className = 'error';
+    est.textContent = 'нет связи с panel.py (' + e.message + ')';
+  } finally {
+    ocupado = false;
+  }
+}
+
+document.getElementById('lista').addEventListener('click', ev => {
+  const s = ev.target.closest('[data-s]');
+  if (!s || s.dataset.s === sel) return;
+  sel = s.dataset.s;
+  abiertos.clear();
+  selNodo = null;
+  history.replaceState(null, '', '#' + encodeURIComponent(sel));
+  pintarLista();
+  refrescar(true);
+});
+
+document.getElementById('contenido').addEventListener('click', ev => {
+  if (ev.target.closest('tr.detalle')) return;
+  const wf = ev.target.closest('[data-wf]');
+  if (wf) {
+    const id = wf.dataset.wf;
+    cerrados.has(id) ? cerrados.delete(id) : cerrados.add(id);
+    pintarSesion();
+    return;
+  }
+  const k = ev.target.closest('[data-k]');
+  if (!k) return;
+  const clv = k.dataset.k;
+  if (clv.startsWith('wf:')) { cerrados.delete(clv.slice(3)); pintarSesion(); return; }
+  const desdeBarra = k.classList.contains('seg');
+  if (desdeBarra) abiertos.add(clv); else abiertos.has(clv) ? abiertos.delete(clv) : abiertos.add(clv);
+  if (desdeBarra && datos) datos.workflows.forEach(w => { if (clv.startsWith('ag:' + w.id + '/')) cerrados.delete(w.id); });
+  pintarSesion();
+  if (desdeBarra) {
+    const fila = document.querySelector('tr[data-k="' + CSS.escape(clv) + '"]');
+    if (fila) fila.scrollIntoView({ block: 'center', behavior: 'smooth' });
+  }
+});
+
+const lienzo = document.getElementById('lienzo');
+const globo = document.getElementById('globo');
+let arrastre = null;
+
+lienzo.addEventListener('click', ev => {
+  if (suprimirClic) return;
+  const g = ev.target.closest('[data-g]');
+  if (g) {
+    const it = mapa['wf:' + g.dataset.g];
+    if (!it) return;
+    const w = it.w, ab = abierto(w);
+    if (w.estado === 'activo') { ab ? wfPlegados.add(w.id) : wfPlegados.delete(w.id); }
+    else { ab ? wfAbiertos.delete(w.id) : wfAbiertos.add(w.id); }
+    globo.hidden = true;
+    pintarEsquema();
+    return;
+  }
+  const n = ev.target.closest('[data-n]');
+  selNodo = n && selNodo !== n.dataset.n ? n.dataset.n : null;
+  pintarEsquema();
+});
+
+lienzo.addEventListener('mousemove', ev => {
+  if (arrastre && arrastre.movido) { globo.hidden = true; return; }
+  const el = ev.target.closest('[data-n], [data-g]');
+  const k = el ? (el.dataset.n || 'wf:' + el.dataset.g) : null;
+  const h = k ? globoHtml(k) : '';
+  if (!h) { globo.hidden = true; return; }
+  if (globo.dataset.k !== k || globo.hidden) { globo.innerHTML = h; globo.dataset.k = k; }
+  globo.hidden = false;
+  const r = globo.getBoundingClientRect();
+  let x = ev.clientX + 16, y = ev.clientY + 16;
+  if (x + r.width > innerWidth - 8) x = Math.max(8, ev.clientX - r.width - 12);
+  if (y + r.height > innerHeight - 8) y = Math.max(8, ev.clientY - r.height - 12);
+  globo.style.left = x + 'px';
+  globo.style.top = y + 'px';
+});
+lienzo.addEventListener('mouseleave', () => { globo.hidden = true; });
+
+lienzo.addEventListener('pointerdown', ev => {
+  if (ev.pointerType !== 'mouse' || ev.button !== 0) return;
+  arrastre = { x: ev.clientX, y: ev.clientY, l: lienzo.scrollLeft, t: lienzo.scrollTop, movido: false };
+});
+window.addEventListener('pointermove', ev => {
+  if (!arrastre) return;
+  const dx = ev.clientX - arrastre.x, dy = ev.clientY - arrastre.y;
+  if (!arrastre.movido && Math.abs(dx) + Math.abs(dy) > 5) { arrastre.movido = true; lienzo.classList.add('arrastre'); }
+  if (arrastre.movido) { lienzo.scrollLeft = arrastre.l - dx; lienzo.scrollTop = arrastre.t - dy; }
+});
+window.addEventListener('pointerup', () => {
+  if (arrastre && arrastre.movido) { suprimirClic = true; setTimeout(() => { suprimirClic = false; }, 0); }
+  arrastre = null;
+  lienzo.classList.remove('arrastre');
+});
+
+document.querySelector('.zoom').addEventListener('click', ev => {
+  const b = ev.target.closest('[data-z]');
+  if (!b) return;
+  const paso = +b.dataset.z;
+  const i = ZOOMS.indexOf(zoom);
+  const nuevo = paso === 0 ? 1 : ZOOMS[Math.max(0, Math.min(ZOOMS.length - 1, i + paso))];
+  if (nuevo === zoom) return;
+  const cx = (lienzo.scrollLeft + lienzo.clientWidth / 2) / zoom, cy = (lienzo.scrollTop + lienzo.clientHeight / 2) / zoom;
+  zoom = nuevo;
+  try { localStorage.setItem('panel_zoom', String(zoom)); } catch (e) {}
+  pintarEsquema();
+  lienzo.scrollLeft = cx * zoom - lienzo.clientWidth / 2;
+  lienzo.scrollTop = cy * zoom - lienzo.clientHeight / 2;
+});
+
+document.getElementById('historia').addEventListener('change', ev => {
+  historia = ev.target.checked;
+  pintarEsquema();
+});
+
+document.getElementById('cajon').addEventListener('click', ev => {
+  if (!ev.target.closest('.cerrar')) return;
+  selNodo = null;
+  pintarEsquema();
+});
+document.addEventListener('keydown', ev => {
+  if (ev.key === 'Escape' && selNodo) { selNodo = null; pintarEsquema(); }
+});
+
+document.getElementById('pestanas').addEventListener('click', ev => {
+  const b = ev.target.closest('[data-vista]');
+  if (b && b.dataset.vista !== vista) ponerVista(b.dataset.vista);
+});
+
+const selModo = document.getElementById('modo');
+selModo.value = modo;
+selModo.addEventListener('change', () => {
+  modo = selModo.value;
+  try { localStorage.setItem('panel_modo', modo); } catch (e) {}
+  refrescarLimite();
+  pintarLista();
+  pintarSesion();
+});
+
+ponerVista(vista);
+refrescar(true);
+refrescarLimite();
+setInterval(() => { if (vista === 'tareas') refrescarTareas(); else refrescar(); }, 5000);
+setInterval(refrescarLimite, 30000);
+</script>
+</body>
+</html>

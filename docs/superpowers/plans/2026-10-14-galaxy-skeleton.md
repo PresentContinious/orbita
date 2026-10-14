@@ -127,7 +127,8 @@ rm -rf dist
     "balance": "tsx scripts/balance.ts",
     "stress": "tsx scripts/stress.ts",
     "smoke": "tsx scripts/smoke.ts",
-    "codemap": "node scripts/codemap.mjs"
+    "codemap": "node scripts/codemap.mjs",
+    "panel": "python tools/panel/panel.py"
   },
   "dependencies": {
     "pixi.js": "8.21.0",
