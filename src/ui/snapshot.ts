@@ -30,6 +30,7 @@ export interface MinimapData {
 
 export interface Snapshot {
   seed: number
+  unitCap: number
   year: number
   speedIndex: number
   paused: boolean
@@ -86,6 +87,7 @@ export function buildSnapshot(w: World, c: Controller, model: UiModel): Snapshot
   })
   return {
     seed: w.seed,
+    unitCap: w.unitCap,
     year: yearOf(w.t),
     speedIndex: c.ui.speedIndex,
     paused: c.ui.paused,

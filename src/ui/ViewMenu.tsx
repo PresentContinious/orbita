@@ -1,4 +1,6 @@
 import { useEffect, useRef, useState, useSyncExternalStore } from 'react'
+import type { Controller } from '../app/controller'
+import { SETUP } from '../sim/setup'
 import { display, onDisplay, setDisplay } from '../app/display'
 import { Icon } from './icons'
 import { PLANET_OPTIONS, planetsPatch, TERRITORY_OPTIONS, territoryPatch, TRADE_OPTIONS, tradePatch } from './viewOptions'
@@ -25,7 +27,7 @@ function Row<T extends string | boolean>({ title, options, value, onPick }: { ti
   )
 }
 
-export function ViewMenu() {
+export function ViewMenu({ controller, unitCap }: { controller: Controller; unitCap: number }) {
   useSyncExternalStore(subscribe, () => version)
   const [open, setOpen] = useState(false)
   const openRef = useRef(false)
@@ -63,6 +65,11 @@ export function ViewMenu() {
           <Row title="Территории" options={TERRITORY_OPTIONS} value={display.territory} onPick={(v) => setDisplay(territoryPatch(v))} />
           <Row title="Планеты" options={PLANET_OPTIONS} value={display.planets} onPick={(v) => setDisplay(planetsPatch(v))} />
           <Row title="Торговые пути" options={TRADE_OPTIONS} value={display.trade} onPick={(v) => setDisplay(tradePatch(v))} />
+          <header className="muted">игра</header>
+          <Row title="Юнитов на карте" options={SETUP.unitCap.options.map((n) => ({ value: String(n), label: n.toLocaleString('ru-RU') }))} value={String(unitCap)} onPick={(v) => controller.setUnitCap(Number(v))} />
+          <button className="newgalaxy" onClick={() => (location.search = '')}>
+            Новая галактика
+          </button>
         </div>
       )}
     </span>

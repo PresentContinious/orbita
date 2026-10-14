@@ -98,7 +98,18 @@ try {
     await page.close()
   }
 
-  // 3) нагрузка: 2000 кораблей, 600 в одной системе
+  // 3) экран настроек (адрес без зерна)
+  {
+    const page = await open('', 1600, 900)
+    await page.waitForSelector('.setup .setup-preview', { timeout: 10_000 })
+    await page.waitForTimeout(300)
+    await page.screenshot({ path: 'artifacts/smoke/setup.png' })
+    const dots = await page.locator('.setup-preview circle').count()
+    if (dots < 4) problems.push(`на превью экрана настроек ${dots} систем`)
+    await page.close()
+  }
+
+  // 4) нагрузка: 2000 кораблей, 600 в одной системе
   {
     const page = await open('seed=4815&stress=1', 1600, 900)
     await page.waitForTimeout(1500)

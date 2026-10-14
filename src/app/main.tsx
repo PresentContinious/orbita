@@ -9,14 +9,34 @@ import { createStore } from '../ui/store'
 import { spawnStressShips } from '../sim/stress'
 import { createWorld, stepWorld } from '../sim/world'
 import { initDisplay } from './display'
+import { loadUnitCap, parseSetup } from './setup'
+import { SETUP } from '../sim/setup'
+import { SetupScreen } from '../ui/SetupScreen'
 import { Controller } from './controller'
 import { attachInput } from './input'
 import { advance, alpha, createClock } from './loop'
 
 async function boot(): Promise<void> {
   const params = new URLSearchParams(location.search)
-  const seed = Number(params.get('seed')) || Math.floor(Math.random() * 1_000_000)
-  const world = createWorld(seed)
+  const parsed = parseSetup(location.search)
+  if (parsed.seed === null) {
+    // нет зерна в адресе — экран «Галактика под заказ», без Pixi и без мира
+    createRoot(document.getElementById('hud')!).render(<SetupScreen />)
+    Object.assign(window, { __orbita: { setup: true } })
+    return
+  }
+  const seed = parsed.seed
+  const opts = { ...parsed.opts }
+  if (opts.unitCap === undefined) {
+    if (parsed.stress) {
+      // лимит под нагрузку, чтобы стресс не срезался; в браузере не запоминаем
+      opts.unitCap = SETUP.unitCap.options.find((c) => c >= parsed.stress + 200) ?? Math.max(...SETUP.unitCap.options)
+    } else {
+      const saved = loadUnitCap()
+      if (saved !== null) opts.unitCap = saved
+    }
+  }
+  const world = createWorld(seed, opts)
 
   initDisplay(location.search)
   const app = new Application()
@@ -28,7 +48,7 @@ async function boot(): Promise<void> {
   const clock = createClock(1)
   const controller = new Controller(world, createCamera(), clock, view)
   controller.flyToGalaxy(true)
-  if (params.get('stress')) controller.flyToSystem(spawnStressShips(world, 2000, 600), 'approach', true)
+  if (parsed.stress) controller.flyToSystem(spawnStressShips(world, parsed.stress, Math.round(parsed.stress * 0.3)), 'approach', true)
   if (params.get('fps')) {
     const fps = document.createElement('div')
     fps.style.cssText = 'position:fixed;left:50%;top:8px;transform:translateX(-50%);font:12px JetBrains Mono,monospace;color:#7df0ff;z-index:9;pointer-events:none'

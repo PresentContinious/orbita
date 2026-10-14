@@ -7,6 +7,7 @@ import { planetPos } from '../sim/system'
 import type { GameEvent, World } from '../sim/types'
 import { pickFocus, type Focus } from './director'
 import { alpha, type Clock } from './loop'
+import { saveUnitCap } from './setup'
 
 export interface Crumb {
   label: string
@@ -69,6 +70,11 @@ export class Controller {
       this.seenEvent = this.world.events.length ? this.world.events[this.world.events.length - 1].id : 0
       this.directorAt = -Infinity
     }
+  }
+
+  setUnitCap(n: number): void {
+    this.world.unitCap = n
+    saveUnitCap(n)
   }
 
   toggleMinimap(): void {

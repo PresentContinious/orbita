@@ -25,7 +25,7 @@ export function TimeControls({ s, controller }: { s: Snapshot; controller: Contr
       <button className={s.follow ? 'on' : ''} onClick={() => controller.toggleFollow()} title="Камера следит за самым интересным — F">
         <Icon name="target" size={14} />
       </button>
-      <ViewMenu />
+      <ViewMenu controller={controller} unitCap={s.unitCap} />
       <button
         className="seed"
         title="Зерно галактики: щёлкни, чтобы ввести своё"

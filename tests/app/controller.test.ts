@@ -96,3 +96,11 @@ describe('Controller', () => {
     expect(c.cam.follow).toBeNull()
   })
 })
+
+describe("Controller: лимит юнитов", () => {
+  test("setUnitCap меняет world.unitCap", () => {
+    const { w, c } = setup()
+    c.setUnitCap(1000)
+    expect(w.unitCap).toBe(1000)
+  })
+})

@@ -4,8 +4,8 @@
 
 ## src/
 
-- `src/app/controller.ts` — 284 стр.
-  - `Crumb` (interface, 11), `UiState` (interface, 16), `Controller` (class, 32)
+- `src/app/controller.ts` — 290 стр.
+  - `Crumb` (interface, 12), `UiState` (interface, 17), `Controller` (class, 33)
 - `src/app/director.ts` — 20 стр.
   - `Focus` (interface, 3), `pickFocus` (function, 10)
 - `src/app/display.ts` — 78 стр. — Настройки вида, которые зритель выбирает под себя: территории, стиль планет, торговые пути.
@@ -14,7 +14,9 @@
   - `attachInput` (function, 7)
 - `src/app/loop.ts` — 32 стр.
   - `Clock` (interface, 3), `createClock` (function, 10), `advance` (function, 15), `alpha` (function, 29)
-- `src/app/main.tsx` — 78 стр.
+- `src/app/main.tsx` — 98 стр.
+- `src/app/setup.ts` — 103 стр. — Параметры галактики в адресе и запоминание выбора в браузере.
+  - `UI_DEFAULTS` (const, 5), `parseSetup` (function, 30), `setupQuery` (function, 52), `loadUnitCap` (function, 62), `saveUnitCap` (function, 71), `SetupValues` (type, 79), `loadSetupValues` (function, 81), `saveSetupValues` (function, 96)
 - `src/render/biome.ts` — 75 стр. — Биом планеты — только вид. Выводится из данных планеты (вид, зона, пригодность, хеш id), симуляцию не трогает.
   - `Biome` (type, 5), `BIOME_NAME` (const, 23), `biomeName` (const, 42), `planetBiome` (function, 61)
 - `src/render/camera.ts` — 136 стр.
@@ -107,14 +109,16 @@
   - `Hud` (function, 14)
 - `src/ui/Minimap.tsx` — 58 стр.
   - `Minimap` (function, 7)
+- `src/ui/SetupScreen.tsx` — 131 стр.
+  - `SetupScreen` (function, 45)
 - `src/ui/TimeControls.tsx` — 45 стр.
   - `TimeControls` (function, 7)
 - `src/ui/Toasts.tsx` — 21 стр.
   - `Toasts` (function, 5)
 - `src/ui/Tooltip.tsx` — 16 стр.
   - `Tooltip` (function, 3)
-- `src/ui/ViewMenu.tsx` — 71 стр.
-  - `ViewMenu` (function, 28)
+- `src/ui/ViewMenu.tsx` — 78 стр.
+  - `ViewMenu` (function, 30)
 - `src/ui/cards.ts` — 154 стр.
   - `CardRow` (interface, 9), `CardData` (interface, 15), `planetCard` (function, 33), `systemCard` (function, 66), `civCard` (function, 79), `missionText` (function, 103), `shipCard` (function, 131), `cardFor` (function, 148)
 - `src/ui/format.ts` — 30 стр.
@@ -123,8 +127,8 @@
   - `IconName` (type, 3), `KIND_ICON` (const, 6), `iconFor` (const, 22), `EventIcon` (function, 74), `Icon` (function, 78)
 - `src/ui/model.ts` — 60 стр.
   - `Toast` (interface, 3), `TOAST_LIFE` (const, 9), `MAX_TOASTS` (const, 10), `updateToasts` (function, 13), `TrendTracker` (class, 30), `UiModel` (class, 49)
-- `src/ui/snapshot.ts` — 109 стр.
-  - `CivSummary` (interface, 12), `MinimapData` (interface, 24), `Snapshot` (interface, 31), `buildSnapshot` (function, 70)
+- `src/ui/snapshot.ts` — 111 стр.
+  - `CivSummary` (interface, 12), `MinimapData` (interface, 24), `Snapshot` (interface, 31), `buildSnapshot` (function, 71)
 - `src/ui/store.ts` — 24 стр.
   - `Store` (interface, 3), `createStore` (function, 9)
 - `src/ui/viewOptions.ts` — 21 стр.
@@ -135,15 +139,16 @@
 - `scripts/balance.ts` — 118 стр. — Балансный прогон: npm run balance [зёрен=12] [минут=30]. Цели — раздел 12.2 спеки.
 - `scripts/codemap.mjs` — 43 стр. — Карта кода: файл → первая строка-комментарий, длина и экспорты с номерами строк.
 - `scripts/shot.ts` — 41 стр. — Снимок экрана игры: npm run shot -- "<параметры URL>" <файл.png> "<JS перед снимком>"
-- `scripts/smoke.ts` — 122 стр. — Дымовой тест: npm run smoke. Снимки — artifacts/smoke/
+- `scripts/smoke.ts` — 133 стр. — Дымовой тест: npm run smoke. Снимки — artifacts/smoke/
 - `scripts/stress.ts` — 19 стр. — Нагрузка: npm run stress — 2000 кораблей, 600 в одной системе; цель — шаг ≤ 6 мс
 
 ## tests/
 
-- `tests/app/controller.test.ts` — 99 стр.
+- `tests/app/controller.test.ts` — 107 стр.
 - `tests/app/director.test.ts` — 55 стр.
 - `tests/app/display.test.ts` — 20 стр.
 - `tests/app/loop.test.ts` — 34 стр.
+- `tests/app/setup.test.ts` — 31 стр.
 - `tests/helpers.ts` — 27 стр.
   - `run` (function, 5), `snapshot` (function, 11), `quietWorld` (function, 22)
 - `tests/render/biome.test.ts` — 40 стр.

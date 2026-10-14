@@ -27,7 +27,7 @@
   "2026-10-14-galaxy-setup": {
     "1": { "status": "done", "note": "коммит bb26b74, ревью PASS" },
     "2": { "status": "done", "note": "коммит deb432a, ревью PASS (стресс 2.43 мс)" },
-    "3": { "status": "review", "note": "коммит 238fce0 (worktree)" }
+    "3": { "status": "done", "note": "коммит 238fce0 → galaxy, ревью PASS; снимки artifacts/setup/" }
   },
   "2026-10-14-battle": {
     "1": { "status": "done", "note": "коммит 7dd37d3 → galaxy, ревью PASS" },
