@@ -1,9 +1,9 @@
 // Арена: мир из одной системы с двумя флотами по строке состава; прогон без экрана (спека 2А, §13.2).
-import { COMBAT_KINDS, DEFAULT_WING, isCraft, radiusOf, type CombatKind } from './classes'
-import { BATTLE } from './combat-config'
-import { SHIP_KINDS } from './config'
+import { COMBAT_KINDS, DEFAULT_WING, isCapital, isCraft, radiusOf, type CombatKind } from './classes'
+import { BATTLE, FRAME } from './combat-config'
+import { SHIP_KINDS, SIM_DT } from './config'
 import { earn } from './economy'
-import { createFleet } from './fleet'
+import { anchorAbs, assignSlots, createFleet, fleetById, slotLocal, slotWorld } from './fleet'
 import { buildGrids, shipById, spawnWarship } from './ships'
 import { planetPos } from './system'
 import type { Vec } from './math'
@@ -37,7 +37,13 @@ export interface ArenaResult {
   alive: [number, number]
   /** минимальный зазор между корпусами (от борта до борта) за прогон */
   minHullDist: number
+  /** то же, но только между капитальными (линия, фрегаты, тыл) */
+  minCapitalDist: number
   pushOuts: number
+  /** доля времени капитальных дальше 15 ед. от слота (0..1); пока фаз нет — считается всегда */
+  capitalOffSlotT: number
+  /** случаев |Δvel| за шаг > accel·dt */
+  minSpeedViolations: number
   positionsHash: string
 }
 
@@ -117,6 +123,32 @@ function place(w: World, fleet: Fleet, heading: number, spacing: number): void {
   })
 }
 
+/** разброс при старте: слоты, растянутые от якоря в STAGE_SPREAD раз; пути к слотам не пересекаются (задача 7) */
+const STAGE_SPREAD = 2
+const STAGE = { wing: 60 }
+
+function stage(w: World, fleet: Fleet): void {
+  assignSlots(w, fleet)
+  const a = anchorAbs(w, fleet, { x: 0, y: 0 })
+  const c = Math.cos(fleet.heading)
+  const s = Math.sin(fleet.heading)
+  const local: Vec = { x: 0, y: 0 }
+  for (const id of fleet.shipIds) {
+    const ship = shipById(w, id)!
+    const slot = ship.combat!.slot
+    if (!slot) continue
+    slotLocal(fleet, slot, w.t, local)
+    // овал корветов — целиком на крыло наружу (смещение одинаково, ряд не перемешивается)
+    const oval = slot.kind === 'oval'
+    const side = slot.column < 0 ? -1 : 1
+    const cy = side * (fleet.width / 2 + FRAME.wingPad)
+    const lx = local.x * STAGE_SPREAD
+    const ly = oval ? cy + (local.y - cy) * STAGE_SPREAD + side * STAGE.wing : local.y * STAGE_SPREAD
+    ship.pos = { x: a.x + lx * c - ly * s, y: a.y + lx * s + ly * c }
+    ship.prevPos = { ...ship.pos }
+  }
+}
+
 export function createArena(spec: ArenaSpec): World {
   const w = createWorld(spec.seed)
   for (const c of w.civs) c.nextDecision = Infinity
@@ -189,25 +221,31 @@ export function createArena(spec: ArenaSpec): World {
   const spacing = 4 * maxLen
   place(w, fleetA, toB, spacing)
   place(w, fleetB, toB + Math.PI, spacing)
+  // в системе отсчёта планеты якорь хранится относительно неё (иначе слоты считались бы со сдвигом)
+  if (fleetB.frame === target.id) fleetB.anchor = { x: anchorB.x - tp.x, y: anchorB.y - tp.y }
+  stage(w, fleetA)
+  stage(w, fleetB)
   buildGrids(w)
   return w
 }
 
 const near: number[] = []
+/** капитальный дальше этого от слота — «вне слота» (метрика capitalOffSlotT) */
+const OFF_SLOT = 15
 
 /** минимальный зазор между корпусами (машины не считаем) в системе арены; через сетку, радиус 3 длины */
-function hullGap(w: World): number {
+function hullGap(w: World, capitalOnly = false): number {
   const sys = w.arenaSystem ?? 0
   const grid = w.grids[sys]
   let min = Infinity
   for (let i = 0; i < w.ships.length; i++) {
     const a = w.ships[i]
-    if (!a.alive || a.systemId !== sys || isCraft(a.kind)) continue
+    if (!a.alive || a.systemId !== sys || isCraft(a.kind) || (capitalOnly && !isCapital(a.kind))) continue
     const ra = radiusOf(a.kind)
     for (const j of grid.query(a.pos.x, a.pos.y, 3 * SHIP_KINDS[a.kind].length + 40, near)) {
       if (j <= i) continue
       const b = w.ships[j]
-      if (!b || !b.alive || b.systemId !== sys || isCraft(b.kind)) continue
+      if (!b || !b.alive || b.systemId !== sys || isCraft(b.kind) || (capitalOnly && !isCapital(b.kind))) continue
       const d = Math.hypot(a.pos.x - b.pos.x, a.pos.y - b.pos.y) - ra - radiusOf(b.kind)
       if (d < min) min = d
     }
@@ -227,11 +265,39 @@ export function runArena(w: World, steps: number, onStep?: (w: World) => void): 
   let battleId: number | null = null
   buildGrids(w)
   let minHullDist = hullGap(w)
+  let minCapitalDist = hullGap(w, true)
+  const prevVel = new Map<number, Vec>()
+  for (const s of w.ships) prevVel.set(s.id, { x: s.vel.x, y: s.vel.y })
+  let violations = 0
+  let offSlot = 0
+  let capSteps = 0
+  const spot: Vec = { x: 0, y: 0 }
   for (let i = 0; i < steps; i++) {
     stepWorld(w)
     pushOuts += w.pushOuts
+    for (const s of w.ships) {
+      if (!s.alive || s.transit) continue
+      const pv = prevVel.get(s.id)
+      if (pv) {
+        if (Math.hypot(s.vel.x - pv.x, s.vel.y - pv.y) > SHIP_KINDS[s.kind].accel * SIM_DT + 1e-6) violations++
+        pv.x = s.vel.x
+        pv.y = s.vel.y
+      } else prevVel.set(s.id, { x: s.vel.x, y: s.vel.y })
+      const sl = s.combat?.slot
+      if (sl && isCapital(s.kind) && s.fleetId !== null) {
+        const f = fleetById(w, s.fleetId)
+        if (f) {
+          capSteps++
+          slotWorld(w, f, sl, spot)
+          if (Math.hypot(spot.x - s.pos.x, spot.y - s.pos.y) > OFF_SLOT) offSlot++
+        }
+      }
+    }
     if (battleId === null && w.battles.length) battleId = w.battles[0].id
-    if (i % 10 === 9) minHullDist = Math.min(minHullDist, hullGap(w))
+    if (i % 10 === 9) {
+      minHullDist = Math.min(minHullDist, hullGap(w))
+      minCapitalDist = Math.min(minCapitalDist, hullGap(w, true))
+    }
     onStep?.(w)
   }
   const losses: [number, number] = [0, 0]
@@ -250,5 +316,5 @@ export function runArena(w: World, steps: number, onStep?: (w: World) => void): 
       else if (s.owner === roster.owners[1]) alive[1]++
     }
   }
-  return { steps, durationS: w.t - t0, battleId, losses, alive, minHullDist, pushOuts, positionsHash: hashOf(w) }
+  return { steps, durationS: w.t - t0, battleId, losses, alive, minHullDist, minCapitalDist, pushOuts, capitalOffSlotT: capSteps ? offSlot / capSteps : 0, minSpeedViolations: violations, positionsHash: hashOf(w) }
 }

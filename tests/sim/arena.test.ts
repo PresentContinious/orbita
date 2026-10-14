@@ -2,7 +2,6 @@ import { describe, expect, it } from 'vitest'
 import { createArena, parseArena, parseSide, runArena } from '../../src/sim/arena'
 import { BATTLE } from '../../src/sim/combat-config'
 import { SHIP_KINDS } from '../../src/sim/config'
-import { planetPos } from '../../src/sim/system'
 
 const spec = (q: string) => parseArena(q)
 
@@ -42,8 +41,7 @@ describe('арена', () => {
     expect(fb.order).toBe('orbit')
     const planet = w.planets.get((fb.mission as { planetId: string }).planetId)!
     expect(fb.frame).toBe(planet.id)
-    const p = planetPos(planet, w.t)
-    expect(Math.hypot(fb.anchor.x - p.x, fb.anchor.y - p.y)).toBeCloseTo(planet.radius + 200, 5)
+    expect(Math.hypot(fb.anchor.x, fb.anchor.y)).toBeCloseTo(planet.radius + 200, 5) // якорь в системе отсчёта планеты — локальный
     expect(planet.owner).toBe(fb.owner)
   })
 

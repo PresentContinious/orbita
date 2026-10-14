@@ -8,7 +8,7 @@ import { generateGalaxy } from './galaxy'
 import { createRng } from './rng'
 import { clampOptions, SETUP, setupOf, type GalaxyOptions } from './setup'
 import { stepCombatState, stepDebris } from './damage'
-import { stepFleets } from './fleet'
+import { pushOut, stepFleets } from './fleet'
 import { initPools, stepProjectiles } from './projectiles'
 import { buildGrids, compactShips, moveShips } from './ships'
 import { SpatialGrid } from './spatial'
@@ -67,6 +67,7 @@ export function stepWorld(w: World): void {
   stepFleets(w)
   buildGrids(w)
   moveShips(w)
+  pushOut(w)
   pickTargets(w)
   fireWeapons(w)
   stepProjectiles(w)

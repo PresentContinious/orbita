@@ -52,6 +52,7 @@ export const FRAME = {
   gatherShare: 0.9,
   gatherT: 60,
   gateOffset: 80,
+  matchAccel: 4,
 }
 
 /** бой: фазы, давление, часы, сплочённость, решение (раздел 8) */

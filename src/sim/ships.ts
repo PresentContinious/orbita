@@ -1,9 +1,10 @@
-import { isCombatKind, isCraft, newCombat, type CombatKind } from './classes'
+import { CLASSES, isCapital, isCombatKind, isCraft, newCombat, type CombatKind } from './classes'
+import { DAMAGE, FRAME } from './combat-config'
 import { MOVE, SHIP_KINDS, SIM_DT, type ShipKind } from './config'
 import { speedMul } from './damage'
 import { buy,shipPrice, shipUpkeepOf } from './economy'
-import { addToFleet } from './fleet'
-import { TAU, ZERO } from './math'
+import { addToFleet, enemyAnchor, fleetById, markDamaged } from './fleet'
+import { TAU, ZERO, type Vec } from './math'
 import { checkColonize, missionGoal } from './missions'
 import { advanceTransit, avoidStar, gateGoal, shipSpeed, steer } from './nav'
 import { planetPos, planetVel } from './system'
@@ -67,6 +68,27 @@ export function turnHeading(ship: Ship, want?: number, dt = SIM_DT): void {
 }
 
 const scratch: number[] = []
+const enemyTmp: Vec = { x: 0, y: 0 }
+
+/** куда смотрит нос: при отходе капитальные — на якорь врага; цель огня в досягаемости — на цель; иначе по курсу рамки */
+function wantHeading(w: World, ship: Ship, fleet: Fleet): number {
+  const c = ship.combat!
+  if (fleet.order === 'retreat' && isCapital(ship.kind)) {
+    const e = enemyAnchor(w, fleet, enemyTmp)
+    if (e) return Math.atan2(e.y - ship.pos.y, e.x - ship.pos.x)
+  }
+  if (c.targetId !== null) {
+    const t = shipById(w, c.targetId)
+    if (t && t.alive && !t.transit && t.systemId === ship.systemId && isCombatKind(ship.kind)) {
+      let reach = 0
+      for (const wp of CLASSES[ship.kind].weapons) reach = Math.max(reach, wp.range)
+      const dx = t.pos.x - ship.pos.x
+      const dy = t.pos.y - ship.pos.y
+      if (dx * dx + dy * dy <= reach * reach) return Math.atan2(dy, dx)
+    }
+  }
+  return fleet.heading
+}
 
 export function stepShips(w: World): void {
   buildGrids(w)
@@ -93,14 +115,29 @@ export function moveShips(w: World): void {
       continue
     }
     if (ship.route.length && ship.mission.type === 'colonize') checkColonize(w, ship)
+    const c = ship.combat
+    const fleet = c && ship.mission.type === 'fleet' && ship.fleetId !== null ? fleetById(w, ship.fleetId) : undefined
+    // подбитый горящий уходит за линию по своей колонне (решает слот, а не корабль); при броске остаётся
+    if (fleet && c && c.burning !== null && c.hull < DAMAGE.burnBelow * c.hullMax && c.slot && c.slot.kind !== 'damaged' && fleet.order !== 'charge') {
+      markDamaged(fleet, ship)
+    }
     const goal = ship.route.length ? gateGoal(w, ship) : missionGoal(w, ship)
     if (!goal) continue
     const sys = w.galaxy.systems[ship.systemId]
     const near = Math.hypot(goal.pos.x - ship.pos.x, goal.pos.y - ship.pos.y)
     const frame = near < goal.frameR ? goal.vel : ZERO
-    steer(ship, avoidStar(ship.pos, goal.pos, sys.star.radius), shipSpeed(w, ship) * speedMul(ship), SHIP_KINDS[ship.kind].accel, frame, SIM_DT)
+    let maxSpeed = shipSpeed(w, ship) * speedMul(ship)
+    let want: number | undefined
+    if (fleet && c) {
+      if (isCapital(ship.kind)) {
+        // без обгона слота; при отходе — реверсом
+        maxSpeed = fleet.order === 'retreat' ? FRAME.reverseSpeed : Math.min(maxSpeed, near / SIM_DT + Math.hypot(fleet.anchorVel.x, fleet.anchorVel.y))
+      }
+      want = wantHeading(w, ship, fleet)
+    }
+    steer(ship, avoidStar(ship.pos, goal.pos, sys.star.radius), maxSpeed, SHIP_KINDS[ship.kind].accel, frame, SIM_DT)
     if (ship.mission.type !== 'fleet' && !isCraft(ship.kind)) separate(w, ship, i)
-    turnHeading(ship)
+    turnHeading(ship, want)
     if (Math.hypot(goal.pos.x - ship.pos.x, goal.pos.y - ship.pos.y) < goal.dockR) goal.onReach(w, ship)
   }
 }
