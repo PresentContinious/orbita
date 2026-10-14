@@ -35,10 +35,10 @@
     "3": { "status": "done", "note": "коммит 029fed1 → 264c840, ревью PASS" },
     "4": { "status": "done", "note": "коммиты 63a9404 + 7637087 (FIX: ракета гасит чужую торпеду, weapon на снаряде), 1000 трассировок 6–18 мс" },
     "5": { "status": "done", "note": "коммиты eb4bfc5 + 334a311 (FIX: состояние в типах, сброс таймера лома) + веха 1 (сетка после сжатия, мирный — через killShip)" },
-    "7": { "status": "active", "note": "пишется в worktree" },
+    "7": { "status": "review", "note": "216a36a (worktree), ревью opus" },
     "8": { "status": "done", "note": "c1bff36 (FIX: пауза поиска цели, причина канала), ревью PASS" },
     "17": { "status": "done", "note": "fcc1ca2, ревью PASS; FPS на арене — после задачи 14" },
-    "18": { "status": "active", "note": "пишется в worktree" },
+    "18": { "status": "done", "note": "ревью PASS; снимки artifacts/battle/wip-*.png" },
     "6": { "status": "done", "note": "коммиты d64f7f3 + 464301e (FIX: порог малого овала), ревью PASS" }
   }
 }
