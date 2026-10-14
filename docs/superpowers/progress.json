@@ -27,10 +27,13 @@
   "2026-10-14-galaxy-setup": {
     "1": { "status": "done", "note": "коммит bb26b74, ревью PASS" },
     "2": { "status": "done", "note": "коммит deb432a, ревью PASS (стресс 2.43 мс)" },
-    "3": { "status": "active", "note": "пишется в worktree" }
+    "3": { "status": "review", "note": "коммит 238fce0 (worktree)" }
   },
   "2026-10-14-battle": {
     "1": { "status": "done", "note": "коммит 7dd37d3 → galaxy, ревью PASS" },
-    "2": { "status": "active", "note": "пишется" }
+    "2": { "status": "done", "note": "коммит 61a7b42, ревью PASS" },
+    "3": { "status": "active", "note": "пишется в worktree" },
+    "4": { "status": "active", "note": "пишется в worktree" },
+    "6": { "status": "active", "note": "пишется в worktree" }
   }
 }
