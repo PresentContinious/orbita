@@ -1,6 +1,7 @@
 import { isCombatKind, isCraft, newCombat, type CombatKind } from './classes'
 import { MOVE, SHIP_KINDS, SIM_DT, type ShipKind } from './config'
-import { buy, shipPrice, shipUpkeepOf } from './economy'
+import { speedMul } from './damage'
+import { buy,shipPrice, shipUpkeepOf } from './economy'
 import { addToFleet } from './fleet'
 import { TAU, ZERO } from './math'
 import { checkColonize, missionGoal } from './missions'
@@ -97,7 +98,7 @@ export function moveShips(w: World): void {
     const sys = w.galaxy.systems[ship.systemId]
     const near = Math.hypot(goal.pos.x - ship.pos.x, goal.pos.y - ship.pos.y)
     const frame = near < goal.frameR ? goal.vel : ZERO
-    steer(ship, avoidStar(ship.pos, goal.pos, sys.star.radius), shipSpeed(w, ship), SHIP_KINDS[ship.kind].accel, frame, SIM_DT)
+    steer(ship, avoidStar(ship.pos, goal.pos, sys.star.radius), shipSpeed(w, ship) * speedMul(ship), SHIP_KINDS[ship.kind].accel, frame, SIM_DT)
     if (ship.mission.type !== 'fleet' && !isCraft(ship.kind)) separate(w, ship, i)
     turnHeading(ship)
     if (Math.hypot(goal.pos.x - ship.pos.x, goal.pos.y - ship.pos.y) < goal.dockR) goal.onReach(w, ship)

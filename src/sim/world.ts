@@ -7,6 +7,7 @@ import { EVENTS, SIM_DT } from './config'
 import { generateGalaxy } from './galaxy'
 import { createRng } from './rng'
 import { clampOptions, SETUP, setupOf, type GalaxyOptions } from './setup'
+import { stepCombatState, stepDebris } from './damage'
 import { stepFleets } from './fleet'
 import { initPools, stepProjectiles } from './projectiles'
 import { buildGrids, compactShips, moveShips } from './ships'
@@ -66,7 +67,9 @@ export function stepWorld(w: World): void {
   buildGrids(w)
   moveShips(w)
   stepProjectiles(w)
+  stepCombatState(w)
   compactShips(w)
+  stepDebris(w)
   stepAsteroids(w)
   while (w.fx.length && w.t - w.fx[0].t > EVENTS.fxLife) w.fx.shift()
 }

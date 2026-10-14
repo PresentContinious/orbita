@@ -27,6 +27,9 @@ function arena(seed = 1) {
     s.pos = { x, y }
     s.prevPos = { x, y }
     s.vel = { x: 0, y: 0 }
+    // здесь проверяется путь и величина урона по корпусу, щиты — в damage.test.ts
+    s.combat!.shield = 0
+    s.combat!.shieldMax = 0
     return s
   }
   return { w, a, b, sys, put }

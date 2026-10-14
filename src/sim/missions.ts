@@ -1,6 +1,7 @@
 import { asteroidPos, asteroidVel, nearestAsteroid } from './belts'
 import { bestColonyTarget, colonyValue } from './civ'
 import { ECON, MOVE, SIM_DT } from './config'
+import { salvageGoal } from './damage'
 import { earn, tradeIncome } from './economy'
 import { fleetGoal } from './fleet'
 import { pushEvent } from './events'
@@ -27,8 +28,9 @@ export function missionGoal(w: World, ship: Ship): Goal | null {
     case 'fleet':
       return fleetGoal(w, ship)
     case 'wing':
-    case 'salvage':
       return null
+    case 'salvage':
+      return salvageGoal(w, ship)
   }
 }
 
