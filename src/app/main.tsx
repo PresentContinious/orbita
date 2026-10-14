@@ -74,7 +74,7 @@ async function boot(): Promise<void> {
     advance(clock, dt, () => stepWorld(world))
     const t1 = performance.now()
     controller.update(t1 / 1000, dt)
-    renderer.render(world, controller.cam, view(), alpha(clock), controller.selectedPlanet())
+    renderer.render(world, controller.cam, view(), alpha(clock), controller.selectedPlanet(), controller.ui.selected)
     const t2 = performance.now()
     uiT += dt
     if (uiT >= 0.2) {

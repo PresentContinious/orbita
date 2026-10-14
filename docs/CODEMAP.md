@@ -17,22 +17,22 @@
 - `src/app/main.tsx` — 98 стр.
 - `src/app/setup.ts` — 103 стр. — Параметры галактики в адресе и запоминание выбора в браузере.
   - `UI_DEFAULTS` (const, 5), `parseSetup` (function, 30), `setupQuery` (function, 52), `loadUnitCap` (function, 62), `saveUnitCap` (function, 71), `SetupValues` (type, 79), `loadSetupValues` (function, 81), `saveSetupValues` (function, 96)
-- `src/render/battleGeom.ts` — 47 стр.
-  - `shipScreenLen` (function, 7), `headingOf` (function, 12), `drawBudget` (function, 17), `shouldDraw` (function, 21), `projTexture` (function, 26), `burnTint` (function, 31), `debrisAlpha` (function, 42)
-- `src/render/battleLayer.ts` — 113 стр.
-  - `BattleLayer` (class, 16)
+- `src/render/battleGeom.ts` — 227 стр. — ---------- бой: рамки, фронт, метка, значок ----------
+  - `shipScreenLen` (function, 11), `headingOf` (function, 16), `drawBudget` (function, 21), `shouldDraw` (function, 25), `projTexture` (function, 30), `burnTint` (function, 35), `debrisAlpha` (function, 46), `BATTLE_ICON_PX` (const, 55), `battleIconPos` (function, 57), `strengthOf` (function, 74), `battleLabel` (function, 89), `frameOrigin` (function, 98), `FrameRect` (interface, 105), `frameRect` (function, 117), `inFrame` (function, 126), `frontLine` (function, 156), `beamSegment` (function, 173), `MarkRing` (interface, 180), `markRings` (function, 187), `markRing` (function, 206), `pulse` (function, 211), `lodBattle` (function, 217), `orderName` (const, 226)
+- `src/render/battleLayer.ts` — 373 стр.
+  - `BattleLayer` (class, 30)
 - `src/render/biome.ts` — 75 стр. — Биом планеты — только вид. Выводится из данных планеты (вид, зона, пригодность, хеш id), симуляцию не трогает.
   - `Biome` (type, 5), `BIOME_NAME` (const, 23), `biomeName` (const, 42), `planetBiome` (function, 61)
 - `src/render/camera.ts` — 136 стр.
   - `View` (interface, 4), `Bounds` (interface, 9), `CamTarget` (interface, 16), `Fly` (interface, 22), `Camera` (interface, 29), `ZOOM_MAX` (const, 40), `LOD` (const, 41), `Lod` (type, 42), `LodInfo` (interface, 43), `createCamera` (function, 49), `worldToScreen` (function, 53), `screenToWorld` (function, 57), `galaxyBounds` (function, 61), `fitZoom` (function, 72), `galaxyZoom` (function, 77), `zoomAt` (function, 83), `flyDuration` (function, 91), `startFly` (function, 95), `updateCamera` (function, 103), `lodOf` (function, 127)
 - `src/render/galaxyLayer.ts` — 274 стр.
   - `territoryVisibility` (function, 13), `GalaxyLayer` (class, 18)
-- `src/render/hit.ts` — 47 стр.
-  - `Pick` (type, 7), `pickAt` (function, 10)
+- `src/render/hit.ts` — 69 стр.
+  - `Pick` (type, 8), `pickAt` (function, 16)
 - `src/render/noise.ts` — 78 стр. — Детерминированный шум и генераторы для рендера (отдельно от src/sim: там свой Rng).
   - `seeded` (function, 4), `hashString` (function, 15), `noise3` (function, 30), `fbm3` (function, 45), `Dust` (interface, 59), `beltDust` (function, 69)
-- `src/render/renderer.ts` — 47 стр.
-  - `GameRenderer` (class, 13)
+- `src/render/renderer.ts` — 48 стр.
+  - `GameRenderer` (class, 14)
 - `src/render/shipsLayer.ts` — 111 стр.
   - `ShipsLayer` (class, 20)
 - `src/render/starfield.ts` — 37 стр.
@@ -166,10 +166,10 @@
 - `tests/app/setup.test.ts` — 31 стр.
 - `tests/helpers.ts` — 27 стр.
   - `run` (function, 5), `snapshot` (function, 11), `quietWorld` (function, 22)
-- `tests/render/battleLayer.test.ts` — 62 стр.
+- `tests/render/battleLayer.test.ts` — 177 стр.
 - `tests/render/biome.test.ts` — 40 стр.
 - `tests/render/camera.test.ts` — 81 стр.
-- `tests/render/hit.test.ts` — 68 стр.
+- `tests/render/hit.test.ts` — 107 стр.
 - `tests/render/noise.test.ts` — 17 стр.
 - `tests/render/territory.test.ts` — 32 стр.
 - `tests/render/zones.test.ts` — 81 стр.
