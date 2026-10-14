@@ -206,7 +206,7 @@ describe('урон', () => {
     const d = w.debris[0]
     expect(d.value).toBeCloseTo(120, 9)
     const sal = put('a', 'frigate', d.pos.x, d.pos.y, false)
-    sal.mission = { type: 'salvage', debrisId: d.id }
+    sal.mission = { type: 'salvage', debrisId: d.id, startT: null }
     const before = a.eco.ledger.income.salvage
     run(w, 7)
     expect(w.debris).toHaveLength(1)
@@ -217,6 +217,28 @@ describe('урон', () => {
     expect(sal.mission.type).toBe('return')
     expect(w.fx.some((f) => f.amount === 120)).toBe(true)
     expect(ledgerBalance(a)).toBeCloseTo(a.treasury, 6)
+  })
+
+  it('лом: корабль ушёл от обломка и вернулся — сбор начинается заново, 8 с', () => {
+    const { w, put, a } = setup()
+    const dead = put('b', 'battleship', X, Y, false)
+    applyHit(w, dead, 99999, 'beam', 0)
+    const d = w.debris[0]
+    const sal = put('a', 'frigate', d.pos.x, d.pos.y, false)
+    sal.mission = { type: 'salvage', debrisId: d.id, startT: null }
+    run(w, 5)
+    expect(sal.mission.type === 'salvage' && sal.mission.startT).not.toBeNull()
+    sal.pos = { x: d.pos.x + d.r + 50, y: d.pos.y }
+    sal.vel = { x: 0, y: 0 }
+    run(w, 0.1)
+    expect(sal.mission.type === 'salvage' && sal.mission.startT).toBeNull()
+    sal.pos = { x: d.pos.x, y: d.pos.y }
+    sal.vel = { x: 0, y: 0 }
+    run(w, 5)
+    expect(w.debris).toHaveLength(1)
+    expect(a.eco.ledger.income.salvage).toBe(0)
+    run(w, 4)
+    expect(w.debris).toHaveLength(0)
   })
 
   it('обломок держит держава без врагов на 800 в течение 30 с; истекает через 720 с', () => {

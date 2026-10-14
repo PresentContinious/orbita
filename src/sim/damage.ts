@@ -42,9 +42,6 @@ function shipAt(w: World, id: number): Ship | undefined {
   return i === undefined ? undefined : w.ships[i]
 }
 
-/** корабль уже отгорел 30 с и не загорится снова, пока корпус не починят выше порога */
-const burnedOut = new WeakSet<object>()
-
 // ---------- попадание ----------
 
 /** корпусный урон и учёт в Battle.damage; убивает при hull ≤ 0 */
@@ -168,13 +165,13 @@ export function stepCombatState(w: World): void {
     const threshold = DAMAGE.burnBelow * c.hullMax
     if (c.burning === null) {
       if (c.hull < threshold) {
-        if (!burnedOut.has(c)) c.burning = w.t
-      } else if (burnedOut.has(c)) burnedOut.delete(c)
+        if (!c.burnedOut) c.burning = w.t
+      } else if (c.burnedOut) c.burnedOut = false
     }
     if (c.burning !== null) {
       if (w.t - c.burning >= DAMAGE.burnT) {
         c.burning = null
-        burnedOut.add(c)
+        c.burnedOut = true
       } else {
         hullLoss(w, ship, DAMAGE.burnRate * c.hullMax * SIM_DT, 'огонь', 'collision', 0)
       }
@@ -219,6 +216,8 @@ export function spawnDebris(w: World, ship: Ship): Debris {
     owner: ship.owner,
     bornT: w.t,
     holder: null,
+    holdCiv: null,
+    holdSince: 0,
     r: SHIP_KINDS[ship.kind].length * DAMAGE.debrisRMul,
     kind: ship.kind,
   }
@@ -226,8 +225,6 @@ export function spawnDebris(w: World, ship: Ship): Debris {
   return d
 }
 
-/** с какой секунды (и какая держава) поле свободно от чужих кораблей */
-const holdWatch = new WeakMap<Debris, { civ: number; since: number }>()
 const near: number[] = []
 const present: number[] = []
 
@@ -239,7 +236,6 @@ export function stepDebris(w: World): void {
   for (let i = 0; i < w.debris.length; i++) {
     const d = w.debris[i]
     if (w.t - d.bornT >= DAMAGE.debrisLife) {
-      holdWatch.delete(d)
       continue
     }
     w.debris[j++] = d
@@ -253,24 +249,23 @@ export function stepDebris(w: World): void {
     }
     if (present.length >= 2) {
       d.holder = null
-      holdWatch.delete(d)
+      d.holdCiv = null
     } else if (present.length === 1) {
       const civ = present[0]
       if (d.holder === civ) continue
-      const watch = holdWatch.get(d)
-      if (!watch || watch.civ !== civ) holdWatch.set(d, { civ, since: w.t })
-      else if (w.t - watch.since >= DAMAGE.debrisHoldAfter) {
+      if (d.holdCiv !== civ) {
+        d.holdCiv = civ
+        d.holdSince = w.t
+      } else if (w.t - d.holdSince >= DAMAGE.debrisHoldAfter) {
         d.holder = civ
-        holdWatch.delete(d)
+        d.holdCiv = null
       }
-    } else holdWatch.delete(d)
+    } else d.holdCiv = null
   }
   w.debris.length = j
 }
 
 // ---------- лом ----------
-
-const salvageStart = new WeakMap<Ship, number>()
 
 function goHome(w: World, ship: Ship): void {
   const civ = civById(w, ship.owner)
@@ -290,7 +285,6 @@ export function salvageGoal(w: World, ship: Ship): Goal | null {
   let idx = -1
   for (let i = 0; i < w.debris.length; i++) if (w.debris[i].id === id) idx = i
   if (idx < 0 || isCraft(ship.kind)) {
-    salvageStart.delete(ship)
     goHome(w, ship)
     return null
   }
@@ -299,19 +293,20 @@ export function salvageGoal(w: World, ship: Ship): Goal | null {
     setDestination(w, ship, d.systemId)
     return null
   }
+  // отошёл дальше радиуса сбора — отсчёт начнётся заново
+  if (ship.mission.startT !== null && Math.hypot(ship.pos.x - d.pos.x, ship.pos.y - d.pos.y) > d.r) ship.mission.startT = null
   return { pos: d.pos, vel: ZERO, frameR: 0, dockR: d.r, onReach: reachDebris }
 }
 
 function reachDebris(w: World, ship: Ship): void {
   if (ship.mission.type !== 'salvage') return
   const id = ship.mission.debrisId
-  const start = salvageStart.get(ship)
-  if (start === undefined) {
-    salvageStart.set(ship, w.t)
+  const start = ship.mission.startT
+  if (start === null) {
+    ship.mission.startT = w.t
     return
   }
   if (w.t - start < DAMAGE.salvageT) return
-  salvageStart.delete(ship)
   for (let i = 0; i < w.debris.length; i++) {
     const d = w.debris[i]
     if (d.id !== id) continue

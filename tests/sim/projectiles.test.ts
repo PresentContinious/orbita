@@ -78,7 +78,7 @@ describe('снаряды-объекты', () => {
     const { w, put, sys, a, b } = arena()
     const shooter = put('a', 'battleship', X, Y)
     const foe = put('b', 'battleship', X + 200, Y)
-    w.debris.push({ id: 900, systemId: sys, pos: { x: X + 100, y: Y }, value: 10, owner: b.id, bornT: 0, holder: null, r: 10, kind: 'corvette' })
+    w.debris.push({ id: 900, systemId: sys, pos: { x: X + 100, y: Y }, value: 10, owner: b.id, bornT: 0, holder: null, holdCiv: null, holdSince: 0, r: 10, kind: 'corvette' })
     fireBeam(w, shooter, foe, 0)
     step(w, 5)
     expect(foe.combat!.hull).toBe(1500)

@@ -104,6 +104,7 @@ export function newCombat(kind: CombatKind, t: number): Combat {
     modules,
     ammo: c.ammo,
     burning: null,
+    burnedOut: false,
     heading: 0,
     slot: null,
     rank: 0,

@@ -116,7 +116,7 @@ export type Mission =
   | { type: 'fleet'; fleetId: number }
   /** машина крыла; carrierId null — сирота */
   | { type: 'wing'; carrierId: number | null }
-  | { type: 'salvage'; debrisId: number }
+  | { type: 'salvage'; debrisId: number; startT: number | null }
 
 export interface Transit {
   corridorId: number
@@ -311,6 +311,8 @@ export interface Combat {
   ammo: number
   /** когда загорелся */
   burning: number | null
+  /** отгорел своё и не загорится снова, пока корпус не починят выше порога */
+  burnedOut: boolean
   /** нос, рад; поворот ограничен SHIP_KINDS.turn */
   heading: number
   slot: Slot | null
@@ -521,6 +523,9 @@ export interface Debris {
   owner: number
   bornT: number
   holder: number | null
+  /** кандидат в держатели: единственная держава рядом и с какой секунды */
+  holdCiv: number | null
+  holdSince: number
   r: number
   kind: ShipKind
 }
