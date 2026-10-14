@@ -5,6 +5,7 @@ import { clamp } from '../sim/math'
 import { capitalOf, civById } from '../sim/query'
 import { planetPos } from '../sim/system'
 import type { GameEvent, World } from '../sim/types'
+import { pickFocus, type Focus } from './director'
 import type { Clock } from './loop'
 
 export interface Crumb {
@@ -29,6 +30,11 @@ const APPROACH_R = 420
 export class Controller {
   readonly ui: UiState = { speedIndex: 0, paused: false, follow: false, minimap: true, feedOpen: false, selected: null, hovered: null, mouse: { x: 0, y: 0 } }
   protected now = 0
+  private focus: Focus | null = null
+  private seenEvent = 0
+  private directorAt = -Infinity
+  /** отложенные новые события, пока камера «держит» прошлое */
+  private pending: GameEvent[] = []
 
   constructor(
     readonly world: World,
@@ -54,6 +60,13 @@ export class Controller {
 
   toggleFollow(on = !this.ui.follow): void {
     this.ui.follow = on
+    if (on) {
+      // при включении учитываем события последних 30 игровых секунд
+      this.focus = null
+      this.pending = this.world.events.filter((e) => e.pri < 2 && this.world.t - e.t <= 30)
+      this.seenEvent = this.world.events.length ? this.world.events[this.world.events.length - 1].id : 0
+      this.directorAt = -Infinity
+    }
   }
 
   toggleMinimap(): void {
@@ -241,5 +254,19 @@ export class Controller {
       }
     }
     updateCamera(this.cam, now, dt)
+    if (this.ui.follow && now - this.directorAt >= 0.5) {
+      this.directorAt = now
+      for (const e of this.world.events) {
+        if (e.id > this.seenEvent && e.pri < 2) this.pending.push(e)
+      }
+      if (this.world.events.length) this.seenEvent = Math.max(this.seenEvent, this.world.events[this.world.events.length - 1].id)
+      const r = pickFocus(this.pending, now, this.focus)
+      this.focus = r.focus
+      if (r.event) {
+        this.pending = []
+        if (r.event.at.planet) this.flyToPlanet(r.event.at.planet, false, false)
+        else this.flyToSystem(r.event.at.system, 'approach')
+      }
+    }
   }
 }

@@ -4,8 +4,10 @@
 
 ## src/
 
-- `src/app/controller.ts` — 246 стр.
-  - `Crumb` (interface, 10), `UiState` (interface, 15), `Controller` (class, 29)
+- `src/app/controller.ts` — 273 стр.
+  - `Crumb` (interface, 11), `UiState` (interface, 16), `Controller` (class, 30)
+- `src/app/director.ts` — 20 стр.
+  - `Focus` (interface, 3), `pickFocus` (function, 10)
 - `src/app/input.ts` — 104 стр.
   - `attachInput` (function, 6)
 - `src/app/loop.ts` — 32 стр.
@@ -112,6 +114,7 @@
 ## tests/
 
 - `tests/app/controller.test.ts` — 78 стр.
+- `tests/app/director.test.ts` — 46 стр.
 - `tests/app/loop.test.ts` — 34 стр.
 - `tests/helpers.ts` — 27 стр.
   - `run` (function, 5), `snapshot` (function, 11), `quietWorld` (function, 22)
