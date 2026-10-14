@@ -1,5 +1,7 @@
 import { galaxyBounds, galaxyZoom, lodOf, startFly, updateCamera, ZOOM_MAX, type Camera, type CamTarget, type Lod, type View } from '../render/camera'
 import type { Pick } from '../render/hit'
+import { strengthOf } from '../render/battleGeom'
+import { BATTLE } from '../sim/combat-config'
 import { SIM_DT, SPEEDS } from '../sim/config'
 import { clamp } from '../sim/math'
 import { capitalOf, civById } from '../sim/query'
@@ -25,19 +27,28 @@ export interface UiState {
   selected: Pick | null
   hovered: Pick | null
   mouse: { x: number; y: number }
+  /** скорость до автозамедления боем; null — замедления нет */
+  slowedFrom: number | null
+  /** подпись под кнопками времени */
+  slowNote: string | null
 }
+
+/** индекс скорости ×2 в SPEEDS */
+export const SLOW_INDEX = 1
 
 /** экранный радиус системы при обзоре «подлёт» */
 const APPROACH_R = 420
 
 export class Controller {
-  readonly ui: UiState = { speedIndex: 0, paused: false, follow: false, minimap: true, feedOpen: false, feedAll: false, selected: null, hovered: null, mouse: { x: 0, y: 0 } }
+  readonly ui: UiState = { speedIndex: 0, paused: false, follow: false, minimap: true, feedOpen: false, feedAll: false, selected: null, hovered: null, mouse: { x: 0, y: 0 }, slowedFrom: null, slowNote: null }
   protected now = 0
   private focus: Focus | null = null
   private seenEvent = 0
   private directorAt = -Infinity
   /** отложенные новые события, пока камера «держит» прошлое */
   private pending: GameEvent[] = []
+  /** бой, который уже замедлил (или был снят пользователем) — второй раз не замедляем */
+  private slowedBattle: number | null = null
 
   constructor(
     readonly world: World,
@@ -55,6 +66,8 @@ export class Controller {
   setSpeed(i: number): void {
     this.ui.speedIndex = clamp(i, 0, SPEEDS.length - 1)
     this.ui.paused = false
+    this.ui.slowedFrom = null
+    this.ui.slowNote = null
   }
 
   togglePause(): void {
@@ -210,7 +223,9 @@ export class Controller {
   }
 
   flyToEvent(ev: GameEvent): void {
-    if (ev.at.planet) this.flyToPlanet(ev.at.planet)
+    const bid = ev.at.battle
+    if (bid !== undefined && this.world.battles.some((b) => b.id === bid && b.phase !== 'over')) this.flyToBattle(bid)
+    else if (ev.at.planet) this.flyToPlanet(ev.at.planet)
     else this.flyToSystem(ev.at.system, 'approach')
   }
 
@@ -278,8 +293,37 @@ export class Controller {
     else this.flyToGalaxy()
   }
 
+  /** слежка + крупный бой в системе фокуса → ×2 с подписью; бой кончился → прежняя скорость */
+  private autoSlow(): void {
+    const u = this.ui
+    const w = this.world
+    if (u.slowedFrom !== null) {
+      const b = w.battles.find((x) => x.id === this.slowedBattle)
+      if (!b || b.phase === 'over') {
+        u.speedIndex = u.slowedFrom
+        u.slowedFrom = null
+        u.slowNote = null
+      }
+      return
+    }
+    if (!u.follow || u.speedIndex <= SLOW_INDEX) return
+    const f = this.focusSystem()
+    if (f === null) return
+    for (const b of w.battles) {
+      if (b.systemId !== f || b.phase === 'over' || b.id === this.slowedBattle) continue
+      if (strengthOf(w, b.sides[0]) >= BATTLE.strengthIcon && strengthOf(w, b.sides[1]) >= BATTLE.strengthIcon) {
+        u.slowedFrom = u.speedIndex
+        u.speedIndex = SLOW_INDEX
+        u.slowNote = 'битва — ×2'
+        this.slowedBattle = b.id
+        return
+      }
+    }
+  }
+
   update(now: number, dt: number): void {
     this.now = now
+    this.autoSlow()
     this.clock.speed = this.ui.paused ? 0 : SPEEDS[this.ui.speedIndex]
     if (this.cam.follow) {
       const p = this.world.planets.get(this.cam.follow)

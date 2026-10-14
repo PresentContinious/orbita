@@ -1,6 +1,8 @@
+import { useState } from 'react'
 import type { CardData } from './cards'
 
 export function Card({ card, onClose }: { card: CardData; onClose: () => void }) {
+  const [allLog, setAllLog] = useState(false)
   return (
     <aside className={`panel card${card.kind === 'battle' ? ' wide' : ''}`}>
       <header>
@@ -63,11 +65,20 @@ export function Card({ card, onClose }: { card: CardData; onClose: () => void })
         </table>
       )}
       {card.log && card.log.length > 0 && (
-        <ul className="cardlog">
-          {card.log.map((e, i) => (
-            <li key={i}>{e.text}</li>
-          ))}
-        </ul>
+        <>
+          <ul className="cardlog" style={allLog ? { maxHeight: 360 } : undefined}>
+            {(allLog ? (card.logAll ?? card.log) : card.log).map((e, i) => (
+              <li key={i} className={e.kind === 'order' ? 'order' : e.kind === 'verdict' ? 'verdict' : undefined}>
+                {e.text}
+              </li>
+            ))}
+          </ul>
+          {(card.logAll?.length ?? 0) > card.log.length && (
+            <button className="logall" onClick={() => setAllLog(!allLog)}>
+              {allLog ? 'последние' : 'вся'}
+            </button>
+          )}
+        </>
       )}
     </aside>
   )

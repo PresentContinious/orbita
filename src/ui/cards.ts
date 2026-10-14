@@ -1,7 +1,7 @@
 import { orderName, strengthOf } from '../render/battleGeom'
 import type { Pick } from '../render/hit'
 import { territoryShares } from '../render/territory'
-import { ECON, RESEARCH, RESEARCH_BRANCHES } from '../sim/config'
+import { ECON, EVENTS, RESEARCH, RESEARCH_BRANCHES } from '../sim/config'
 import { report, stationIncome, taxOf } from '../sim/economy'
 import { capOf, civById, planetsOf, populatedOf } from '../sim/query'
 import { CLASSES, isCombatKind, type CombatKind } from '../sim/classes'
@@ -24,6 +24,8 @@ export interface CardData {
   sections?: { title: string; rows: CardRow[]; color?: string }[]
   table?: { head: string[]; rows: string[][] }
   log?: BattleLogEntry[]
+  /** вся лента боя (≤ EVENTS.battleLog) для кнопки «вся» */
+  logAll?: BattleLogEntry[]
   /** value — доля левой стороны 0..1 */
   meter?: { label: string; value: number; left: string; right: string }[]
 }
@@ -296,6 +298,7 @@ export function battleCard(w: World, id: number): CardData | null {
     table: { head, rows },
     meter: [{ label: 'давление', value: share, left: names[0], right: names[1] }],
     log: b.log.slice(-30),
+    logAll: b.log.slice(-EVENTS.battleLog),
   }
 }
 

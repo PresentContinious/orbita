@@ -20,6 +20,7 @@ export function Hud({ store, controller }: { store: Store; controller: Controlle
     <>
       <Breadcrumbs crumbs={s.crumbs} onPick={(c) => controller.goCrumb(c)} />
       <TimeControls s={s} controller={controller} />
+      {s.slowNote && <div className="slownote">{s.slowNote}</div>}
       {s.minimap && <Minimap data={s.minimap} onJump={(x, y) => controller.flyToWorldPoint(x, y)} />}
       {s.card && <Card card={s.card} onClose={() => controller.select(null)} />}
       <Toasts toasts={s.toasts} colors={colors} onPick={(ev) => controller.flyToEvent(ev)} />

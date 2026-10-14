@@ -141,6 +141,6 @@ export function buildSnapshot(w: World, c: Controller, model: UiModel): Snapshot
     })(),
     minimap: c.ui.minimap ? minimapOf(w, c) : null,
     battles: battlesOf(w),
-    slowNote: null,
+    slowNote: c.ui.slowNote,
   }
 }

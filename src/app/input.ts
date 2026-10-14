@@ -73,6 +73,7 @@ export function attachInput(el: HTMLElement, c: Controller): () => void {
       case 'Digit2':
       case 'Digit3':
       case 'Digit4':
+      case 'Digit5':
         c.setSpeed(Number(e.code.slice(5)) - 1)
         break
       case 'KeyF':

@@ -4,13 +4,13 @@
 
 ## src/
 
-- `src/app/controller.ts` — 315 стр.
-  - `Crumb` (interface, 12), `UiState` (interface, 17), `Controller` (class, 33)
+- `src/app/controller.ts` — 359 стр.
+  - `Crumb` (interface, 14), `UiState` (interface, 19), `SLOW_INDEX` (const, 37), `Controller` (class, 42)
 - `src/app/director.ts` — 20 стр.
   - `Focus` (interface, 3), `pickFocus` (function, 10)
 - `src/app/display.ts` — 78 стр. — Настройки вида, которые зритель выбирает под себя: территории, стиль планет, торговые пути.
   - `TerritoryMode` (type, 3), `PlanetStyle` (type, 4), `Display` (interface, 6), `DEFAULT_DISPLAY` (const, 12), `display` (const, 17), `resolveDisplay` (function, 36), `initDisplay` (function, 53), `setDisplay` (function, 64), `onDisplay` (function, 74)
-- `src/app/input.ts` — 108 стр.
+- `src/app/input.ts` — 109 стр.
   - `attachInput` (function, 7)
 - `src/app/loop.ts` — 32 стр.
   - `Clock` (interface, 3), `createClock` (function, 10), `advance` (function, 15), `alpha` (function, 29)
@@ -113,13 +113,13 @@
   - `createWorld` (function, 18), `stepWorld` (function, 58)
 - `src/ui/Breadcrumbs.tsx` — 18 стр.
   - `Breadcrumbs` (function, 3)
-- `src/ui/Card.tsx` — 75 стр.
-  - `Card` (function, 3)
+- `src/ui/Card.tsx` — 86 стр.
+  - `Card` (function, 4)
 - `src/ui/CivBar.tsx` — 27 стр.
   - `CivBar` (function, 7)
 - `src/ui/FeedDrawer.tsx` — 49 стр.
   - `FeedDrawer` (function, 5)
-- `src/ui/Hud.tsx` — 32 стр.
+- `src/ui/Hud.tsx` — 33 стр.
   - `Hud` (function, 14)
 - `src/ui/Minimap.tsx` — 58 стр.
   - `Minimap` (function, 7)
@@ -133,8 +133,8 @@
   - `Tooltip` (function, 3)
 - `src/ui/ViewMenu.tsx` — 78 стр.
   - `ViewMenu` (function, 30)
-- `src/ui/cards.ts` — 336 стр. — ---------- бой и флот ----------
-  - `CardRow` (interface, 12), `CardData` (interface, 18), `traitName` (const, 37), `phaseName` (const, 38), `planetCard` (function, 50), `systemCard` (function, 83), `civCard` (function, 96), `missionText` (function, 120), `shipCard` (function, 152), `fleetMissionText` (function, 181), `battleCard` (function, 261), `fleetCard` (function, 302), `cardFor` (function, 328)
+- `src/ui/cards.ts` — 339 стр. — ---------- бой и флот ----------
+  - `CardRow` (interface, 12), `CardData` (interface, 18), `traitName` (const, 39), `phaseName` (const, 40), `planetCard` (function, 52), `systemCard` (function, 85), `civCard` (function, 98), `missionText` (function, 122), `shipCard` (function, 154), `fleetMissionText` (function, 183), `battleCard` (function, 263), `fleetCard` (function, 305), `cardFor` (function, 331)
 - `src/ui/format.ts` — 30 стр.
   - `yearOf` (const, 3), `fmtInt` (function, 6), `fmtPop` (const, 11), `fmtRate` (function, 14), `fmtCredits` (const, 19), `fmtDuration` (function, 21), `roman` (const, 27), `hex` (const, 29)
 - `src/ui/icons.tsx` — 101 стр.
@@ -159,6 +159,7 @@
 
 ## tests/
 
+- `tests/app/battleController.test.ts` — 100 стр.
 - `tests/app/controller.test.ts` — 107 стр.
 - `tests/app/director.test.ts` — 55 стр.
 - `tests/app/display.test.ts` — 20 стр.

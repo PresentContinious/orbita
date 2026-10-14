@@ -79,7 +79,7 @@ describe('Controller', () => {
 
   test('скорость и пауза управляют часами', () => {
     const { c } = setup()
-    c.setSpeed(3)
+    c.setSpeed(4)
     c.update(0, 0)
     expect(c.clock.speed).toBe(50)
     c.togglePause()
