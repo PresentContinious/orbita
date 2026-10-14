@@ -13,7 +13,7 @@
     "11": { "status": "done", "note": "коммит cb89cb6, ревью PASS" },
     "12": { "status": "done", "note": "коммит 3a2a002 (зерно теста 2→5), ревью PASS" },
     "13": { "status": "done", "note": "коммит ff755c7, ревью PASS" },
-    "14": { "status": "fix", "note": "коммит 1ba79be, ревью PASS; веха 2: потолок конверта, колонисты; баланс — ждёт решения владельца" },
+    "14": { "status": "done", "note": "коммит 1ba79be + веха 2 (f1c09c0: потолок конверта, колонисты), ревью PASS; баланс 8/11 — 3 решения владельца в ROADMAP" },
     "15": { "status": "done", "note": "коммит 152d20f + веха 1 (25b924b: galaxyZoom), ревью PASS" },
     "16": { "status": "done", "note": "коммит a2fce67 + 38a08a3 (shot закрывает браузер), ревью PASS" },
     "17": { "status": "done", "note": "коммиты 1dc54e8 + a085a20 + веха 3 (a13f52c: трассы на паузе), ревью PASS" },
@@ -22,6 +22,6 @@
     "20": { "status": "done", "note": "коммит 1a7af80, ревью PASS" },
     "21": { "status": "done", "note": "коммиты d9c1f77 + 4d2375c, ревью PASS" },
     "22": { "status": "done", "note": "коммиты a0d95b9 + 1ebb3d9, ревью PASS" },
-    "23": { "status": "active", "note": "implementer пишет (в worktree)" }
+    "23": { "status": "done", "note": "коммиты 107e517 + 4f82e6d (бюджет времени кадра 20 мс), ревью PASS" }
   }
 }
