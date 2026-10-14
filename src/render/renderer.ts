@@ -6,7 +6,7 @@ import { GalaxyLayer } from './galaxyLayer'
 import { ShipsLayer } from './shipsLayer'
 import { Starfield } from './starfield'
 import { SystemLayer } from './systemLayer'
-import { glowTexture, shipAtlas } from './textures'
+import { glowTexture, planetVariant, shipAtlas } from './textures'
 
 export class GameRenderer {
   private readonly worldRoot = new Container()
@@ -20,7 +20,7 @@ export class GameRenderer {
     const glow = glowTexture()
     this.stars = new Starfield(glow)
     this.galaxy = new GalaxyLayer(w, glow)
-    this.systems = new SystemLayer(w, glow)
+    this.systems = new SystemLayer(w, glow, planetVariant(globalThis.location?.search ?? ''))
     this.ships = new ShipsLayer(shipAtlas())
     this.worldRoot.addChild(this.galaxy.under, this.systems.root, this.ships.root, this.galaxy.over)
     this.overlay.addChild(this.galaxy.labels, this.systems.labels, this.ships.popups)

@@ -4,8 +4,8 @@
 
 ## src/
 
-- `src/app/controller.ts` — 284 стр.
-  - `Crumb` (interface, 11), `UiState` (interface, 16), `Controller` (class, 32)
+- `src/app/controller.ts` — 278 стр.
+  - `Crumb` (interface, 11), `UiState` (interface, 16), `Controller` (class, 30)
 - `src/app/director.ts` — 20 стр.
   - `Focus` (interface, 3), `pickFocus` (function, 10)
 - `src/app/input.ts` — 105 стр.
@@ -15,24 +15,24 @@
 - `src/app/main.tsx` — 76 стр.
 - `src/render/camera.ts` — 136 стр.
   - `View` (interface, 4), `Bounds` (interface, 9), `CamTarget` (interface, 16), `Fly` (interface, 22), `Camera` (interface, 29), `ZOOM_MAX` (const, 40), `LOD` (const, 41), `Lod` (type, 42), `LodInfo` (interface, 43), `createCamera` (function, 49), `worldToScreen` (function, 53), `screenToWorld` (function, 57), `galaxyBounds` (function, 61), `fitZoom` (function, 72), `galaxyZoom` (function, 77), `zoomAt` (function, 83), `flyDuration` (function, 91), `startFly` (function, 95), `updateCamera` (function, 103), `lodOf` (function, 127)
-- `src/render/galaxyLayer.ts` — 247 стр.
-  - `GalaxyLayer` (class, 12)
+- `src/render/galaxyLayer.ts` — 151 стр.
+  - `GalaxyLayer` (class, 11)
 - `src/render/hit.ts` — 47 стр.
   - `Pick` (type, 7), `pickAt` (function, 10)
+- `src/render/noise.ts` — 78 стр. — Детерминированный шум и генераторы для рендера (отдельно от src/sim: там свой Rng).
+  - `seeded` (function, 4), `hashString` (function, 15), `noise3` (function, 30), `fbm3` (function, 45), `Dust` (interface, 59), `beltDust` (function, 69)
 - `src/render/renderer.ts` — 41 стр.
   - `GameRenderer` (class, 11)
 - `src/render/shipsLayer.ts` — 106 стр.
   - `ShipsLayer` (class, 20)
 - `src/render/starfield.ts` — 37 стр.
   - `Starfield` (class, 14)
-- `src/render/systemLayer.ts` — 134 стр.
-  - `SystemLayer` (class, 28)
+- `src/render/systemLayer.ts` — 153 стр.
+  - `SystemLayer` (class, 50)
 - `src/render/territory.ts` — 28 стр.
   - `Share` (interface, 4), `territoryShares` (function, 11)
-- `src/render/textures.ts` — 127 стр.
-  - `glowTexture` (function, 12), `PLANET_TEX` (const, 25), `PLANET_DISC` (const, 27), `planetTexture` (function, 43), `IconKind` (type, 89), `Atlas` (type, 90), `ICON_CELL` (const, 91), `ICON_BODY` (const, 93), `shipAtlas` (function, 96)
-- `src/render/zones.ts` — 216 стр.
-  - `Pt` (interface, 5), `Vert` (interface, 13), `ARC` (const, 16), `RADIAL` (const, 17), `SPLIT` (const, 18), `START_ANGLE` (const, 21), `zoneRadius` (function, 25), `clipHalfPlane` (function, 35), `zoneCell` (function, 55), `Sector` (interface, 76), `sectorsOf` (function, 84), `civAtAngle` (function, 97), `clipSector` (function, 107), `polyArea` (function, 126), `ZonePiece` (interface, 136), `systemPieces` (function, 143), `ZoneEdge` (interface, 157), `pieceEdges` (function, 167), `Spot` (interface, 188), `cloudSpots` (function, 198)
+- `src/render/textures.ts` — 255 стр. — направление на звезду (освещённая сторона слева, чуть к зрителю)
+  - `glowTexture` (function, 13), `PLANET_TEX` (const, 26), `PLANET_DISC` (const, 28), `PlanetVariant` (type, 31), `planetVariant` (function, 32), `planetTexture` (function, 109), `IconKind` (type, 217), `Atlas` (type, 218), `ICON_CELL` (const, 219), `ICON_BODY` (const, 221), `shipAtlas` (function, 224)
 - `src/sim/belts.ts` — 35 стр.
   - `asteroidPos` (const, 6), `asteroidVel` (const, 7), `nearestAsteroid` (function, 9), `stepAsteroids` (function, 25)
 - `src/sim/bot.ts` — 24 стр.
@@ -81,30 +81,28 @@
   - `Breadcrumbs` (function, 3)
 - `src/ui/Card.tsx` — 24 стр.
   - `Card` (function, 3)
-- `src/ui/CivBar.tsx` — 27 стр.
-  - `CivBar` (function, 7)
-- `src/ui/FeedDrawer.tsx` — 49 стр.
-  - `FeedDrawer` (function, 5)
-- `src/ui/Hud.tsx` — 32 стр.
+- `src/ui/CivBar.tsx` — 26 стр.
+  - `CivBar` (function, 6)
+- `src/ui/FeedDrawer.tsx` — 23 стр.
+  - `FeedDrawer` (function, 4)
+- `src/ui/Hud.tsx` — 30 стр.
   - `Hud` (function, 14)
 - `src/ui/Minimap.tsx` — 58 стр.
   - `Minimap` (function, 7)
-- `src/ui/TimeControls.tsx` — 43 стр.
-  - `TimeControls` (function, 6)
-- `src/ui/Toasts.tsx` — 21 стр.
-  - `Toasts` (function, 5)
+- `src/ui/TimeControls.tsx` — 42 стр.
+  - `TimeControls` (function, 5)
+- `src/ui/Toasts.tsx` — 15 стр.
+  - `Toasts` (function, 4)
 - `src/ui/Tooltip.tsx` — 16 стр.
   - `Tooltip` (function, 3)
 - `src/ui/cards.ts` — 144 стр.
   - `CardRow` (interface, 9), `CardData` (interface, 15), `planetCard` (function, 29), `systemCard` (function, 62), `civCard` (function, 75), `missionText` (function, 99), `shipCard` (function, 121), `cardFor` (function, 138)
 - `src/ui/format.ts` — 30 стр.
   - `yearOf` (const, 3), `fmtInt` (function, 6), `fmtPop` (const, 11), `fmtRate` (function, 14), `fmtCredits` (const, 19), `fmtDuration` (function, 21), `roman` (const, 27), `hex` (const, 29)
-- `src/ui/icons.tsx` — 90 стр.
-  - `IconName` (type, 3), `KIND_ICON` (const, 6), `iconFor` (const, 22), `EventIcon` (function, 68), `Icon` (function, 72)
 - `src/ui/model.ts` — 60 стр.
   - `Toast` (interface, 3), `TOAST_LIFE` (const, 9), `MAX_TOASTS` (const, 10), `updateToasts` (function, 13), `TrendTracker` (class, 30), `UiModel` (class, 49)
-- `src/ui/snapshot.ts` — 109 стр.
-  - `CivSummary` (interface, 12), `MinimapData` (interface, 24), `Snapshot` (interface, 31), `buildSnapshot` (function, 70)
+- `src/ui/snapshot.ts` — 107 стр.
+  - `CivSummary` (interface, 12), `MinimapData` (interface, 24), `Snapshot` (interface, 31), `buildSnapshot` (function, 69)
 - `src/ui/store.ts` — 24 стр.
   - `Store` (interface, 3), `createStore` (function, 9)
 
@@ -125,8 +123,8 @@
   - `run` (function, 5), `snapshot` (function, 11), `quietWorld` (function, 22)
 - `tests/render/camera.test.ts` — 81 стр.
 - `tests/render/hit.test.ts` — 68 стр.
+- `tests/render/noise.test.ts` — 17 стр.
 - `tests/render/territory.test.ts` — 32 стр.
-- `tests/render/zones.test.ts` — 81 стр.
 - `tests/sim/bot.test.ts` — 127 стр.
 - `tests/sim/economy.test.ts` — 186 стр.
 - `tests/sim/events.test.ts` — 35 стр.
@@ -144,6 +142,5 @@
 - `tests/sim/world.test.ts` — 83 стр.
 - `tests/ui/cards.test.ts` — 56 стр.
 - `tests/ui/format.test.ts` — 27 стр.
-- `tests/ui/icons.test.ts` — 26 стр.
-- `tests/ui/model.test.ts` — 49 стр.
+- `tests/ui/model.test.ts` — 37 стр.
 - `tests/ui/snapshot.test.ts` — 23 стр.
