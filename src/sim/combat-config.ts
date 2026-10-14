@@ -144,6 +144,8 @@ export const HIT = {
   flak: { missile: 0.7, craft: 0.4, hullMul: 0.15 },
   turret: { small: 0.35, craft: 0.25, capitalMul: 0.25 },
   gun: { craftMul: 2 },
+  /** с до следующего поиска цели у второго оружия, если целей не нашлось */
+  retargetIdle: 0.5,
   rankBonus: 0.03,
 }
 

@@ -57,8 +57,8 @@
   - `createCivs` (function, 8), `stepPopulation` (function, 38), `colonyValue` (function, 52), `bestColonyTarget` (function, 58)
 - `src/sim/classes.ts` — 129 стр. — Таблицы классов боевых кораблей (спека 2А, раздел 6). Движение — в SHIP_KINDS, всё остальное здесь.
   - `CombatKind` (type, 5), `Role` (type, 7), `WeaponKind` (type, 8), `Weapon` (interface, 10), `HangarSpec` (interface, 22), `ShipClass` (interface, 30), `CLASSES` (const, 46), `COMBAT_KINDS` (const, 68), `isCombatKind` (function, 70), `isCraft` (const, 74), `isCapital` (function, 76), `pushable` (const, 83), `radiusOf` (const, 85), `DEFAULT_WING` (const, 88), `newCombat` (function, 93), `fullPrice` (function, 124)
-- `src/sim/combat-config.ts` — 216 стр. — Все числа боя (спека 2А). Арена крутит их; в коде боя литералов из спеки быть не должно.
-  - `WAR` (const, 5), `FRAME` (const, 17), `BATTLE` (const, 58), `TRAITS` (const, 115), `TRAIT_LIST` (const, 124), `PROJ` (const, 127), `HIT` (const, 143), `DAMAGE` (const, 151), `WING` (const, 170), `DOCK` (const, 183), `SKIRMISH` (const, 192)
+- `src/sim/combat-config.ts` — 218 стр. — Все числа боя (спека 2А). Арена крутит их; в коде боя литералов из спеки быть не должно.
+  - `WAR` (const, 5), `FRAME` (const, 17), `BATTLE` (const, 58), `TRAITS` (const, 115), `TRAIT_LIST` (const, 124), `PROJ` (const, 127), `HIT` (const, 143), `DAMAGE` (const, 153), `WING` (const, 172), `DOCK` (const, 185), `SKIRMISH` (const, 194)
 - `src/sim/config.ts` — 182 стр. — ---------- время ----------
   - `SIM_DT` (const, 4), `YEAR_SECONDS` (const, 5), `MAX_STEPS_PER_FRAME` (const, 6), `MAX_FRAME_DT` (const, 7), `SPEEDS` (const, 9), `GALAXY` (const, 12), `CIVS` (const, 24), `StarType` (type, 27), `STAR_TYPES` (const, 28), `ORBIT` (const, 36), `HZ` (const, 52), `PlanetKind` (type, 54), `PLANET_KINDS` (const, 55), `ROLE_GEN` (const, 62), `BELT` (const, 72), `POP` (const, 75), `ShipKind` (type, 78), `SHIP_KINDS` (const, 82), `MOVE` (const, 98), `Envelope` (type, 114), `ENVELOPE_SHARES` (const, 115), `ECON` (const, 117), `ResearchBranch` (type, 167), `RESEARCH` (const, 168), `RESEARCH_BRANCHES` (const, 174), `BOT` (const, 177), `PALETTE` (const, 180), `EVENTS` (const, 181)
 - `src/sim/damage.ts` — 323 стр. — Урон (спека 2А, §9.2, §10.2–10.4): щит до нуля, модули, горение, гибель, обломки и лом.
@@ -103,8 +103,10 @@
   - `Orbiting` (type, 7), `periodOf` (function, 9), `zoneOf` (function, 13), `tempKOf` (function, 20), `planetPos` (function, 24), `planetVel` (function, 29), `makeLook` (function, 50), `habitableCount` (function, 68), `makeAsteroid` (function, 72), `generateSystem` (function, 86)
 - `src/sim/types.ts` — 537 стр. — ---------- война (2А) ----------
   - `Zone` (type, 9), `SystemRole` (type, 10), `PlanetLook` (interface, 12), `Build` (interface, 19), `Planet` (interface, 26), `Belt` (interface, 47), `Asteroid` (interface, 52), `Gate` (interface, 62), `Star` (interface, 69), `StarSystem` (interface, 76), `Corridor` (interface, 94), `Galaxy` (interface, 104), `Mission` (type, 109), `Transit` (interface, 121), `Ship` (interface, 129), `Stage` (type, 149), `IncomeSource` (type, 150), `ExpenseCat` (type, 151), `Ledger` (interface, 153), `CivEconomy` (interface, 159), `CivProject` (interface, 176), `ResearchJob` (interface, 182), `Civ` (interface, 189), `GameEvent` (interface, 205), `Fx` (interface, 217), `World` (interface, 226), `Module` (type, 269), `Trait` (type, 270), `Order` (type, 271), `TargetPriority` (type, 272), `SlotKind` (type, 273), `Slot` (interface, 276), `WingState` (interface, 284), `Hangar` (interface, 290), `Combat` (interface, 301), `FleetMission` (type, 333), `Fleet` (interface, 340), `Admiral` (interface, 406), `ProjectileKind` (type, 416), `Projectile` (interface, 418), `BattlePhase` (type, 446), `BattleSide` (interface, 448), `BattleLogEntry` (interface, 463), `BattleMetrics` (interface, 471), `Battle` (interface, 489), `Debris` (interface, 518), `BattleFx` (type, 534)
-- `src/sim/world.ts` — 76 стр.
-  - `createWorld` (function, 17), `stepWorld` (function, 57)
+- `src/sim/weapons.ts` — 566 стр. — Оружие (спека 2А, §6, §8.1, §10.1): выбор целей расслоённо, сектора, выстрелы, залп ряда, каналы турелей.
+  - `arcOk` (function, 38), `flakTarget` (function, 78), `screenTarget` (function, 113), `beamTarget` (function, 140), `missileTarget` (function, 220), `autocannonTarget` (function, 241), `interceptorTarget` (function, 258), `markGroups` (function, 333), `pickTargets` (function, 356), `hitChance` (function, 380), `rowVolley` (function, 456), `fireWeapons` (function, 481), `setChannel` (function, 549)
+- `src/sim/world.ts` — 79 стр.
+  - `createWorld` (function, 18), `stepWorld` (function, 58)
 - `src/ui/Breadcrumbs.tsx` — 18 стр.
   - `Breadcrumbs` (function, 3)
 - `src/ui/Card.tsx` — 24 стр.
@@ -189,6 +191,7 @@
 - `tests/sim/system.test.ts` — 110 стр.
 - `tests/sim/war-economy.test.ts` — 77 стр.
 - `tests/sim/warships.test.ts` — 122 стр.
+- `tests/sim/weapons.test.ts` — 394 стр.
 - `tests/sim/world.test.ts` — 84 стр.
 - `tests/ui/cards.test.ts` — 56 стр.
 - `tests/ui/format.test.ts` — 27 стр.

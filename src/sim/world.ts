@@ -12,6 +12,7 @@ import { stepFleets } from './fleet'
 import { initPools, stepProjectiles } from './projectiles'
 import { buildGrids, compactShips, moveShips } from './ships'
 import { SpatialGrid } from './spatial'
+import { fireWeapons, pickTargets } from './weapons'
 import type { Planet, World } from './types'
 
 export function createWorld(seed: number, opts: GalaxyOptions = {}): World {
@@ -66,6 +67,8 @@ export function stepWorld(w: World): void {
   stepFleets(w)
   buildGrids(w)
   moveShips(w)
+  pickTargets(w)
+  fireWeapons(w)
   stepProjectiles(w)
   stepCombatState(w)
   compactShips(w)
