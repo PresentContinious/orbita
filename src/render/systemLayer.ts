@@ -6,7 +6,8 @@ import { periodOf, planetPos } from '../sim/system'
 import type { Planet, StarSystem, World } from '../sim/types'
 import { worldToScreen, type Camera, type LodInfo, type View } from './camera'
 import { beltDust, type Dust } from './noise'
-import { PLANET_DISC, planetTexture, type PlanetVariant } from './textures'
+import { display, type PlanetStyle } from '../app/display'
+import { PLANET_DISC, planetTexture } from './textures'
 
 interface PlanetView {
   p: Planet
@@ -52,8 +53,23 @@ export class SystemLayer {
   readonly labels = new Container()
   private readonly views: SystemView[] = []
 
-  constructor(w: World, private readonly glow: Texture, private readonly variant: PlanetVariant = 'a') {
+  private style: PlanetStyle = display.planets
+
+  constructor(w: World, private readonly glow: Texture) {
     for (const s of w.galaxy.systems) this.views.push(this.build(s))
+  }
+
+  /** сменить стиль планет на лету: один раз перегенерировать текстуры, старые уничтожить */
+  restyle(style: PlanetStyle): void {
+    if (style === this.style) return
+    this.style = style
+    for (const v of this.views) {
+      for (const pv of v.planets) {
+        const old = pv.sprite.texture
+        pv.sprite.texture = planetTexture(pv.p, style)
+        old.destroy(true)
+      }
+    }
   }
 
   private build(s: StarSystem): SystemView {
@@ -84,7 +100,7 @@ export class SystemLayer {
     const belt = new Graphics()
     const marks = new Graphics()
     const planets = s.planets.map((p) => {
-      const sprite = new Sprite(planetTexture(p, this.variant))
+      const sprite = new Sprite(planetTexture(p, this.style))
       sprite.anchor.set(0.5)
       const label = new Text({ text: p.name.toUpperCase(), style: LABEL })
       label.anchor.set(0.5, 0)

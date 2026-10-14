@@ -1,4 +1,5 @@
 import { Container, type Application } from 'pixi.js'
+import { display } from '../app/display'
 import { SIM_DT } from '../sim/config'
 import type { World } from '../sim/types'
 import { lodOf, type Camera, type View } from './camera'
@@ -6,7 +7,7 @@ import { GalaxyLayer } from './galaxyLayer'
 import { ShipsLayer } from './shipsLayer'
 import { Starfield } from './starfield'
 import { SystemLayer } from './systemLayer'
-import { glowTexture, planetVariant, shipAtlas } from './textures'
+import { glowTexture, shipAtlas } from './textures'
 
 export class GameRenderer {
   private readonly worldRoot = new Container()
@@ -20,7 +21,7 @@ export class GameRenderer {
     const glow = glowTexture()
     this.stars = new Starfield(glow)
     this.galaxy = new GalaxyLayer(w, glow)
-    this.systems = new SystemLayer(w, glow, planetVariant(globalThis.location?.search ?? ''))
+    this.systems = new SystemLayer(w, glow)
     this.ships = new ShipsLayer(shipAtlas())
     this.worldRoot.addChild(this.galaxy.under, this.systems.root, this.ships.root, this.galaxy.over)
     this.overlay.addChild(this.galaxy.labels, this.systems.labels, this.ships.popups)
@@ -32,6 +33,7 @@ export class GameRenderer {
     this.worldRoot.position.set(view.width / 2 - cam.x * cam.zoom, view.height / 2 - cam.y * cam.zoom)
     const lods = w.galaxy.systems.map((s) => lodOf(s.radius, cam.zoom))
     const t = w.t - SIM_DT * (1 - alpha)
+    this.systems.restyle(display.planets)
     this.stars.update(cam, view)
     this.galaxy.update(w, cam, view, lods)
     this.systems.update(w, cam, view, lods, t, selected)
