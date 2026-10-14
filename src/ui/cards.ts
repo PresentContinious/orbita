@@ -84,7 +84,7 @@ export function civCard(w: World, id: number): CardData | null {
     { label: 'доход', value: fmtRate(r.grossPerMin) },
     { label: 'содержание', value: fmtRate(-r.upkeepPerMin) },
     { label: 'чистый доход', value: fmtRate(r.netPerMin), tone: r.netPerMin >= 0 ? 'good' : 'bad' },
-    { label: 'запас', value: fmtDuration(r.runwaySec) },
+    { label: 'запас', value: Number.isFinite(r.reserveMin) ? `${r.reserveMin.toFixed(1)} мин дохода` : '—' },
     { label: 'стадия', value: STAGE_RU[civ.eco.stage], tone: civ.eco.stage === 'ok' ? 'good' : 'bad' },
     { label: 'планет', value: `${mine.length}${stations ? ` + ${stations} станц.` : ''}` },
     { label: 'население', value: fmtPop(mine.reduce((s, p) => s + p.pop, 0)) },
