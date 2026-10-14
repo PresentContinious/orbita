@@ -15,6 +15,9 @@ const dist = (a, b) => Math.hypot(a.x - b.x, a.y - b.y)
 const STATE_COLORS = ['#5da8ff', '#ff8a5c', '#7dd87d', '#e0c060', '#c98bff', '#5ce0d8', '#ff8fc8', '#a8c84d', '#8aa0ff', '#ffd07a']
 const PIRATE_COLOR = '#ff5555'
 
+// Максимальный шаг логики ботов, игровые секунды
+const CIV_STEP = 0.1
+
 // Война при отношениях ниже, союз — выше
 const WAR_AT = -45
 const ALLY_AT = 55
@@ -56,9 +59,11 @@ export class Civ {
     // пояса астероидов: 2–3 кольца между орбитами планет
     const orbits = this.e.planets.map((p) => p.orbit).sort((a, b) => a - b)
     const beltCount = 2 + ((Math.random() * 2) | 0)
+    this.belts = [] // орбиты поясов и россыпей у глыб — здесь руда отрастает заново
     for (let b = 0; b < beltCount; b++) {
       const i = 1 + ((Math.random() * (orbits.length - 2)) | 0)
       const beltR = (orbits[i] + orbits[i + 1]) / 2
+      this.belts.push(beltR)
       const n = 12 + ((Math.random() * 9) | 0)
       for (let k = 0; k < n; k++) this._spawnAsteroid(beltR + rand(-50, 50))
     }
@@ -74,6 +79,7 @@ export class Civ {
       p.lightsSeed = Math.random() * 1000
       // у глыб на окраине — богатые россыпи руды рядом
       if (p.barren) {
+        this.belts.push(p.orbit)
         const ang0 = Math.atan2(p.y, p.x)
         for (let k = 0; k < 8; k++) {
           this._spawnAsteroid(p.orbit + rand(-55, 55), ang0 + rand(-0.4, 0.4), Math.round(rand(120, 260)))
@@ -158,6 +164,17 @@ export class Civ {
     return this.planetsOf(st).reduce((s, p) => s + p.pop, 0)
   }
 
+  // столица: родная планета, пока она жива и своя; потеряли — переносим на самую населённую
+  capitalOf(st) {
+    const home = this.planetById(st.home)
+    if (home && home.alive && home.owner === st.id) return home
+    const mine = this.planetsOf(st)
+    if (!mine.length) return null
+    const cap = mine.reduce((b, p) => (p.pop > b.pop ? p : b), mine[0])
+    st.home = cap.id
+    return cap
+  }
+
   // ---------- главный тик ----------
 
   update(h, dt) {
@@ -165,6 +182,13 @@ export class Civ {
     for (const b of this.beams) b.life -= dt * 2
     this.beams = this.beams.filter((b) => b.life > 0)
     if (h <= 0) return
+    // логика ботов — шагами не длиннее CIV_STEP: на ×50 кадр несёт до 2.5 с игрового времени,
+    // и одним шагом истребители перелетали цель, ни разу не попадая
+    const n = Math.ceil(h / CIV_STEP)
+    for (let i = 0; i < n; i++) this._tick(h / n)
+  }
+
+  _tick(h) {
     this.t += h
     if (this.battleLogT > 0) this.battleLogT -= h
 
@@ -270,6 +294,7 @@ export class Civ {
   _stateDecide(st) {
     const myPlanets = this.planetsOf(st)
     if (!myPlanets.length) return
+    const capital = this.capitalOf(st)
     const myPop = this.popOf(st)
     const enemies = this.states.filter((o) => o.id !== st.id && !o.pirate && this.isWar(st.id, o.id))
     const myShips = this.ships.filter((s) => s.owner === st.id)
@@ -278,11 +303,11 @@ export class Civ {
     // шахтёры; после пиратских грабежей — с эскортом (конвой)
     if (this.asteroids.some((a) => a.res > 0) && myShips.filter((s) => s.kind === 'miner').length < 2 && st.credits >= SHIP.miner.cost) {
       st.credits -= SHIP.miner.cost
-      const mn = this._spawnShip('miner', st, myPlanets[0])
+      const mn = this._spawnShip('miner', st, capital)
       if (st.pirateLosses >= 80 && st.credits >= SHIP.escort.cost * 2) {
         st.credits -= SHIP.escort.cost * 2
         for (let i = 0; i < 2; i++) {
-          const es = this._spawnShip('escort', st, myPlanets[0])
+          const es = this._spawnShip('escort', st, capital)
           es.mission = { type: 'escort', ship: mn.id }
         }
         if (Math.random() < 0.5) this.log(`🛡 ${st.name} пускает шахтёров только конвоями`)
@@ -350,7 +375,7 @@ export class Civ {
       // флот
       if (st.credits >= SHIP.dread.cost && myDreads.length < 3) {
         st.credits -= SHIP.dread.cost
-        this._spawnShip('dread', st, myPlanets[0])
+        this._spawnShip('dread', st, capital)
         this.log(`⚓ ${st.name} спустило на воду дредноут`)
       }
 
@@ -373,9 +398,9 @@ export class Civ {
           while (needed > 0 && sent < 3 && st.credits >= SHIP.transport.cost && myPop > 0.8) {
             st.credits -= SHIP.transport.cost
             // борт берёт от 1 до 10 тысяч — крупный десант, а не сотня лодок
-            const troops = Math.min(clamp(needed, 1, 10), Math.max(myPlanets[0].pop * 0.5, 0.3))
-            myPlanets[0].pop = Math.max(myPlanets[0].pop - troops * 0.4, 0.05)
-            const sh = this._spawnShip('transport', st, myPlanets[0])
+            const troops = Math.min(clamp(needed, 1, 10), Math.max(capital.pop * 0.5, 0.3))
+            capital.pop = Math.max(capital.pop - troops * 0.4, 0.05)
+            const sh = this._spawnShip('transport', st, capital)
             sh.mission = { type: 'invade', planet: broken.id, troops }
             needed -= troops
             sent++
@@ -395,10 +420,14 @@ export class Civ {
         for (const d of myDreads) if (d.mission && d.mission.type !== 'escort') d.mission = null
       }
 
-      // мир — только если война затянулась и идёт плохо
+      // мир — только если война затянулась и идёт плохо. и враг должен согласиться:
+      // пока его флот осаждает наши планеты, он своё дожмёт
       const key = this.relKey(st.id, enemy.id)
       const warDur = this.t - (this.warSince[key] ?? this.t)
-      if (warDur > 50 && myPop < ePop * 0.4 && Math.random() < 0.3) {
+      const underSiege = this.ships.some(
+        (s) => s.owner === enemy.id && s.hp > 0 && s.mission?.type === 'siege' && this.planetById(s.mission.planet)?.owner === st.id,
+      )
+      if (warDur > 50 && myPop < ePop * 0.4 && !underSiege && Math.random() < 0.3) {
         this.setRel(st.id, enemy.id, -10)
         delete this.warSince[key]
         this.log(`🕊 ${st.name} запросило мир с ${enemy.name}`)
@@ -424,8 +453,8 @@ export class Civ {
       const internal = this.ships.find((s) => s.kind === 'transport' && s.mission?.type === 'trade' && s.mission.a === st.id && s.mission.b === st.id)
       if (!internal && st.credits >= SHIP.transport.cost) {
         st.credits -= SHIP.transport.cost
-        const sh = this._spawnShip('transport', st, myPlanets[0])
-        sh.mission = { type: 'trade', a: st.id, b: st.id, from: myPlanets[0].id, to: myPlanets[1].id, leg: 0, boost: 1 }
+        const sh = this._spawnShip('transport', st, capital)
+        sh.mission = { type: 'trade', a: st.id, b: st.id, from: capital.id, to: myPlanets.find((p) => p !== capital).id, leg: 0, boost: 1 }
         this.log(`🚚 ${st.name} запустило внутренний караван`)
       }
     }
@@ -437,10 +466,10 @@ export class Civ {
       )
       if (!route && st.credits >= SHIP.transport.cost) {
         st.credits -= SHIP.transport.cost
-        const sh = this._spawnShip('transport', st, myPlanets[0])
+        const sh = this._spawnShip('transport', st, capital)
         const alHome = this.planetsOf(al)[0]
         if (alHome) {
-          sh.mission = { type: 'trade', a: st.id, b: al.id, from: myPlanets[0].id, to: alHome.id, leg: 0, boost: 1 }
+          sh.mission = { type: 'trade', a: st.id, b: al.id, from: capital.id, to: alHome.id, leg: 0, boost: 1 }
           this.log(`🚚 караван ${st.name} ↔ ${al.name} вышел на маршрут`)
         }
         break
@@ -450,15 +479,17 @@ export class Civ {
     // колонизация — дорогая экспедиция: сначала обустраиваем свою планету,
     // и только зрелое государство тянет новую колонию
     const COLONY_COST = 240
-    const home = this.planetById(st.home) || myPlanets[0]
+    const home = capital
     const homeMature = home && home.pop > home.baseR * 1.3 * 0.55 && home.pvoUnits >= 2
-    const free = this.e.planets.filter((p) => p.alive && !p.owner && !p.barren && p.baseR >= 5)
+    // куда уже летят свои колонисты — вторую экспедицию туда не шлём
+    const claimed = new Set(myShips.filter((s) => s.mission?.type === 'colonize').map((s) => s.mission.planet))
+    const free = this.e.planets.filter((p) => p.alive && !p.owner && !p.barren && p.baseR >= 5 && !claimed.has(p.id))
     if (free.length && homeMature && st.credits >= COLONY_COST + SHIP.transport.cost) {
-      free.sort((a, b) => dist(a, myPlanets[0]) - dist(b, myPlanets[0]))
+      free.sort((a, b) => dist(a, capital) - dist(b, capital))
       st.credits -= COLONY_COST + SHIP.transport.cost
       const settlers = 0.18
-      myPlanets[0].pop = Math.max(myPlanets[0].pop - settlers, 0.05)
-      const sh = this._spawnShip('transport', st, myPlanets[0])
+      capital.pop = Math.max(capital.pop - settlers, 0.05)
+      const sh = this._spawnShip('transport', st, capital)
       sh.mission = { type: 'colonize', planet: free[0].id, settlers }
       this.log(`🚀 ${st.name} снарядило экспедицию к ${free[0].name} (−${COLONY_COST + SHIP.transport.cost} кр)`)
     }
@@ -474,7 +505,7 @@ export class Civ {
     }
     if (st.credits >= SHIP.dread.cost && myDreads.length < 1 && this.states.length > 2) {
       st.credits -= SHIP.dread.cost
-      this._spawnShip('dread', st, myPlanets[0])
+      this._spawnShip('dread', st, capital)
     }
 
     // сецессия колоний: отделившиеся получают ПВО и казну — у них есть шанс отбиться.
@@ -666,7 +697,8 @@ export class Civ {
       sh.airTactic = r2 < 0.4 ? 'free' : r2 < 0.8 ? 'massed' : 'cap'
       sh.strike = false
     }
-    if (this.ships.length < 130) this.ships.push(sh)
+    // лимит режет только бесплатные истребители: купленный корабль за уплаченные деньги появляется всегда
+    if (kind !== 'fighter' || this.ships.length < 130) this.ships.push(sh)
     return sh
   }
 
@@ -1065,8 +1097,8 @@ export class Civ {
                 this._damageShip(nearest, p.pvoUnits * 14 * h, null)
                 if (nearest !== sh) this._damageShip(sh, p.pvoUnits * 2.5 * h, null)
                 if (Math.random() < h * 2.2) this.beams.push({ x1: p.x, y1: p.y, x2: nearest.x, y2: nearest.y, life: 0.8, color: '#7df0ff' })
-              } else {
-                // бомбардировка беззащитной планеты: выжигаем, но не захватываем
+              } else if (this.stateById(p.owner)?.pirate) {
+                // пиратское логово захватывать незачем — выжигаем
                 p.pop -= 0.12 * h
                 if (Math.random() < h * 1.5) this.beams.push({ x1: sh.x, y1: sh.y, x2: p.x, y2: p.y, life: 0.7, color: st.color })
                 if (p.pop <= 0.01) {
@@ -1281,11 +1313,16 @@ export class Civ {
           sh.owner = killer.id
           sh.hp = sh.maxHp * 0.6
           const kHome = this.planetsOf(killer)[0]
-          if (kHome) {
+          if (kHome && kHome.id !== sh.mission.from) {
             sh.mission = { type: 'trade', a: killer.id, b: killer.id, from: sh.mission.from, to: kHome.id, leg: 0, boost: 1.5 }
             this.log(`⚓ ${killer.name} перехватило караван — теперь возит ему ×1.5`)
             continue
           }
+          // отбили собственный караван: дани с самих себя не бывает — уводим в док
+          sh.mission = null
+          if (kHome) sh.home = kHome.id
+          this.log(`⚓ ${killer.name} отбило свой караван`)
+          continue
         }
       }
       if (sh.kind === 'dread') {
@@ -1486,8 +1523,8 @@ export class Civ {
     this.astTick -= h
     if (this.astTick <= 0) {
       this.astTick = 30
-      if (this.asteroids.length < 50 && this.asteroids.length > 0) {
-        this._spawnAsteroid(pick(this.asteroids).orbitR + rand(-40, 40))
+      if (this.asteroids.length < 50 && this.belts.length) {
+        this._spawnAsteroid(pick(this.belts) + rand(-40, 40))
       }
     }
     for (const a of this.asteroids) {
