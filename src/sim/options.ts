@@ -33,6 +33,8 @@ export interface Route {
   a: Planet
   b: Planet
   internal: boolean
+  /** маршрут между разными системами (свой слот) */
+  inter: boolean
 }
 
 export function tradeRoutes(w: World, civ: Civ): Route[] {
@@ -41,7 +43,7 @@ export function tradeRoutes(w: World, civ: Civ): Route[] {
     if (!s.alive || s.owner !== civ.id || s.mission.type !== 'trade') continue
     const a = w.planets.get(s.mission.a)
     const b = w.planets.get(s.mission.b)
-    if (a && b) out.push({ a, b, internal: a.owner === civ.id && b.owner === civ.id })
+    if (a && b) out.push({ a, b, internal: a.owner === civ.id && b.owner === civ.id, inter: a.systemId !== b.systemId })
   }
   return out
 }
@@ -66,15 +68,22 @@ function legTime(w: World, a: Planet, b: Planet): number {
   return (sa.radius + sb.radius) / speed + transit + MOVE.crossingCost * Math.max(0, path.length - 1)
 }
 
-function bestRoute(w: World, civ: Civ, internal: boolean, routes: Route[]): { a: Planet; b: Planet; rate: number } | null {
+type Slot = 'internal' | 'external' | 'inter'
+
+function routeSlot(r: Route): Slot {
+  return r.inter ? 'inter' : r.internal ? 'internal' : 'external'
+}
+
+function bestRoute(w: World, civ: Civ, slot: Slot, routes: Route[]): { a: Planet; b: Planet; rate: number } | null {
   const capSys = capitalSystem(w, civ)
   let best: { a: Planet; b: Planet; rate: number } | null = null
   for (const a of populatedOf(w, civ)) {
     for (const b of w.planets.values()) {
       if (b.id === a.id || b.pop <= 0 || b.owner === null) continue
-      if ((b.owner === civ.id) !== internal) continue
-      if (internal && b.id < a.id) continue
-      if (!internal && hops(w.galaxy, capSys, b.systemId) > ECON.tradeMaxHops) continue
+      if ((a.systemId !== b.systemId) !== (slot === 'inter')) continue
+      if (slot === 'internal' && (b.owner !== civ.id || b.id < a.id)) continue
+      if (slot === 'external' && b.owner === civ.id) continue
+      if (slot === 'inter' && hops(w.galaxy, capSys, b.systemId) > ECON.tradeMaxHops) continue
       if (routes.some((r) => (r.a.id === a.id && r.b.id === b.id) || (r.a.id === b.id && r.b.id === a.id))) continue
       const rate = tradeIncome(civ, a, b) / legTime(w, a, b)
       if (!best || rate > best.rate) best = { a, b, rate }
@@ -160,9 +169,9 @@ export function listOptions(w: World, civ: Civ): Option[] {
 
   const routes = tradeRoutes(w, civ)
   const routeLimit = 1 + (civ.port ? 1 : 0)
-  for (const internal of [true, false]) {
-    if (routes.filter((r) => r.internal === internal).length >= routeLimit) continue
-    const best = bestRoute(w, civ, internal, routes)
+  for (const slot of ['internal', 'external', 'inter'] as const) {
+    if (routes.filter((r) => routeSlot(r) === slot).length >= routeLimit) continue
+    const best = bestRoute(w, civ, slot, routes)
     if (best) {
       out.push({ kind: 'caravan', price: shipPrice(civ, 'caravan'), envelope: 'trade', dIncome: best.rate, dUpkeep: shipUpkeep(civ, 'caravan'), planetId: best.a.id, partnerId: best.b.id })
     }

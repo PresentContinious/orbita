@@ -61,8 +61,8 @@
   - `genName` (function, 8), `uniqueName` (function, 15)
 - `src/sim/nav.ts` — 125 стр.
   - `Goal` (interface, 9), `Body` (type, 18), `avoidStar` (function, 21), `steer` (function, 45), `shipSpeed` (function, 64), `planetGoal` (function, 69), `setDestination` (function, 85), `gateGoal` (function, 90), `transitDuration` (function, 99), `advanceTransit` (function, 112)
-- `src/sim/options.ts` — 226 стр.
-  - `OptionKind` (type, 12), `Option` (interface, 14), `score` (function, 28), `Route` (interface, 32), `tradeRoutes` (function, 38), `listOptions` (function, 118), `execute` (function, 180)
+- `src/sim/options.ts` — 235 стр.
+  - `OptionKind` (type, 12), `Option` (interface, 14), `score` (function, 28), `Route` (interface, 32), `tradeRoutes` (function, 40), `listOptions` (function, 127), `execute` (function, 189)
 - `src/sim/query.ts` — 74 стр.
   - `civById` (function, 5), `planetsOf` (function, 10), `populatedOf` (function, 16), `capOf` (function, 20), `capitalOf` (function, 25), `capitalSystem` (function, 35), `reachableSystems` (function, 40), `claimedTargets` (function, 46), `colonyTargets` (function, 53), `stationTargets` (function, 65)
 - `src/sim/rng.ts` — 59 стр. — Генератор случайных чисел с зерном (mulberry32): одно зерно — одна и та же история.
@@ -133,8 +133,8 @@
 - `tests/render/noise.test.ts` — 17 стр.
 - `tests/render/territory.test.ts` — 32 стр.
 - `tests/render/zones.test.ts` — 81 стр.
-- `tests/sim/bot.test.ts` — 127 стр.
-- `tests/sim/economy.test.ts` — 186 стр.
+- `tests/sim/bot.test.ts` — 145 стр.
+- `tests/sim/economy.test.ts` — 187 стр.
 - `tests/sim/events.test.ts` — 35 стр.
 - `tests/sim/galaxy.test.ts` — 124 стр.
 - `tests/sim/invest.test.ts` — 112 стр.
@@ -147,7 +147,7 @@
 - `tests/sim/spatial.test.ts` — 42 стр.
 - `tests/sim/stepEconomy.test.ts` — 166 стр.
 - `tests/sim/system.test.ts` — 110 стр.
-- `tests/sim/world.test.ts` — 83 стр.
+- `tests/sim/world.test.ts` — 84 стр.
 - `tests/ui/cards.test.ts` — 56 стр.
 - `tests/ui/format.test.ts` — 27 стр.
 - `tests/ui/icons.test.ts` — 26 стр.

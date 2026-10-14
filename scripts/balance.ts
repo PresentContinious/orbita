@@ -103,7 +103,7 @@ const checks: [string, boolean, string][] = [
   ['все стартовые державы с ≥ 2 планетами к 10-й мин', share(all.filter((r) => r.twoPlanetsAt10).length) >= 0.8, `${all.filter((r) => r.twoPlanetsAt10).length}/${all.length} зёрен (нужно ≥ 80%)`],
   ['запас казны 0.5–4 мин дохода', all.reduce((s, r) => s + r.corridorHits, 0) / Math.max(1, all.reduce((s, r) => s + r.corridorSamples, 0)) >= 0.7, `${((100 * all.reduce((s, r) => s + r.corridorHits, 0)) / Math.max(1, all.reduce((s, r) => s + r.corridorSamples, 0))).toFixed(0)}% времени (нужно ≥ 70%)`],
   ['никто не копит > 5 мин дохода дольше 120 с', all.every((r) => r.hoarders === 0), `${all.reduce((s, r) => s + r.hoarders, 0)} держав`],
-  ['содержание / доход с 10-й мин — медиана 0.35–0.65', (() => { const m = median(all.flatMap((r) => r.upkeepShares)); return m >= 0.35 && m <= 0.65 })(), median(all.flatMap((r) => r.upkeepShares)).toFixed(2)],
+  ['содержание / доход с 10-й мин — медиана 0.05–0.25 (этап 1; цель 0.35–0.65 — этап 2, когда появятся флоты)', (() => { const m = median(all.flatMap((r) => r.upkeepShares)); return m >= 0.05 && m <= 0.25 })(), median(all.flatMap((r) => r.upkeepShares)).toFixed(2)],
   ['инвестиции ≥ 20% трат', all.reduce((s, r) => s + r.investSpend, 0) / Math.max(1, all.reduce((s, r) => s + r.totalSpend, 0)) >= 0.2, `${((100 * all.reduce((s, r) => s + r.investSpend, 0)) / Math.max(1, all.reduce((s, r) => s + r.totalSpend, 0))).toFixed(0)}%`],
   ['колония в чужой системе в каждой партии', all.every((r) => r.crossColonies >= 1), `${all.filter((r) => r.crossColonies >= 1).length}/${all.length}`],
   ['≥ 2 межсистемные трассы к 15-й мин в каждой партии', all.every((r) => r.interTradeBy15 >= 2), `${all.filter((r) => r.interTradeBy15 >= 2).length}/${all.length}`],

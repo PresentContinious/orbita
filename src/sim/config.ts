@@ -21,7 +21,7 @@ export const GALAXY = {
   placementAttempts: 4000,
 }
 
-export const CIVS = { min: 8, max: 10, startPopMin: 1.6, startPopMax: 2.4, startTreasury: 100 }
+export const CIVS = { min: 8, max: 10, startPopMin: 1.6, startPopMax: 2.4, startTreasury: 60 }
 
 // ---------- звёзды и планеты ----------
 export type StarType = 'G' | 'K' | 'F' | 'M' | 'B'

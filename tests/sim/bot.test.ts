@@ -89,6 +89,24 @@ describe('listOptions', () => {
   })
 })
 
+describe('межсистемный слот', () => {
+  test('внутренний и внешний караваны — в своей системе, межсистемный — отдельный вариант в другую систему', () => {
+    const { w, civ } = rich()
+    const home = capitalOf(w, civ)!
+    for (const o of listOptions(w, civ).filter((x) => x.kind === 'caravan')) {
+      const a = w.planets.get(o.planetId!)!
+      const b = w.planets.get(o.partnerId!)!
+      expect(a.systemId === b.systemId || hops(w.galaxy, home.systemId, b.systemId) <= 2).toBe(true)
+    }
+  })
+
+  test('держава с межсистемной возможностью со временем открывает межсистемную трассу', () => {
+    const w = createWorld(3)
+    run(w, 900)
+    expect(w.events.some((e) => e.kind === 'trade-route')).toBe(true)
+  })
+})
+
 describe('decide', () => {
   test('деньги только в конверте развития — покупается развитие', () => {
     const { w, civ } = rich()

@@ -2,6 +2,7 @@ import { describe, expect, test } from 'vitest'
 import {
   adminTotal, buy, canAfford, colonyPrice, earn, ledgerBalance, report, shipPrice, shipUpkeep, spend, stationIncome, taxOf, tradeIncome,
 } from '../../src/sim/economy'
+import { CIVS } from '../../src/sim/config'
 import { capitalOf } from '../../src/sim/query'
 import type { Planet, StarSystem } from '../../src/sim/types'
 import { quietWorld } from '../helpers'
@@ -16,10 +17,10 @@ describe('журнал денег', () => {
     const { civ } = freshCiv()
     earn(civ, 30, 'tax')
     spend(civ, 20, 'infra')
-    expect(civ.treasury).toBe(110)
+    expect(civ.treasury).toBe(CIVS.startTreasury + 10)
     expect(civ.eco.ledger.income.tax).toBe(30)
     expect(civ.eco.ledger.expense.infra).toBe(20)
-    expect(ledgerBalance(civ)).toBe(110)
+    expect(ledgerBalance(civ)).toBe(CIVS.startTreasury + 10)
   })
 
   test('отрицательные и NaN-суммы игнорируются', () => {
@@ -27,7 +28,7 @@ describe('журнал денег', () => {
     earn(civ, -5, 'tax')
     earn(civ, Number.NaN, 'tax')
     spend(civ, -5, 'infra')
-    expect(civ.treasury).toBe(100)
+    expect(civ.treasury).toBe(CIVS.startTreasury)
   })
 })
 

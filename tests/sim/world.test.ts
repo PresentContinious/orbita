@@ -1,4 +1,5 @@
 import { describe, expect, test } from 'vitest'
+import { CIVS } from '../../src/sim/config'
 import { capitalOf, capOf } from '../../src/sim/query'
 import { createWorld } from '../../src/sim/world'
 import { quietWorld, run, snapshot } from '../helpers'
@@ -15,7 +16,7 @@ describe('createWorld', () => {
         expect(home.habitability).toBeGreaterThanOrEqual(1)
         expect(home.pop).toBeGreaterThanOrEqual(1.6)
         expect(home.pop).toBeLessThan(2.4)
-        expect(c.treasury).toBe(100)
+        expect(c.treasury).toBe(CIVS.startTreasury)
         expect(w.galaxy.systems[home.systemId].role).toBe('inhabited')
       }
       expect(new Set(w.civs.map((c) => c.name)).size).toBe(w.civs.length)
