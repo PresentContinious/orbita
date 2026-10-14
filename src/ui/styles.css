@@ -110,3 +110,15 @@ button.on { background: var(--accent); color: #fff; }
 .legend i { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 3px; }
 .setup-result { color: var(--text); }
 .setup-go { align-self: flex-end; background: var(--accent); color: #fff; padding: 6px 28px; font-size: 13px; }
+.card.wide { width: 340px; }
+.card .cardsec h4 { margin: 8px 0 2px; font-size: 12px; letter-spacing: 0.04em; text-transform: uppercase; }
+.card .meter { margin: 6px 0; }
+.card .meter-names { display: flex; justify-content: space-between; color: var(--muted); font-size: 11px; }
+.card .meter-bar { height: 4px; background: rgba(255, 255, 255, 0.12); margin-top: 2px; }
+.card .meter-bar i { display: block; height: 100%; background: rgba(255, 255, 255, 0.7); }
+.card .cardtable { width: 100%; border-collapse: collapse; margin-top: 8px; font-size: 11px; }
+.card .cardtable th { color: var(--muted); font-weight: normal; text-align: right; padding: 1px 3px; }
+.card .cardtable td { text-align: right; padding: 1px 3px; border-top: 1px solid rgba(255, 255, 255, 0.04); }
+.card .cardtable th:first-child, .card .cardtable td:first-child { text-align: left; padding-left: 0; }
+.card .cardlog { list-style: none; margin: 8px 0 0; padding: 0; max-height: 140px; overflow: auto; font-size: 11px; color: var(--muted); }
+.card .cardlog li { padding: 1px 0; }

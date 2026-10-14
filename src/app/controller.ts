@@ -160,6 +160,30 @@ export class Controller {
     this.go({ x: (b.minX + b.maxX) / 2, y: (b.minY + b.maxY) / 2, zoom: galaxyZoom(this.view(), this.world.galaxy) }, instant)
   }
 
+  /** камера к бою: точка между якорями флотов на уровне «система»; карточка боя */
+  flyToBattle(id: number, instant = false): void {
+    const w = this.world
+    const b = w.battles.find((x) => x.id === id)
+    if (!b) return
+    const s = w.galaxy.systems[b.systemId]
+    let x = 0
+    let y = 0
+    let n = 0
+    for (const side of b.sides) {
+      for (const fid of side.fleetIds) {
+        const f = w.fleets.find((q) => q.id === fid)
+        if (!f) continue
+        x += f.anchor.x
+        y += f.anchor.y
+        n++
+      }
+    }
+    const v = this.view()
+    this.cam.follow = null
+    this.go({ x: s.pos.x + (n ? x / n : 0), y: s.pos.y + (n ? y / n : 0), zoom: clamp(Math.max(900, Math.min(v.width, v.height)) / s.radius, this.minZoom(), ZOOM_MAX) }, instant)
+    this.select({ type: 'battle', id })
+  }
+
   flyToSystem(id: number, level: 'approach' | 'system' = 'approach', instant = false): void {
     const s = this.world.galaxy.systems[id]
     const v = this.view()
@@ -238,6 +262,7 @@ export class Controller {
     const sel = this.selectedPlanet()
     const p = sel ? this.world.planets.get(sel) : undefined
     if (p && p.systemId === f) out.push({ label: p.name, target: { type: 'planet', id: p.id } })
+    if (this.ui.selected?.type === 'battle') out.push({ label: 'Бой', target: { type: 'system', id: f } })
     return out
   }
 

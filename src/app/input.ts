@@ -46,8 +46,11 @@ export function attachInput(el: HTMLElement, c: Controller): () => void {
     drag.vy = -dy / c.cam.zoom / dt
   }
   const onUp = (e: PointerEvent) => {
-    if (drag && drag.moved <= 4) c.select(pick(e))
-    else if (drag) {
+    if (drag && drag.moved <= 4) {
+      const p = pick(e)
+      if (p?.type === 'battle') c.flyToBattle(p.id)
+      else c.select(p)
+    } else if (drag) {
       // инерция после броска
       c.cam.vx = drag.vx
       c.cam.vy = drag.vy

@@ -458,6 +458,8 @@ export interface BattleSide {
   state: 'fight' | 'charge' | 'retreat' | 'flee' | 'orbit' | 'dock'
   value0: number
   lossValue: number
+  /** состав по классам в начале боя (для карточки «было / живы / горят»); у собранных руками боёв может не быть */
+  classes0?: Partial<Record<string, number>>
 }
 
 export interface BattleLogEntry {

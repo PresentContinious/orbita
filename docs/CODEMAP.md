@@ -4,13 +4,13 @@
 
 ## src/
 
-- `src/app/controller.ts` — 290 стр.
+- `src/app/controller.ts` — 315 стр.
   - `Crumb` (interface, 12), `UiState` (interface, 17), `Controller` (class, 33)
 - `src/app/director.ts` — 20 стр.
   - `Focus` (interface, 3), `pickFocus` (function, 10)
 - `src/app/display.ts` — 78 стр. — Настройки вида, которые зритель выбирает под себя: территории, стиль планет, торговые пути.
   - `TerritoryMode` (type, 3), `PlanetStyle` (type, 4), `Display` (interface, 6), `DEFAULT_DISPLAY` (const, 12), `display` (const, 17), `resolveDisplay` (function, 36), `initDisplay` (function, 53), `setDisplay` (function, 64), `onDisplay` (function, 74)
-- `src/app/input.ts` — 105 стр.
+- `src/app/input.ts` — 108 стр.
   - `attachInput` (function, 7)
 - `src/app/loop.ts` — 32 стр.
   - `Clock` (interface, 3), `createClock` (function, 10), `advance` (function, 15), `alpha` (function, 29)
@@ -105,15 +105,15 @@
   - `spawnStressShips` (function, 6)
 - `src/sim/system.ts` — 172 стр.
   - `Orbiting` (type, 7), `periodOf` (function, 9), `zoneOf` (function, 13), `tempKOf` (function, 20), `planetPos` (function, 24), `planetVel` (function, 29), `makeLook` (function, 50), `habitableCount` (function, 68), `makeAsteroid` (function, 72), `generateSystem` (function, 86)
-- `src/sim/types.ts` — 537 стр. — ---------- война (2А) ----------
-  - `Zone` (type, 9), `SystemRole` (type, 10), `PlanetLook` (interface, 12), `Build` (interface, 19), `Planet` (interface, 26), `Belt` (interface, 47), `Asteroid` (interface, 52), `Gate` (interface, 62), `Star` (interface, 69), `StarSystem` (interface, 76), `Corridor` (interface, 94), `Galaxy` (interface, 104), `Mission` (type, 109), `Transit` (interface, 121), `Ship` (interface, 129), `Stage` (type, 149), `IncomeSource` (type, 150), `ExpenseCat` (type, 151), `Ledger` (interface, 153), `CivEconomy` (interface, 159), `CivProject` (interface, 176), `ResearchJob` (interface, 182), `Civ` (interface, 189), `GameEvent` (interface, 205), `Fx` (interface, 217), `World` (interface, 226), `Module` (type, 269), `Trait` (type, 270), `Order` (type, 271), `TargetPriority` (type, 272), `SlotKind` (type, 273), `Slot` (interface, 276), `WingState` (interface, 284), `Hangar` (interface, 290), `Combat` (interface, 301), `FleetMission` (type, 333), `Fleet` (interface, 340), `Admiral` (interface, 406), `ProjectileKind` (type, 416), `Projectile` (interface, 418), `BattlePhase` (type, 446), `BattleSide` (interface, 448), `BattleLogEntry` (interface, 463), `BattleMetrics` (interface, 471), `Battle` (interface, 489), `Debris` (interface, 518), `BattleFx` (type, 534)
+- `src/sim/types.ts` — 539 стр. — ---------- война (2А) ----------
+  - `Zone` (type, 9), `SystemRole` (type, 10), `PlanetLook` (interface, 12), `Build` (interface, 19), `Planet` (interface, 26), `Belt` (interface, 47), `Asteroid` (interface, 52), `Gate` (interface, 62), `Star` (interface, 69), `StarSystem` (interface, 76), `Corridor` (interface, 94), `Galaxy` (interface, 104), `Mission` (type, 109), `Transit` (interface, 121), `Ship` (interface, 129), `Stage` (type, 149), `IncomeSource` (type, 150), `ExpenseCat` (type, 151), `Ledger` (interface, 153), `CivEconomy` (interface, 159), `CivProject` (interface, 176), `ResearchJob` (interface, 182), `Civ` (interface, 189), `GameEvent` (interface, 205), `Fx` (interface, 217), `World` (interface, 226), `Module` (type, 269), `Trait` (type, 270), `Order` (type, 271), `TargetPriority` (type, 272), `SlotKind` (type, 273), `Slot` (interface, 276), `WingState` (interface, 284), `Hangar` (interface, 290), `Combat` (interface, 301), `FleetMission` (type, 333), `Fleet` (interface, 340), `Admiral` (interface, 406), `ProjectileKind` (type, 416), `Projectile` (interface, 418), `BattlePhase` (type, 446), `BattleSide` (interface, 448), `BattleLogEntry` (interface, 465), `BattleMetrics` (interface, 473), `Battle` (interface, 491), `Debris` (interface, 520), `BattleFx` (type, 536)
 - `src/sim/weapons.ts` — 566 стр. — Оружие (спека 2А, §6, §8.1, §10.1): выбор целей расслоённо, сектора, выстрелы, залп ряда, каналы турелей.
   - `arcOk` (function, 38), `flakTarget` (function, 78), `screenTarget` (function, 113), `beamTarget` (function, 140), `missileTarget` (function, 220), `autocannonTarget` (function, 241), `interceptorTarget` (function, 258), `markGroups` (function, 333), `pickTargets` (function, 356), `hitChance` (function, 380), `rowVolley` (function, 456), `fireWeapons` (function, 481), `setChannel` (function, 549)
 - `src/sim/world.ts` — 79 стр.
   - `createWorld` (function, 18), `stepWorld` (function, 58)
 - `src/ui/Breadcrumbs.tsx` — 18 стр.
   - `Breadcrumbs` (function, 3)
-- `src/ui/Card.tsx` — 24 стр.
+- `src/ui/Card.tsx` — 75 стр.
   - `Card` (function, 3)
 - `src/ui/CivBar.tsx` — 27 стр.
   - `CivBar` (function, 7)
@@ -133,16 +133,16 @@
   - `Tooltip` (function, 3)
 - `src/ui/ViewMenu.tsx` — 78 стр.
   - `ViewMenu` (function, 30)
-- `src/ui/cards.ts` — 154 стр.
-  - `CardRow` (interface, 9), `CardData` (interface, 15), `planetCard` (function, 33), `systemCard` (function, 66), `civCard` (function, 79), `missionText` (function, 103), `shipCard` (function, 131), `cardFor` (function, 148)
+- `src/ui/cards.ts` — 336 стр. — ---------- бой и флот ----------
+  - `CardRow` (interface, 12), `CardData` (interface, 18), `traitName` (const, 37), `phaseName` (const, 38), `planetCard` (function, 50), `systemCard` (function, 83), `civCard` (function, 96), `missionText` (function, 120), `shipCard` (function, 152), `fleetMissionText` (function, 181), `battleCard` (function, 261), `fleetCard` (function, 302), `cardFor` (function, 328)
 - `src/ui/format.ts` — 30 стр.
   - `yearOf` (const, 3), `fmtInt` (function, 6), `fmtPop` (const, 11), `fmtRate` (function, 14), `fmtCredits` (const, 19), `fmtDuration` (function, 21), `roman` (const, 27), `hex` (const, 29)
-- `src/ui/icons.tsx` — 96 стр.
-  - `IconName` (type, 3), `KIND_ICON` (const, 6), `iconFor` (const, 22), `EventIcon` (function, 74), `Icon` (function, 78)
+- `src/ui/icons.tsx` — 101 стр.
+  - `IconName` (type, 3), `KIND_ICON` (const, 6), `iconFor` (const, 25), `EventIcon` (function, 79), `Icon` (function, 83)
 - `src/ui/model.ts` — 60 стр.
   - `Toast` (interface, 3), `TOAST_LIFE` (const, 9), `MAX_TOASTS` (const, 10), `updateToasts` (function, 13), `TrendTracker` (class, 30), `UiModel` (class, 49)
-- `src/ui/snapshot.ts` — 111 стр.
-  - `CivSummary` (interface, 12), `MinimapData` (interface, 24), `Snapshot` (interface, 31), `buildSnapshot` (function, 71)
+- `src/ui/snapshot.ts` — 147 стр.
+  - `CivSummary` (interface, 13), `MinimapData` (interface, 25), `BattleSummary` (interface, 32), `Snapshot` (interface, 43), `buildSnapshot` (function, 105)
 - `src/ui/store.ts` — 24 стр.
   - `Store` (interface, 3), `createStore` (function, 9)
 - `src/ui/viewOptions.ts` — 21 стр.
@@ -198,6 +198,7 @@
 - `tests/sim/warships.test.ts` — 122 стр.
 - `tests/sim/weapons.test.ts` — 395 стр.
 - `tests/sim/world.test.ts` — 84 стр.
+- `tests/ui/battleCards.test.ts` — 194 стр.
 - `tests/ui/cards.test.ts` — 56 стр.
 - `tests/ui/format.test.ts` — 27 стр.
 - `tests/ui/icons.test.ts` — 26 стр.

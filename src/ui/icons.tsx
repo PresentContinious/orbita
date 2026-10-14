@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react'
 
-export type IconName = 'colony' | 'trade' | 'research' | 'port' | 'build' | 'crisis' | 'bankrupt' | 'recovered' | 'other' | 'target' | 'dice' | 'eye'
+export type IconName = 'colony' | 'trade' | 'research' | 'port' | 'build' | 'crisis' | 'bankrupt' | 'recovered' | 'other' | 'target' | 'dice' | 'eye' | 'battle' | 'verdict'
 
 /** kind события -> имя значка */
 export const KIND_ICON: Record<string, IconName> = {
@@ -17,6 +17,9 @@ export const KIND_ICON: Record<string, IconName> = {
   recovered: 'recovered',
   decommission: 'other',
   'station-sold': 'other',
+  battle: 'battle',
+  verdict: 'verdict',
+  shipLost: 'crisis',
 }
 
 export const iconFor = (kind: string): IconName => KIND_ICON[kind] ?? 'other'
@@ -63,6 +66,8 @@ const PATHS: Record<IconName, ReactNode> = {
       <circle cx="7" cy="7" r="1.8" />
     </>
   ),
+  battle: <path d="M2 12 10 4M10 4V2.5H11.5M12 12 4 4M4 4V2.5H2.5" />,
+  verdict: <path d="M7 2v10M3 12h8M3 4.5h8M3 4.5 1.5 8h3zM11 4.5 9.5 8h3z" />,
   dice: (
     <>
       <rect x="2" y="2" width="10" height="10" rx="2" />

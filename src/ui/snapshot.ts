@@ -1,10 +1,11 @@
 import type { Controller, Crumb } from '../app/controller'
 import { galaxyBounds, screenToWorld, type Bounds } from '../render/camera'
 import { territoryShares } from '../render/territory'
+import { battleLabel, strengthOf } from '../render/battleGeom'
 import { report } from '../sim/economy'
 import { populatedOf } from '../sim/query'
 import { gateGalaxyPos, gateTo } from '../sim/routing'
-import type { GameEvent, Stage, World } from '../sim/types'
+import type { BattlePhase, GameEvent, Stage, World } from '../sim/types'
 import { cardFor, civCard, type CardData } from './cards'
 import { hex, yearOf } from './format'
 import type { Toast, UiModel } from './model'
@@ -28,6 +29,17 @@ export interface MinimapData {
   view: { x0: number; y0: number; x1: number; y1: number }
 }
 
+export interface BattleSummary {
+  id: number
+  systemId: number
+  systemName: string
+  label: string
+  strength: [number, number]
+  colors: [string, string]
+  phase: BattlePhase
+  big: boolean
+}
+
 export interface Snapshot {
   seed: number
   unitCap: number
@@ -45,6 +57,8 @@ export interface Snapshot {
   card: CardData | null
   hover: { x: number; y: number; card: CardData } | null
   minimap: MinimapData | null
+  battles: BattleSummary[]
+  slowNote: string | null
 }
 
 function minimapOf(w: World, c: Controller): MinimapData {
@@ -66,6 +80,26 @@ function minimapOf(w: World, c: Controller): MinimapData {
     bounds: galaxyBounds(w.galaxy),
     view: { x0: a.x, y0: a.y, x1: b.x, y1: b.y },
   }
+}
+
+function battlesOf(w: World): BattleSummary[] {
+  return w.battles.map((b) => {
+    const s: [number, number] = [strengthOf(w, b.sides[0]), strengthOf(w, b.sides[1])]
+    const col = (i: 0 | 1) => {
+      const civ = w.civs.find((c) => c.id === b.sides[i].civ)
+      return civ ? hex(civ.color) : '#888888'
+    }
+    return {
+      id: b.id,
+      systemId: b.systemId,
+      systemName: w.galaxy.systems[b.systemId].name,
+      label: battleLabel(w, b),
+      strength: s,
+      colors: [col(0), col(1)],
+      phase: b.phase,
+      big: Math.max(b.sides[0].strength0, b.sides[1].strength0) >= 1000,
+    }
+  })
 }
 
 export function buildSnapshot(w: World, c: Controller, model: UiModel): Snapshot {
@@ -106,5 +140,7 @@ export function buildSnapshot(w: World, c: Controller, model: UiModel): Snapshot
       return card ? { x: c.ui.mouse.x, y: c.ui.mouse.y, card } : null
     })(),
     minimap: c.ui.minimap ? minimapOf(w, c) : null,
+    battles: battlesOf(w),
+    slowNote: null,
   }
 }
