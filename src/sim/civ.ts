@@ -6,7 +6,7 @@ import type { Rng } from './rng'
 import type { Civ, World } from './types'
 
 export function createCivs(w: World, rng: Rng): void {
-  const used = new Set<string>()
+  const used = new Set<string>([...w.planets.values()].map((p) => p.name).concat(w.galaxy.systems.map((s) => s.name)))
   let color = 0
   for (const sys of w.galaxy.systems) {
     if (sys.role !== 'inhabited') continue

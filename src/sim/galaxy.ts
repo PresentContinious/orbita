@@ -40,6 +40,17 @@ export function isConnected(n: number, edges: [number, number][]): boolean {
   return seen.size === n
 }
 
+function distToSegment(q: Vec, a: Vec, b: Vec): number {
+  const l2 = (b.x - a.x) ** 2 + (b.y - a.y) ** 2
+  const t = l2 === 0 ? 0 : Math.max(0, Math.min(1, ((q.x - a.x) * (b.x - a.x) + (q.y - a.y) * (b.y - a.y)) / l2))
+  return Math.hypot(q.x - (a.x + t * (b.x - a.x)), q.y - (a.y + t * (b.y - a.y)))
+}
+
+function segmentsCross(p1: Vec, p2: Vec, p3: Vec, p4: Vec): boolean {
+  const cr = (o: Vec, a: Vec, b: Vec) => (a.x - o.x) * (b.y - o.y) - (a.y - o.y) * (b.x - o.x)
+  return cr(p1, p2, p3) * cr(p1, p2, p4) < 0 && cr(p3, p4, p1) * cr(p3, p4, p2) < 0
+}
+
 /** граф относительного соседства + одна петля, если вышло дерево; степень ≤ 4 */
 export function buildCorridorEdges(pts: Vec[]): [number, number][] {
   const n = pts.length
@@ -53,25 +64,6 @@ export function buildCorridorEdges(pts: Vec[]): [number, number][] {
       }
       if (ok) edges.push([i, j])
     }
-  }
-  if (edges.length === n - 1) {
-    const has = new Set(edges.map(([a, b]) => `${a}-${b}`))
-    let best: [number, number] | null = null
-    let bestLen = Infinity
-    for (let i = 0; i < n; i++) {
-      for (let j = i + 1; j < n; j++) {
-        if (has.has(`${i}-${j}`)) continue
-        const mid = { x: (pts[i].x + pts[j].x) / 2, y: (pts[i].y + pts[j].y) / 2 }
-        const half = dist(pts[i], pts[j]) / 2
-        let gabriel = true
-        for (let k = 0; k < n && gabriel; k++) if (k !== i && k !== j && dist(pts[k], mid) < half) gabriel = false
-        if (gabriel && half * 2 < bestLen) {
-          best = [i, j]
-          bestLen = half * 2
-        }
-      }
-    }
-    if (best) edges.push(best)
   }
   for (;;) {
     const deg = new Array(n).fill(0)
@@ -91,7 +83,69 @@ export function buildCorridorEdges(pts: Vec[]): [number, number][] {
         break
       }
     }
-    if (!removed) break
+    if (!removed) {
+      // все рёбра вершины — мосты: самое длинное заменяем связью через другую вершину
+      const e = mine[0]
+      const rest = edges.filter((x) => x !== e)
+      const u = e[0] === v ? e[1] : e[0]
+      const comp = new Set<number>([u])
+      for (let grew = true; grew; ) {
+        grew = false
+        for (const [a, b] of rest) {
+          if (comp.has(a) !== comp.has(b)) {
+            comp.add(a)
+            comp.add(b)
+            grew = true
+          }
+        }
+      }
+      let best: [number, number] | null = null
+      let bestLen = Infinity
+      for (const x of comp) {
+        for (let y = 0; y < n; y++) {
+          if (comp.has(y) || y === v || deg[x] >= GALAXY.maxDegree || deg[y] >= GALAXY.maxDegree) continue
+          const len = dist(pts[x], pts[y])
+          if (len < bestLen) {
+            best = x < y ? [x, y] : [y, x]
+            bestLen = len
+          }
+        }
+      }
+      if (!best) break
+      edges = [...rest, best]
+    }
+  }
+  if (edges.length === n - 1) {
+    const has = new Set(edges.map(([a, b]) => `${a}-${b}`))
+    const deg = new Array(n).fill(0)
+    for (const [a, b] of edges) {
+      deg[a]++
+      deg[b]++
+    }
+    let best: [number, number] | null = null
+    let bestLen = Infinity
+    // сначала кратчайшее ребро графа Габриэля, иначе кратчайшее не пересекающее коридоры
+    for (const mode of ['gabriel', 'free'] as const) {
+      for (let i = 0; i < n; i++) {
+        for (let j = i + 1; j < n; j++) {
+          if (has.has(`${i}-${j}`) || deg[i] >= GALAXY.maxDegree || deg[j] >= GALAXY.maxDegree) continue
+          const len = dist(pts[i], pts[j])
+          if (len >= bestLen) continue
+          if (mode === 'gabriel') {
+            const mid = { x: (pts[i].x + pts[j].x) / 2, y: (pts[i].y + pts[j].y) / 2 }
+            if (pts.some((q, k) => k !== i && k !== j && dist(q, mid) < len / 2)) continue
+          } else if (pts.some((q, k) => k !== i && k !== j && distToSegment(q, pts[i], pts[j]) < 1e-9)) {
+            continue
+          } else if (edges.some(([a, b]) => a !== i && a !== j && b !== i && b !== j && segmentsCross(pts[i], pts[j], pts[a], pts[b]))) {
+            continue
+          }
+          best = [i, j]
+          bestLen = len
+        }
+      }
+      if (best) break
+    }
+    if (best) edges.push(best)
   }
   return edges
 }
@@ -194,7 +248,7 @@ function gatePos(from: StarSystem, to: StarSystem): Vec {
 }
 
 export function generateGalaxy(rng: Rng): Galaxy {
-  const n = rng.int(GALAXY.minSystems, GALAXY.maxSystems)
+  const n = rng.pick([5, 6, 6, 7])
   const pts = placeSystems(rng, n)
   const edges = buildCorridorEdges(pts)
   const roles = assignRoles(rng, n, edges)

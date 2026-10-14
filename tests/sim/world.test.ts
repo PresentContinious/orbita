@@ -70,3 +70,13 @@ describe('население', () => {
     expect(civ.capital).toBe(other.id)
   })
 })
+
+describe('имена держав', () => {
+  test('seed 1..200: имя державы не совпадает с именем планеты или системы', () => {
+    for (let seed = 1; seed <= 200; seed++) {
+      const w = createWorld(seed)
+      const taken = new Set([...w.planets.values()].map((p) => p.name).concat(w.galaxy.systems.map((s) => s.name)))
+      for (const c of w.civs) expect(taken.has(c.name), `seed ${seed}: ${c.name}`).toBe(false)
+    }
+  })
+})

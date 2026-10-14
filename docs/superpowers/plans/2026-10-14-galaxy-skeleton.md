@@ -25,7 +25,7 @@
 
 ## Review Focus
 
-1. **Размер экрана от 1280×720 до 2560×1440:** вся галактика в кадре должна оставаться уровнем «галактика», а не «подлёт»; панели не перекрывают центр. Тест — задача 15 (`lodOf` при `fitZoom` для обоих размеров), снимок 1280×720 — задача 23.
+1. **Размер экрана от 1280×720 до 2560×1440:** вся галактика в кадре должна оставаться уровнем «галактика», а не «подлёт»; панели не перекрывают центр. Тест — задача 15 (`lodOf` при `galaxyZoom` для обоих размеров), снимок 1280×720 — задача 23.
 2. **Бесконечная партия (часы на ×50):** журнал событий ограничен 500 записями, мёртвые корабли удаляются из массива, визуальные подсказки `fx` чистятся, в экономике нет `NaN`. Тесты — задачи 7 (удаление кораблей), 10 (лимит журнала), 12 (чистка `fx`), 14 (долгий прогон без `NaN`).
 3. **Неудачные зёрна:** системы на одной линии, обитаемая система без нужного числа пригодных планет. Тесты — задача 4 (повторная генерация системы), задача 5 (50 зёрен + точки на одной прямой).
 4. **Держава без дохода, кораблей и станций в банкротстве:** отчёт без `NaN`/`Infinity` в запасе казны, списание не зацикливается. Тесты — задачи 9 и 10.
@@ -5435,7 +5435,7 @@ git commit -m "app: fixed-step clock; render: camera math and LOD"
 - Test: `tests/render/territory.test.ts`
 
 **Interfaces:**
-- Consumes: `Camera`, `lodOf`, `worldToScreen`, `galaxyBounds`, `fitZoom`, `createClock`, `advance`, `alpha`, `createWorld`, `stepWorld`, `gateGalaxyPos`, `gateTo`, `findPath`, `civById`.
+- Consumes: `Camera`, `lodOf`, `worldToScreen`, `galaxyBounds`, `galaxyZoom`, `createClock`, `advance`, `alpha`, `createWorld`, `stepWorld`, `gateGalaxyPos`, `gateTo`, `findPath`, `civById`.
 - Produces:
   - `territory.ts`: `interface Share { civ: number; color: number; share: number }`, `territoryShares(w, sys): Share[]` (населённая планета весит 1, станция 0.5; по убыванию доли).
   - `textures.ts`: `glowTexture(size = 128): Texture`.
@@ -5773,7 +5773,7 @@ export class GameRenderer {
 
 ```tsx
 import { Application } from 'pixi.js'
-import { createCamera, fitZoom, galaxyBounds, updateCamera } from '../render/camera'
+import { createCamera, galaxyBounds, galaxyZoom, updateCamera } from '../render/camera'
 import { GameRenderer } from '../render/renderer'
 import { createWorld, stepWorld } from '../sim/world'
 import { advance, alpha, createClock } from './loop'
@@ -5793,7 +5793,7 @@ async function boot(): Promise<void> {
   const b = galaxyBounds(world.galaxy)
   cam.x = (b.minX + b.maxX) / 2
   cam.y = (b.minY + b.maxY) / 2
-  cam.zoom = fitZoom(view(), b)
+  cam.zoom = galaxyZoom(view(), world.galaxy)
   const clock = createClock(1)
 
   app.ticker.add((ticker) => {
@@ -6392,7 +6392,7 @@ git commit -m "render: per-ship particles, transit dots, income popups"
 - Test: `tests/render/hit.test.ts`, `tests/app/controller.test.ts`
 
 **Interfaces:**
-- Consumes: `Camera`, `lodOf`, `screenToWorld`, `startFly`, `updateCamera`, `fitZoom`, `galaxyBounds`, `ZOOM_MAX`, `Clock`, `planetPos`, `capitalOf`, `civById`, `SPEEDS`, `GameEvent`.
+- Consumes: `Camera`, `lodOf`, `screenToWorld`, `startFly`, `updateCamera`, `galaxyZoom`, `galaxyBounds`, `ZOOM_MAX`, `Clock`, `planetPos`, `capitalOf`, `civById`, `SPEEDS`, `GameEvent`.
 - Produces:
   - `hit.ts`: `type Pick = { type: 'ship'; id: number } | { type: 'planet'; id: string } | { type: 'system'; id: number }`, `pickAt(w, cam, view, screen): Pick | null` (приоритет: корабль > планета > система).
   - `controller.ts`: `interface Crumb { label: string; target: { type: 'galaxy' } | { type: 'system'; id: number } | { type: 'planet'; id: string } }`, `interface UiState { speedIndex; paused; follow; minimap; feedOpen; selected: Pick | null; hovered: Pick | null; mouse: { x: number; y: number } }`, класс `Controller(world, cam, clock, view: () => View)` с методами `minZoom()`, `setSpeed(i)`, `togglePause()`, `toggleFollow(on?)`, `toggleMinimap()`, `toggleFeed()`, `select(p)`, `hover(p, mouse?)`, `userMoved()`, `flyToGalaxy(instant?)`, `flyToSystem(id, level = 'approach', instant?)`, `flyToPlanet(id, instant?)`, `flyToCiv(id)`, `flyToEvent(ev)`, `flyToWorldPoint(x, y)`, `goCrumb(c)`, `focusSystem(): number | null`, `level(): Lod`, `crumbs(): Crumb[]`, `back()`, `update(now, dt)`, `selectedPlanet(): string | null`.
@@ -6593,7 +6593,7 @@ export function pickAt(w: World, cam: Camera, view: View, screen: Vec): Pick | n
 - [ ] **Step 4: Write `src/app/controller.ts`**
 
 ```ts
-import { fitZoom, galaxyBounds, lodOf, startFly, updateCamera, ZOOM_MAX, type Camera, type CamTarget, type Lod, type View } from '../render/camera'
+import { galaxyBounds, galaxyZoom, lodOf, startFly, updateCamera, ZOOM_MAX, type Camera, type CamTarget, type Lod, type View } from '../render/camera'
 import type { Pick } from '../render/hit'
 import { SPEEDS } from '../sim/config'
 import { clamp } from '../sim/math'
@@ -6633,7 +6633,7 @@ export class Controller {
   ) {}
 
   minZoom(): number {
-    return fitZoom(this.view(), galaxyBounds(this.world.galaxy)) * 0.8
+    return galaxyZoom(this.view(), this.world.galaxy) * 0.8
   }
 
   // ---------- время и переключатели ----------
@@ -6700,7 +6700,7 @@ export class Controller {
   flyToGalaxy(instant = false): void {
     const b = galaxyBounds(this.world.galaxy)
     this.cam.follow = null
-    this.go({ x: (b.minX + b.maxX) / 2, y: (b.minY + b.maxY) / 2, zoom: fitZoom(this.view(), b) }, instant)
+    this.go({ x: (b.minX + b.maxX) / 2, y: (b.minY + b.maxY) / 2, zoom: galaxyZoom(this.view(), this.world.galaxy) }, instant)
   }
 
   flyToSystem(id: number, level: 'approach' | 'system' = 'approach', instant = false): void {

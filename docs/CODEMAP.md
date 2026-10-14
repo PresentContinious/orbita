@@ -7,16 +7,16 @@
 - `src/app/loop.ts` — 32 стр.
   - `Clock` (interface, 3), `createClock` (function, 10), `advance` (function, 15), `alpha` (function, 29)
 - `src/app/main.tsx` — 3 стр. — Точка входа. Заполняется в задаче 16.
-- `src/render/camera.ts` — 130 стр.
-  - `View` (interface, 4), `Bounds` (interface, 9), `CamTarget` (interface, 16), `Fly` (interface, 22), `Camera` (interface, 29), `ZOOM_MAX` (const, 40), `LOD` (const, 41), `Lod` (type, 42), `LodInfo` (interface, 43), `createCamera` (function, 49), `worldToScreen` (function, 53), `screenToWorld` (function, 57), `galaxyBounds` (function, 61), `fitZoom` (function, 72), `zoomAt` (function, 77), `flyDuration` (function, 85), `startFly` (function, 89), `updateCamera` (function, 97), `lodOf` (function, 121)
+- `src/render/camera.ts` — 136 стр.
+  - `View` (interface, 4), `Bounds` (interface, 9), `CamTarget` (interface, 16), `Fly` (interface, 22), `Camera` (interface, 29), `ZOOM_MAX` (const, 40), `LOD` (const, 41), `Lod` (type, 42), `LodInfo` (interface, 43), `createCamera` (function, 49), `worldToScreen` (function, 53), `screenToWorld` (function, 57), `galaxyBounds` (function, 61), `fitZoom` (function, 72), `galaxyZoom` (function, 77), `zoomAt` (function, 83), `flyDuration` (function, 91), `startFly` (function, 95), `updateCamera` (function, 103), `lodOf` (function, 127)
 - `src/sim/civ.ts` — 50 стр.
   - `createCivs` (function, 8), `stepPopulation` (function, 38)
 - `src/sim/config.ts` — 169 стр. — ---------- время ----------
   - `SIM_DT` (const, 4), `YEAR_SECONDS` (const, 5), `MAX_STEPS_PER_FRAME` (const, 6), `MAX_FRAME_DT` (const, 7), `SPEEDS` (const, 9), `GALAXY` (const, 12), `CIVS` (const, 24), `StarType` (type, 27), `STAR_TYPES` (const, 28), `ORBIT` (const, 36), `HZ` (const, 52), `PlanetKind` (type, 54), `PLANET_KINDS` (const, 55), `ROLE_GEN` (const, 62), `BELT` (const, 72), `POP` (const, 75), `ShipKind` (type, 78), `SHIP_KINDS` (const, 79), `MOVE` (const, 85), `Envelope` (type, 101), `ENVELOPE_SHARES` (const, 102), `ECON` (const, 104), `ResearchBranch` (type, 154), `RESEARCH` (const, 155), `RESEARCH_BRANCHES` (const, 161), `BOT` (const, 164), `PALETTE` (const, 167), `EVENTS` (const, 168)
 - `src/sim/economy.ts` — 29 стр.
   - `newEconomy` (function, 4)
-- `src/sim/galaxy.ts` — 227 стр.
-  - `placeSystems` (function, 8), `isConnected` (function, 26), `buildCorridorEdges` (function, 44), `hopMatrix` (function, 99), `assignRoles` (function, 138), `civSlots` (function, 174), `generateGalaxy` (function, 196)
+- `src/sim/galaxy.ts` — 281 стр.
+  - `placeSystems` (function, 8), `isConnected` (function, 26), `buildCorridorEdges` (function, 55), `hopMatrix` (function, 153), `assignRoles` (function, 192), `civSlots` (function, 228), `generateGalaxy` (function, 250)
 - `src/sim/math.ts` — 9 стр.
   - `Vec` (type, 1), `TAU` (const, 3), `ZERO` (const, 4), `clamp` (const, 6), `lerp` (const, 7), `dist` (const, 8)
 - `src/sim/names.ts` — 27 стр. — Слоги из старой ОРБИТЫ
@@ -45,10 +45,10 @@
 - `tests/app/loop.test.ts` — 34 стр.
 - `tests/helpers.ts` — 27 стр.
   - `run` (function, 5), `snapshot` (function, 11), `quietWorld` (function, 22)
-- `tests/render/camera.test.ts` — 73 стр.
-- `tests/sim/galaxy.test.ts` — 106 стр.
+- `tests/render/camera.test.ts` — 81 стр.
+- `tests/sim/galaxy.test.ts` — 124 стр.
 - `tests/sim/names.test.ts` — 11 стр.
 - `tests/sim/rng.test.ts` — 60 стр.
 - `tests/sim/spatial.test.ts` — 42 стр.
 - `tests/sim/system.test.ts` — 110 стр.
-- `tests/sim/world.test.ts` — 73 стр.
+- `tests/sim/world.test.ts` — 83 стр.

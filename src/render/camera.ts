@@ -73,6 +73,12 @@ export function fitZoom(view: View, b: Bounds, pad = 1.15): number {
   return Math.min(view.width / ((b.maxX - b.minX) * pad), view.height / ((b.maxY - b.minY) * pad))
 }
 
+/** зум «вся галактика»: влезает в экран и держит уровень «галактика» у самой большой системы */
+export function galaxyZoom(view: View, g: Galaxy): number {
+  const maxR = Math.max(...g.systems.map((s) => s.radius))
+  return Math.min(fitZoom(view, galaxyBounds(g)), (LOD.approach * (1 - LOD.band)) / maxR)
+}
+
 /** зум колесом: точка мира под курсором остаётся под курсором */
 export function zoomAt(cam: Camera, view: View, screen: Vec, factor: number, minZoom: number): void {
   const before = screenToWorld(cam, view, screen)

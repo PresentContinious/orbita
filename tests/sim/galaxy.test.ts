@@ -103,3 +103,21 @@ describe('generateGalaxy на 50 зёрнах', () => {
     expect(JSON.stringify(generateGalaxy(createRng(5)))).toBe(JSON.stringify(generateGalaxy(createRng(5))))
   })
 })
+
+describe('generateGalaxy: свойства по зёрнам', () => {
+  test('seed 1..200: есть петля, степень ≤ 4, граф связный', () => {
+    for (let seed = 1; seed <= 200; seed++) {
+      const g = generateGalaxy(createRng(seed))
+      expect(g.corridors.length, `seed ${seed}`).toBeGreaterThanOrEqual(g.systems.length)
+      for (const s of g.systems) expect(s.gates.length, `seed ${seed}`).toBeLessThanOrEqual(4)
+      expect(isConnected(g.systems.length, g.corridors.map((c) => [c.a, c.b] as [number, number]))).toBe(true)
+    }
+  })
+
+  test('seed 1..400: шестёрок больше, чем пятёрок и семёрок по отдельности', () => {
+    const cnt: Record<number, number> = { 5: 0, 6: 0, 7: 0 }
+    for (let seed = 1; seed <= 400; seed++) cnt[generateGalaxy(createRng(seed)).systems.length]++
+    expect(cnt[6]).toBeGreaterThan(cnt[5])
+    expect(cnt[6]).toBeGreaterThan(cnt[7])
+  })
+})

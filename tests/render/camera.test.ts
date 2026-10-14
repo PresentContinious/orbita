@@ -1,7 +1,8 @@
 import { describe, expect, test } from 'vitest'
 import {
-  createCamera, fitZoom, flyDuration, lodOf, screenToWorld, startFly, updateCamera, worldToScreen, zoomAt,
+  createCamera, flyDuration, galaxyZoom, lodOf, screenToWorld, startFly, updateCamera, worldToScreen, zoomAt,
 } from '../../src/render/camera'
+import { createWorld } from '../../src/sim/world'
 
 describe('камера', () => {
   const view = { width: 800, height: 600 }
@@ -64,9 +65,16 @@ describe('камера', () => {
   })
 
   test('вся галактика в кадре — уровень «галактика» на экранах 1280×720 и 2560×1440', () => {
-    const b = { minX: -50_000, minY: -30_000, maxX: 50_000, maxY: 30_000 }
-    for (const v of [{ width: 1280, height: 720 }, { width: 2560, height: 1440 }]) {
-      expect(lodOf(8000, fitZoom(v, b)).level).toBe('galaxy')
+    for (let seed = 1; seed <= 50; seed++) {
+      const g = createWorld(seed).galaxy
+      for (const v of [{ width: 1280, height: 720 }, { width: 2560, height: 1440 }]) {
+        const z = galaxyZoom(v, g)
+        for (const s of g.systems) {
+          const l = lodOf(s.radius, z)
+          expect(l.level, `seed ${seed}`).toBe('galaxy')
+          expect(l.approachAlpha, `seed ${seed}`).toBe(0)
+        }
+      }
     }
   })
 })
