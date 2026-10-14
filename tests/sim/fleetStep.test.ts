@@ -9,7 +9,12 @@ import type { Vec, World } from '../../src/sim/types'
 import { stepWorld } from '../../src/sim/world'
 
 const COMP = '3bb,1cv,3ff,6co'
-const arena = (q: string): World => createArena(parseArena(q))
+/** мир без стрельбы: проверяем именно движение (оружие задачи 8 иначе убивает корабли и меняет составы) */
+const arena = (q: string): World => {
+  const w = createArena(parseArena(q))
+  for (const s of w.ships) s.combat!.mothballed = true
+  return w
+}
 const standard = (seed = 1): World => arena(`A=${COMP}&B=${COMP}&seed=${seed}`)
 const deg = (r: number): number => (r * 180) / Math.PI
 
@@ -65,10 +70,23 @@ describe('движение рамки и корабля в слоте', () => {
     expect(r.capitalOffSlotT).toBeLessThanOrEqual(0.1)
   })
 
-  it('минимальная дистанция корпусов капитальных ≥ 2 длины (24) за всё развёртывание; push-out = 0 при подходе к слотам', () => {
-    const r = runArena(standard(), 1200)
-    expect(r.minCapitalDist).toBeGreaterThanOrEqual(24)
-    expect(r.pushOuts).toBe(0)
+  it('минимальная дистанция корпусов ≥ 2 длины меньшего корабля пары (minHullRatio ≥ 1), push-out = 0: 5 зёрен × 3000 шагов, замер каждый шаг', () => {
+    for (let seed = 1; seed <= 5; seed++) {
+      const r = runArena(arena(`A=${COMP}&B=2bb,2ff,1cv,4tb&seed=${seed}`), 3000)
+      expect(r.minHullRatio, 'зерно ' + seed).toBeGreaterThanOrEqual(1)
+      expect(r.pushOuts, 'зерно ' + seed).toBe(0)
+      expect(r.minSpeedViolations, 'зерно ' + seed).toBe(0)
+    }
+  })
+
+  it('флот с чётной линией (2bb+4co, 4bb+6co), order line, 1500 шагов: ratio ≥ 1, push-out = 0', () => {
+    for (const side of ['2bb,4co', '4bb,6co']) {
+      const w = arena(`A=${side}&B=1bb&seed=1`)
+      w.fleets[0].order = 'line'
+      const r = runArena(w, 1500)
+      expect(r.minHullRatio, side).toBeGreaterThanOrEqual(1)
+      expect(r.pushOuts, side).toBe(0)
+    }
   })
 
   it('проход горящего линкора по своей колонне в ряд −150 при соседях в k±1: push-out = 0, дистанция ≥ 2 длины', () => {
@@ -86,7 +104,7 @@ describe('движение рамки и корабля в слоте', () => {
     expect(sl.y).toBe(col)
     expect(sl.x).toBe(FRAME.rows.damaged)
     expect(r.pushOuts).toBe(0)
-    expect(r.minCapitalDist).toBeGreaterThanOrEqual(24)
+    expect(r.minHullRatio).toBeGreaterThanOrEqual(1)
     // корабль действительно ушёл назад от линии
     const lineMate = f.shipIds.map((id) => shipById(w, id)!).find((s) => s.combat!.slot!.kind === 'line')!
     const back = (mid.pos.x - lineMate.pos.x) * Math.cos(f.heading) + (mid.pos.y - lineMate.pos.y) * Math.sin(f.heading)

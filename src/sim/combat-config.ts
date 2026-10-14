@@ -30,6 +30,7 @@ export const FRAME = {
   frontB: 15,
   frontPad: 20,
   ovalSpeed: 60,
+  ovalTurnShare: 0.5,
   screenForwardT: 15,
   anchorSpeed: 10,
   anchorAccelT: 10,
@@ -53,6 +54,7 @@ export const FRAME = {
   gatherT: 60,
   gateOffset: 80,
   matchAccel: 4,
+  brakeShare: 0.5,
 }
 
 /** бой: фазы, давление, часы, сплочённость, решение (раздел 8) */

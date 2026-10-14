@@ -28,11 +28,11 @@ for (let i = 0; i < n; i++) {
   results.push(r)
   console.log(
     `зерно ${seed0 + i}: бой ${r.battleId ?? '-'}; живых ${r.alive[0]}:${r.alive[1]}; потери ${r.losses[0]}:${r.losses[1]}; ` +
-      `дистанция корпусов ${r.minHullDist.toFixed(1)}; push-out ${r.pushOuts}; ${(performance.now() - t0).toFixed(0)} мс`,
+      `дистанция корпусов ${r.minHullDist.toFixed(1)} (х${r.minHullRatio.toFixed(2)}); капитальные ${r.minCapitalDist.toFixed(1)}; push-out ${r.pushOuts}; вне слота ${(r.capitalOffSlotT * 100).toFixed(1)}%; нарушений скорости ${r.minSpeedViolations}; ${(performance.now() - t0).toFixed(0)} мс`,
   )
 }
 const avg = (f: (r: ArenaResult) => number): number => results.reduce((s, r) => s + f(r), 0) / results.length
 console.log(
   `итог (${n}): потери A ${avg((r) => r.losses[0]).toFixed(0)}, B ${avg((r) => r.losses[1]).toFixed(0)}; ` +
-    `мин. дистанция ${Math.min(...results.map((r) => r.minHullDist)).toFixed(1)}; push-out макс ${Math.max(...results.map((r) => r.pushOuts))}`,
+    `мин. дистанция ${Math.min(...results.map((r) => r.minHullDist)).toFixed(1)}, отношение к 2 длинам меньшего ${Math.min(...results.map((r) => r.minHullRatio)).toFixed(2)}; push-out макс ${Math.max(...results.map((r) => r.pushOuts))}`,
 )

@@ -1,7 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { createArena, parseArena, parseSide, runArena } from '../../src/sim/arena'
 import { BATTLE } from '../../src/sim/combat-config'
-import { SHIP_KINDS } from '../../src/sim/config'
 
 const spec = (q: string) => parseArena(q)
 
@@ -58,9 +57,8 @@ describe('арена', () => {
     for (const terrain of ['empty', 'belt', 'orbit', 'gate']) {
       const w = createArena(spec(`A=4bb,3ff,6co&B=3bb,2cv,4tb&terrain=${terrain}&seed=2`))
       const r = runArena(w, 0)
-      const maxLen = Math.max(...w.ships.map((s) => SHIP_KINDS[s.kind].length))
       expect(Number.isFinite(r.minHullDist)).toBe(true)
-      expect(r.minHullDist).toBeGreaterThanOrEqual(2 * maxLen)
+      expect(r.minHullRatio).toBeGreaterThanOrEqual(1) // 2 длины меньшего корабля пары
     }
   })
 })

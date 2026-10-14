@@ -1,5 +1,5 @@
 import { createAdmiral } from './admiral'
-import { CLASSES, isCapital, isCombatKind, pushable, radiusOf } from './classes'
+import { CLASSES, isCombatKind, pushable, radiusOf } from './classes'
 import { BATTLE, FRAME } from './combat-config'
 import { MOVE, SHIP_KINDS, SIM_DT } from './config'
 import type { Vec } from './math'
@@ -28,6 +28,8 @@ export function createFleet(w: World, civ: Civ, planet: Planet, mission: FleetMi
     flagshipId: null,
     anchor: { x: p.x + off, y: p.y },
     anchorVel: planetVel(planet, w.t),
+    ownVel: { x: 0, y: 0 },
+    turnRate: 0,
     speed: 0,
     heading: 0,
     frame: null,
@@ -172,9 +174,11 @@ export function assignSlots(w: World, fleet: Fleet): void {
   const positions: Slot[] = []
   for (let i = 0; i < cols; i++) {
     const k = k0 + i
-    positions.push({ kind: 'line', column: k, x: FRAME.rows.line, y: k * g, phase: 0 })
+    // ряд симметричен оси: при чётном числе колонн — между колоннами
+    const y = (i - (cols - 1) / 2) * g
+    positions.push({ kind: 'line', column: k, x: FRAME.rows.line, y, phase: 0 })
     if (double && positions.length < n) {
-      positions.push({ kind: 'second', column: k, x: FRAME.rows.second, y: k * g + g / 2, phase: 0 })
+      positions.push({ kind: 'second', column: k, x: FRAME.rows.second, y: y + g / 2, phase: 0 })
     }
   }
   const flagShip = line.find((s) => s.id === fleet.flagshipId) ?? null
@@ -201,21 +205,30 @@ export function assignSlots(w: World, fleet: Fleet): void {
 
   // тыловые: колонны ближе к центру, но не ближе 0.9·grid (3 длины) к слотам фрегатов
   rear.sort(cmp)
-  const dx = FRAME.rows.frigate - FRAME.rows.rear
-  const dyMin = Math.sqrt(Math.max(0, (g * 0.9) ** 2 - dx * dx))
-  // и не под овалом корветов (коридор y ∈ [W/2 + wingPad − ovalB, W/2 + wingPad + ovalB], запас полсетки)
-  const clear = g / 2
-  const lo = W / 2 + FRAME.wingPad - FRAME.ovalB - clear
-  const hi = W / 2 + FRAME.wingPad + FRAME.ovalB + clear
-  const free: number[] = []
-  for (let d = 0; free.length < rear.length; d++) {
-    for (const y of d === 0 ? [0] : [-d * g, d * g]) {
-      const underOval = Math.abs(y) > lo && Math.abs(y) < hi
-      if (free.length < rear.length && !underOval && frigates.every((f) => Math.abs(f.combat!.slot!.y - y) >= dyMin)) free.push(y)
+  // только внутри завесы: |y| < lo (овал корветов идёт на y ≥ W/2 + wingPad − ovalB, запас полсетки);
+  // нет места — следующий ряд на 0.9·grid глубже ряда фрегатов, и дальше по ряду на каждые 0.9·grid
+  const minD = g * 0.9
+  // тыловые между собой — три длины самого длинного из них (носители 14 → 42)
+  const rearD = Math.max(minD, ...rear.map((s) => 3 * SHIP_KINDS[s.kind].length))
+  const lo = W / 2 + FRAME.wingPad - FRAME.ovalB - g / 2
+  const spots: { x: number; y: number }[] = []
+  const free = (x: number, y: number): boolean =>
+    frigates.every((f) => Math.hypot(f.combat!.slot!.x - x, f.combat!.slot!.y - y) >= minD - 1e-9) &&
+    spots.every((p) => Math.hypot(p.x - x, p.y - y) >= rearD - 1e-9)
+  for (let r = 0; spots.length < rear.length && r <= rear.length; r++) {
+    const x = r === 0 ? FRAME.rows.rear : FRAME.rows.frigate - minD * r
+    for (let d = 0; spots.length < rear.length; d++) {
+      let any = false
+      for (const y of d === 0 ? [0] : [-d * g, d * g]) {
+        if (Math.abs(y) >= lo) continue
+        any = true
+        if (spots.length < rear.length && free(x, y)) spots.push({ x, y })
+      }
+      if (!any) break
     }
   }
-  free.sort((a, b) => a - b)
-  rear.forEach((s, i) => setSlot(s, 'rear', Math.round(free[i] / g), FRAME.rows.rear, free[i]))
+  spots.sort((p, q) => p.y - q.y || q.x - p.x)
+  rear.forEach((s, i) => setSlot(s, 'rear', Math.round(spots[i].y / g), spots[i].x, spots[i].y))
 
   // катера и резерв — на крыльях, лишние отступают назад по ряду
   const wings = (list: Ship[], kind: Slot['kind'], x: number, pad: number): void => {
@@ -227,7 +240,10 @@ export function assignSlots(w: World, fleet: Fleet): void {
       setSlot(s, kind, side, x - j * g, side * (W / 2 + pad))
     })
   }
-  wings(boats, 'boat', FRAME.rows.boat, FRAME.wingPad)
+  // катера не заходят под овал корветов: у малого флота овал уходит глубже (cx − a), тогда ряд катеров сдвигается за него
+  const smallOval = W < FRAME.ovalSmallW
+  const ovalTail = (smallOval ? FRAME.ovalSmallCx - FRAME.ovalSmallA : FRAME.ovalCx - FRAME.ovalA) - minD
+  wings(boats, 'boat', Math.min(FRAME.rows.boat, ovalTail), FRAME.wingPad)
   wings(reserve, 'reserve', FRAME.rows.reserve, FRAME.reservePad)
 
   // корветы: овал, на каждом крыле равномерно по фазе
@@ -242,7 +258,64 @@ export function assignSlots(w: World, fleet: Fleet): void {
   fleet.reassignAt = null
 }
 
-/** точка овала корветов (или передней петли) в системе рамки; фаза — доля периметра */
+
+/**
+ * «Стадион» корветов: две прямые длиной 2(a − b) на Y = ±b и два полукруга радиуса b.
+ * Скорость кусочная: на дуге va = sqrt(ovalTurnShare · accel · b) (центростремительное ≤ доли ускорения корвета),
+ * на прямой разгон/торможение с ovalTurnShare · accel до пика vp ≤ ovalSpeed (на короткой прямой профиль треугольный).
+ * Цикл по времени, без массивов: позиция — по τ внутри периода.
+ */
+function stadium(a: number, b: number, tau: number, out: Vec): void {
+  const acc = SHIP_KINDS.corvette.accel * FRAME.ovalTurnShare
+  const va = Math.sqrt(FRAME.ovalTurnShare * SHIP_KINDS.corvette.accel * b)
+  const s = Math.max(0, a - b)
+  const L = 2 * s
+  const vp = Math.min(FRAME.ovalSpeed, Math.sqrt(va * va + acc * L))
+  const dA = (vp * vp - va * va) / (2 * acc)
+  const tA = (vp - va) / acc
+  const tC = vp > 0 ? Math.max(0, L - 2 * dA) / vp : 0
+  const Ts = 2 * tA + tC
+  const Ta = (Math.PI * b) / va
+  const T = 2 * (Ts + Ta)
+  let u = ((tau % T) + T) % T
+  // вдоль прямой: пройденный путь за время x ∈ [0, Ts]
+  const dist = (x: number): number => {
+    if (x < tA) return va * x + 0.5 * acc * x * x
+    if (x < tA + tC) return dA + vp * (x - tA)
+    const r = Ts - x
+    return L - (va * r + 0.5 * acc * r * r)
+  }
+  if (u < Ts) {
+    out.x = -s + dist(u)
+    out.y = -b
+  } else if ((u -= Ts) < Ta) {
+    const th = -Math.PI / 2 + (u / Ta) * Math.PI
+    out.x = s + b * Math.cos(th)
+    out.y = b * Math.sin(th)
+  } else if ((u -= Ta) < Ts) {
+    out.x = s - dist(u)
+    out.y = b
+  } else {
+    u -= Ts
+    const th = Math.PI / 2 + (u / Ta) * Math.PI
+    out.x = -s + b * Math.cos(th)
+    out.y = b * Math.sin(th)
+  }
+}
+
+/** период обхода «стадиона», с (для фаз) */
+function stadiumPeriod(a: number, b: number): number {
+  const acc = SHIP_KINDS.corvette.accel * FRAME.ovalTurnShare
+  const va = Math.sqrt(FRAME.ovalTurnShare * SHIP_KINDS.corvette.accel * b)
+  const L = 2 * Math.max(0, a - b)
+  const vp = Math.min(FRAME.ovalSpeed, Math.sqrt(va * va + acc * L))
+  const tA = (vp - va) / acc
+  const dA = (vp * vp - va * va) / (2 * acc)
+  const tC = vp > 0 ? Math.max(0, L - 2 * dA) / vp : 0
+  return 2 * (2 * tA + tC + (Math.PI * b) / va)
+}
+
+/** точка овала корветов (или передней петли) в системе рамки; фаза — доля периода обхода */
 export function ovalPoint(fleet: Fleet, side: -1 | 1, phase: number, t: number, out: Vec): Vec {
   const W = fleet.width
   const front = fleet.screenForward !== null
@@ -262,19 +335,17 @@ export function ovalPoint(fleet: Fleet, side: -1 | 1, phase: number, t: number, 
     b = FRAME.ovalB
     cy = side * (W / 2 + FRAME.wingPad)
   }
-  const h = ((a - b) / (a + b)) ** 2
-  const perimeter = Math.PI * (a + b) * (1 + (3 * h) / (10 + Math.sqrt(4 - 3 * h)))
-  // левое (side −1) крыло против часовой, правое по часовой
-  const phi = TAU * (phase - side * (FRAME.ovalSpeed / perimeter) * t)
-  const ex = a * Math.cos(phi)
-  const ey = b * Math.sin(phi)
+  const T = stadiumPeriod(a, b)
+  // левое (side −1) крыло против часовой, правое по часовой: время бежит по контуру вперёд или назад
+  stadium(a, b, phase * T - side * t, out)
   if (front) {
-    // петля вытянута вдоль фронта: длинная полуось — по y
-    out.x = cx + ey
-    out.y = cy + ex
+    // петля вытянута вдоль фронта: длинная ось — по y
+    const sx = out.x
+    out.x = cx + out.y
+    out.y = cy + sx
   } else {
-    out.x = cx + ex
-    out.y = cy + ey
+    out.x += cx
+    out.y += cy
   }
   return out
 }
@@ -395,8 +466,6 @@ const tmpA: Vec = { x: 0, y: 0 }
 const tmpB: Vec = { x: 0, y: 0 }
 const pushScratch: number[] = []
 const tmpEnemy: Vec = { x: 0, y: 0 }
-/** собственная скорость якоря (без скорости планеты) */
-const ownVels = new WeakMap<Fleet, Vec>()
 /** запас радиуса запроса в сетке: самый крупный корабль */
 const PUSH_REACH = Math.max(...Object.values(SHIP_KINDS).map((k) => k.length)) / 2
 
@@ -454,16 +523,16 @@ function switchFrame(w: World, fleet: Fleet, next: string | null): void {
   anchorAbs(w, fleet, tmpA)
   // скорость в системе координат не прыгает: собственная скорость якоря пересчитывается в новую систему отсчёта
   // (избыток над anchorSpeed потом гасится с matchAccel — см. moveAnchor)
-  const own = ownVels.get(fleet)
+  const own = fleet.ownVel
   const oldPl = framePlanet(w, fleet)
-  if (own && oldPl) {
+  if (oldPl) {
     const v = planetVel(oldPl, w.t)
     own.x += v.x
     own.y += v.y
   }
   fleet.frame = next
   const pl = framePlanet(w, fleet)
-  if (own && pl) {
+  if (pl) {
     const v = planetVel(pl, w.t)
     own.x -= v.x
     own.y -= v.y
@@ -487,7 +556,13 @@ export function anchorTarget(w: World, fleet: Fleet): Vec {
   const pl = missionPlanet(w, fleet)
   if (!pl || pl.systemId !== fleet.systemId) return out
   const pp = planetPos(pl, w.t)
-  const hold = pl.radius + BATTLE.orbitPad
+  // орбитальная стоянка не ближе, чем нужно, чтобы глубокие ряды рамки не оказались в теле планеты
+  let depth = 0
+  for (const id of fleet.shipIds) {
+    const sl = shipOf(w, id)?.combat?.slot
+    if (sl && sl.kind !== "oval") depth = Math.max(depth, -sl.x)
+  }
+  const hold = pl.radius + Math.max(BATTLE.orbitPad, FRAME.planetSlotPad + depth)
   const dx = here.x - pp.x
   const dy = here.y - pp.y
   const d = Math.hypot(dx, dy)
@@ -517,9 +592,30 @@ function angleDiff(want: number, have: number): number {
   return d
 }
 
+/**
+ * поворот к want: угловая скорость растёт и гасится плавно (тангенциальное ускорение дальнего слота ≤ доли ускорения
+ * самого неповоротливого корабля), не выше frameTurnRate
+ */
 export function turnFrame(w: World, fleet: Fleet, want: number): void {
-  const max = frameTurnRate(w, fleet) * SIM_DT
-  fleet.heading += Math.max(-max, Math.min(max, angleDiff(want, fleet.heading)))
+  const wMax = frameTurnRate(w, fleet)
+  let aMin = Infinity
+  let rMax = 1
+  for (const id of fleet.shipIds) {
+    const s = shipOf(w, id)
+    const sl = s?.combat?.slot
+    if (!s || !sl || sl.kind === 'oval') continue
+    aMin = Math.min(aMin, SHIP_KINDS[s.kind].accel)
+    rMax = Math.max(rMax, Math.hypot(sl.x, sl.y))
+  }
+  const alpha = Number.isFinite(aMin) ? (FRAME.ovalTurnShare * aMin) / rMax : wMax
+  const err = angleDiff(want, fleet.heading)
+  const wDes = Math.sign(err) * Math.min(wMax, Math.sqrt(2 * alpha * Math.abs(err)))
+  const lim = alpha * SIM_DT
+  let om = fleet.turnRate + Math.max(-lim, Math.min(lim, wDes - fleet.turnRate))
+  om = Math.max(-wMax, Math.min(wMax, om))
+  const step = om * SIM_DT
+  if (Math.abs(step) >= Math.abs(err)) fleet.heading = want
+  else fleet.heading += step
 }
 
 /** якорь едет к цели: разгон/торможение, в бою не ниже anchorMinBattle, дрейф, враждебные якори не ближе anchorMinDist */
@@ -556,13 +652,13 @@ export function moveAnchor(w: World, fleet: Fleet, target: Vec): void {
   let desired = moving ? (retreat ? FRAME.reverseSpeed : FRAME.anchorSpeed) * factor : 0
   if (!inBattle) desired = Math.min(desired, Math.sqrt(2 * acc * L))
   // собственная скорость якоря — вектор: меняется не быстрее acc, поэтому разворот на 180° не рвёт строй
-  let own = ownVels.get(fleet)
-  if (!own) ownVels.set(fleet, (own = { x: 0, y: 0 }))
+  const own = fleet.ownVel
   let wantX = moving ? (dx / L) * desired : 0
   let wantY = moving ? (dy / L) * desired : 0
-  // враждебные якори не ближе anchorMinDist: скорость сближения ограничена так, чтобы успеть остановиться
-  if (wantX !== 0 || wantY !== 0) {
+  // враждебные якори не ближе anchorMinDist: скорость сближения (относительная, в системе координат) ограничена так, чтобы успеть остановиться
+  {
     const me = anchorAbs(w, fleet, tmpA)
+    const myFrameV = pl ? planetVel(pl, w.t) : ZERO_V
     for (const g of w.fleets) {
       if (g === fleet || g.owner === fleet.owner || g.systemId !== fleet.systemId) continue
       const o = anchorAbs(w, g, tmpB)
@@ -570,19 +666,25 @@ export function moveAnchor(w: World, fleet: Fleet, target: Vec): void {
       const ey = o.y - me.y
       const d = Math.hypot(ex, ey)
       if (d < 1e-6) continue
-      const closing = (wantX * ex + wantY * ey) / d
-      const vmax = Math.sqrt(2 * acc * Math.max(0, d - FRAME.anchorMinDist))
+      const closing = ((wantX + myFrameV.x - g.anchorVel.x) * ex + (wantY + myFrameV.y - g.anchorVel.y) * ey) / d
+      const vmax = Math.sqrt(2 * FRAME.matchAccel * FRAME.brakeShare * Math.max(0, d - FRAME.anchorMinDist))
       if (closing > vmax) {
         wantX -= (ex / d) * (closing - vmax)
         wantY -= (ey / d) * (closing - vmax)
       }
     }
+    const wl = Math.hypot(wantX, wantY)
+    if (wl > FRAME.anchorSpeed) {
+      wantX *= FRAME.anchorSpeed / wl
+      wantY *= FRAME.anchorSpeed / wl
+    }
   }
   const dvx = wantX - own.x
   const dvy = wantY - own.y
   const dv = Math.hypot(dvx, dvy)
-  // избыток скорости (вход в систему отсчёта планеты) гасится быстрее обычного разгона, но не быстрее ускорения линкора
-  const lim = (Math.hypot(own.x, own.y) > FRAME.anchorSpeed ? FRAME.matchAccel : acc) * SIM_DT
+  // торможение (и избыток скорости после входа в систему отсчёта планеты) — до matchAccel, но не быстрее ускорения линкора; разгон — acc
+  const braking = dvx * own.x + dvy * own.y < 0 || Math.hypot(own.x, own.y) > FRAME.anchorSpeed
+  const lim = (braking ? FRAME.matchAccel : acc) * SIM_DT
   if (dv > lim) {
     own.x += (dvx / dv) * lim
     own.y += (dvy / dv) * lim
@@ -651,12 +753,10 @@ export function stepFleets(w: World): void {
     if (frame !== f.frame) switchFrame(w, f, frame)
     const h0 = f.heading
     moveAnchor(w, f, anchorTarget(w, f))
-    turnRates.set(f, angleDiff(f.heading, h0) / SIM_DT)
+    f.turnRate = angleDiff(f.heading, h0) / SIM_DT
   }
 }
 
-/** угловая скорость рамки за последний шаг, рад/с (опережение для слотов) */
-const turnRates = new WeakMap<Fleet, number>()
 const GOAL: Goal = { pos: { x: 0, y: 0 }, vel: { x: 0, y: 0 }, frameR: Infinity, dockR: 0, onReach: () => {} }
 
 /** слот в мире, система отсчёта — рамка (общий объект: потребляется сразу); корабль без слота держит место */
@@ -673,7 +773,7 @@ export function fleetGoal(w: World, ship: Ship): Goal | null {
   GOAL.vel.y = fleet ? fleet.anchorVel.y : 0
   if (fleet && slot) {
     // рамка поворачивается: слот на расстоянии r от якоря идёт со скоростью ω·r поперёк радиуса
-    const om = turnRates.get(fleet) ?? 0
+    const om = fleet.turnRate
     if (om !== 0) {
       anchorAbs(w, fleet, tmpA)
       GOAL.vel.x += -om * (GOAL.pos.y - tmpA.y)
@@ -694,7 +794,7 @@ export function fleetGoal(w: World, ship: Ship): Goal | null {
   return GOAL
 }
 
-/** раздвигает слишком близких (последняя защита): вдоль линии центров, не быстрее pushSpeed; машины и мирные не участвуют. В w.pushOuts идут пары капитальных (метрика «проход по колонне»); лёгкие тоже раздвигаются, но не считаются */
+/** раздвигает слишком близких (последняя защита): вдоль линии центров, не быстрее pushSpeed; машины и мирные не участвуют. Каждая раздвинутая пара — w.pushOuts++ */
 export function pushOut(w: World): void {
   const maxShift = FRAME.pushSpeed * SIM_DT
   for (let i = 0; i < w.ships.length; i++) {
@@ -717,7 +817,7 @@ export function pushOut(w: World): void {
       a.pos.y -= ny * shift
       b.pos.x += nx * shift
       b.pos.y += ny * shift
-      if (isCapital(a.kind) && isCapital(b.kind)) w.pushOuts++
+      w.pushOuts++
     }
   }
 }
