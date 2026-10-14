@@ -21,7 +21,15 @@ export function missionGoal(w: World, ship: Ship): Goal | null {
       return tradeGoal(w, ship)
     case 'mine':
       return mineGoal(w, ship)
+    case 'patrol':
+      return planetGoal(w, ship, ship.mission.leg === 0 ? ship.mission.b : ship.mission.a, turnAround)
   }
+}
+
+/** патруль: долетел — развернулся к другой планете, без денег и событий */
+function turnAround(_w: World, ship: Ship): void {
+  const m = ship.mission as Of<'patrol'>
+  m.leg = m.leg === 0 ? 1 : 0
 }
 
 /** пристыковался к своей планете — корабль уходит в док */

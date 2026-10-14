@@ -109,6 +109,7 @@ export type Mission =
   | { type: 'trade'; a: string; b: string; leg: 0 | 1 }
   | { type: 'mine'; phase: 'out' | 'back'; asteroidId: number | null; cargo: number; idleT: number }
   | { type: 'return'; planetId: string }
+  | { type: 'patrol'; a: string; b: string; leg: 0 | 1 }
 
 export interface Transit {
   corridorId: number

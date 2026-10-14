@@ -37,7 +37,7 @@
   - `tryInfra` (function, 9), `tryStation` (function, 17), `tryProject` (function, 26), `tryResearch` (function, 35), `advanceJobs` (function, 45)
 - `src/sim/math.ts` — 9 стр.
   - `Vec` (type, 1), `TAU` (const, 3), `ZERO` (const, 4), `clamp` (const, 6), `lerp` (const, 7), `dist` (const, 8)
-- `src/sim/missions.ts` — 216 стр. — ---------- колонизация ----------
+- `src/sim/missions.ts` — 224 стр. — ---------- колонизация ----------
   - `missionGoal` (function, 14)
 - `src/sim/names.ts` — 27 стр. — Слоги из старой ОРБИТЫ
   - `genName` (function, 8), `uniqueName` (function, 15)
@@ -55,17 +55,21 @@
   - `spawnShip` (function, 8), `stepShips` (function, 33)
 - `src/sim/spatial.ts` — 46 стр. — Пространственная сетка: поиск соседей без перебора всех кораблей.
   - `SpatialGrid` (class, 3)
+- `src/sim/stress.ts` — 21 стр.
+  - `spawnStressShips` (function, 6)
 - `src/sim/system.ts` — 172 стр.
   - `Orbiting` (type, 7), `periodOf` (function, 9), `zoneOf` (function, 13), `tempKOf` (function, 20), `planetPos` (function, 24), `planetVel` (function, 29), `makeLook` (function, 50), `habitableCount` (function, 68), `makeAsteroid` (function, 72), `generateSystem` (function, 86)
-- `src/sim/types.ts` — 230 стр.
-  - `Zone` (type, 7), `SystemRole` (type, 8), `PlanetLook` (interface, 10), `Build` (interface, 17), `Planet` (interface, 24), `Belt` (interface, 45), `Asteroid` (interface, 50), `Gate` (interface, 60), `Star` (interface, 67), `StarSystem` (interface, 74), `Corridor` (interface, 92), `Galaxy` (interface, 102), `Mission` (type, 107), `Transit` (interface, 113), `Ship` (interface, 121), `Stage` (type, 138), `IncomeSource` (type, 139), `ExpenseCat` (type, 140), `Ledger` (interface, 142), `CivEconomy` (interface, 148), `CivProject` (interface, 165), `ResearchJob` (interface, 171), `Civ` (interface, 178), `GameEvent` (interface, 194), `Fx` (interface, 206), `World` (interface, 215)
+- `src/sim/types.ts` — 231 стр.
+  - `Zone` (type, 7), `SystemRole` (type, 8), `PlanetLook` (interface, 10), `Build` (interface, 17), `Planet` (interface, 24), `Belt` (interface, 45), `Asteroid` (interface, 50), `Gate` (interface, 60), `Star` (interface, 67), `StarSystem` (interface, 74), `Corridor` (interface, 92), `Galaxy` (interface, 102), `Mission` (type, 107), `Transit` (interface, 114), `Ship` (interface, 122), `Stage` (type, 139), `IncomeSource` (type, 140), `ExpenseCat` (type, 141), `Ledger` (interface, 143), `CivEconomy` (interface, 149), `CivProject` (interface, 166), `ResearchJob` (interface, 172), `Civ` (interface, 179), `GameEvent` (interface, 195), `Fx` (interface, 207), `World` (interface, 216)
 - `src/sim/world.ts` — 45 стр.
   - `createWorld` (function, 12), `stepWorld` (function, 35)
 
 ## scripts/
 
+- `scripts/balance.ts` — 118 стр. — Балансный прогон: npm run balance [зёрен=12] [минут=30]. Цели — раздел 12.2 спеки.
 - `scripts/codemap.mjs` — 43 стр. — Карта кода: файл → первая строка-комментарий, длина и экспорты с номерами строк.
 - `scripts/shot.ts` — 41 стр. — Снимок экрана игры: npm run shot -- "<параметры URL>" <файл.png> "<JS перед снимком>"
+- `scripts/stress.ts` — 19 стр. — Нагрузка: npm run stress — 2000 кораблей, 600 в одной системе; цель — шаг ≤ 6 мс
 
 ## tests/
 
@@ -79,6 +83,7 @@
 - `tests/sim/events.test.ts` — 35 стр.
 - `tests/sim/galaxy.test.ts` — 124 стр.
 - `tests/sim/invest.test.ts` — 112 стр.
+- `tests/sim/longrun.test.ts` — 53 стр.
 - `tests/sim/missions.test.ts` — 165 стр.
 - `tests/sim/names.test.ts` — 11 стр.
 - `tests/sim/rng.test.ts` — 60 стр.

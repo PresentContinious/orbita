@@ -94,7 +94,7 @@ export const MOVE = {
   separationForce: 30,
   gateInset: 0.97,
   /** оценка времени пересечения промежуточной системы при поиске пути, с */
-  crossingCost: 60,
+  crossingCost: 30,
 }
 
 // ---------- экономика ----------
@@ -119,12 +119,12 @@ export const ECON = {
   stationOreMul: 2,
   /** станция ставится на свободную планету с пригодностью ниже этого порога */
   stationMaxHab: 0.5,
-  infraPrice: [120, 200, 320],
+  infraPrice: [120, 600, 2500],
   infraBuild: [40, 60, 80],
-  portPrice: 200,
+  portPrice: 500,
   portBuild: 60,
   portTradeMul: 1.4,
-  shipyardPrice: 250,
+  shipyardPrice: 800,
   shipyardBuild: 80,
   shipyardPriceMul: 0.75,
   shipyardUpkeepMul: 0.7,
