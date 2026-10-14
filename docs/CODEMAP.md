@@ -43,6 +43,8 @@
   - `Pt` (interface, 5), `Vert` (interface, 13), `ARC` (const, 16), `RADIAL` (const, 17), `SPLIT` (const, 18), `START_ANGLE` (const, 21), `zoneRadius` (function, 25), `clipHalfPlane` (function, 35), `zoneCell` (function, 55), `Sector` (interface, 76), `sectorsOf` (function, 84), `civAtAngle` (function, 97), `clipSector` (function, 107), `polyArea` (function, 126), `ZonePiece` (interface, 136), `systemPieces` (function, 143), `ZoneEdge` (interface, 157), `pieceEdges` (function, 167), `Spot` (interface, 188), `cloudSpots` (function, 198)
 - `src/sim/admiral.ts` — 13 стр.
   - `createAdmiral` (function, 6)
+- `src/sim/arena.ts` — 255 стр. — Арена: мир из одной системы с двумя флотами по строке состава; прогон без экрана (спека 2А, §13.2).
+  - `Terrain` (type, 13), `SideSpec` (interface, 15), `ArenaSpec` (interface, 23), `ArenaResult` (interface, 31), `parseSide` (function, 50), `parseArena` (function, 71), `createArena` (function, 120), `runArena` (function, 224)
 - `src/sim/belts.ts` — 35 стр.
   - `asteroidPos` (const, 6), `asteroidVel` (const, 7), `nearestAsteroid` (function, 9), `stepAsteroids` (function, 25)
 - `src/sim/bot.ts` — 24 стр.
@@ -93,8 +95,8 @@
   - `spawnStressShips` (function, 6)
 - `src/sim/system.ts` — 172 стр.
   - `Orbiting` (type, 7), `periodOf` (function, 9), `zoneOf` (function, 13), `tempKOf` (function, 20), `planetPos` (function, 24), `planetVel` (function, 29), `makeLook` (function, 50), `habitableCount` (function, 68), `makeAsteroid` (function, 72), `generateSystem` (function, 86)
-- `src/sim/types.ts` — 527 стр. — ---------- война (2А) ----------
-  - `Zone` (type, 8), `SystemRole` (type, 9), `PlanetLook` (interface, 11), `Build` (interface, 18), `Planet` (interface, 25), `Belt` (interface, 46), `Asteroid` (interface, 51), `Gate` (interface, 61), `Star` (interface, 68), `StarSystem` (interface, 75), `Corridor` (interface, 93), `Galaxy` (interface, 103), `Mission` (type, 108), `Transit` (interface, 120), `Ship` (interface, 128), `Stage` (type, 148), `IncomeSource` (type, 149), `ExpenseCat` (type, 150), `Ledger` (interface, 152), `CivEconomy` (interface, 158), `CivProject` (interface, 175), `ResearchJob` (interface, 181), `Civ` (interface, 188), `GameEvent` (interface, 204), `Fx` (interface, 216), `World` (interface, 225), `Module` (type, 266), `Trait` (type, 267), `Order` (type, 268), `TargetPriority` (type, 269), `SlotKind` (type, 270), `Slot` (interface, 273), `WingState` (interface, 281), `Hangar` (interface, 287), `Combat` (interface, 298), `FleetMission` (type, 328), `Fleet` (interface, 335), `Admiral` (interface, 401), `ProjectileKind` (type, 411), `Projectile` (interface, 413), `BattlePhase` (type, 439), `BattleSide` (interface, 441), `BattleLogEntry` (interface, 456), `BattleMetrics` (interface, 464), `Battle` (interface, 482), `Debris` (interface, 511), `BattleFx` (type, 524)
+- `src/sim/types.ts` — 529 стр. — ---------- война (2А) ----------
+  - `Zone` (type, 8), `SystemRole` (type, 9), `PlanetLook` (interface, 11), `Build` (interface, 18), `Planet` (interface, 25), `Belt` (interface, 46), `Asteroid` (interface, 51), `Gate` (interface, 61), `Star` (interface, 68), `StarSystem` (interface, 75), `Corridor` (interface, 93), `Galaxy` (interface, 103), `Mission` (type, 108), `Transit` (interface, 120), `Ship` (interface, 128), `Stage` (type, 148), `IncomeSource` (type, 149), `ExpenseCat` (type, 150), `Ledger` (interface, 152), `CivEconomy` (interface, 158), `CivProject` (interface, 175), `ResearchJob` (interface, 181), `Civ` (interface, 188), `GameEvent` (interface, 204), `Fx` (interface, 216), `World` (interface, 225), `Module` (type, 268), `Trait` (type, 269), `Order` (type, 270), `TargetPriority` (type, 271), `SlotKind` (type, 272), `Slot` (interface, 275), `WingState` (interface, 283), `Hangar` (interface, 289), `Combat` (interface, 300), `FleetMission` (type, 330), `Fleet` (interface, 337), `Admiral` (interface, 403), `ProjectileKind` (type, 413), `Projectile` (interface, 415), `BattlePhase` (type, 441), `BattleSide` (interface, 443), `BattleLogEntry` (interface, 458), `BattleMetrics` (interface, 466), `Battle` (interface, 484), `Debris` (interface, 513), `BattleFx` (type, 526)
 - `src/sim/world.ts` — 70 стр.
   - `createWorld` (function, 15), `stepWorld` (function, 54)
 - `src/ui/Breadcrumbs.tsx` — 18 стр.
@@ -136,6 +138,7 @@
 
 ## scripts/
 
+- `scripts/arena.ts` — 39 стр. — Арена без экрана: npm run arena -- "A=3bb,1cv B=2bb,2ff" --n 20 --terrain orbit --steps 3000 --seed 1
 - `scripts/balance.ts` — 118 стр. — Балансный прогон: npm run balance [зёрен=12] [минут=30]. Цели — раздел 12.2 спеки.
 - `scripts/codemap.mjs` — 43 стр. — Карта кода: файл → первая строка-комментарий, длина и экспорты с номерами строк.
 - `scripts/shot.ts` — 41 стр. — Снимок экрана игры: npm run shot -- "<параметры URL>" <файл.png> "<JS перед снимком>"
@@ -157,6 +160,7 @@
 - `tests/render/noise.test.ts` — 17 стр.
 - `tests/render/territory.test.ts` — 32 стр.
 - `tests/render/zones.test.ts` — 81 стр.
+- `tests/sim/arena.test.ts` — 69 стр.
 - `tests/sim/bot.test.ts` — 145 стр.
 - `tests/sim/cap.test.ts` — 104 стр.
 - `tests/sim/classes.test.ts` — 46 стр.

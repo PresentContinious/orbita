@@ -240,6 +240,8 @@ export interface World {
   settings: Setup
   /** лимит юнитов на карте */
   unitCap: number
+  /** арена: система, где стоят два флота (ставит только createArena) */
+  arenaSystem?: number
   // ---- война (2А) ----
   civIndex: Map<number, Civ>
   /** id корабля → индекс в ships; перестраивается при сжатии и в spawnShip */
