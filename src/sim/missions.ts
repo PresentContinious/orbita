@@ -2,6 +2,7 @@ import { asteroidPos, asteroidVel, nearestAsteroid } from './belts'
 import { bestColonyTarget, colonyValue } from './civ'
 import { ECON, MOVE, SIM_DT } from './config'
 import { earn, tradeIncome } from './economy'
+import { fleetGoal } from './fleet'
 import { pushEvent } from './events'
 import type { Vec } from './math'
 import { planetGoal, type Goal } from './nav'
@@ -24,6 +25,7 @@ export function missionGoal(w: World, ship: Ship): Goal | null {
     case 'patrol':
       return planetGoal(w, ship, ship.mission.leg === 0 ? ship.mission.b : ship.mission.a, turnAround)
     case 'fleet':
+      return fleetGoal(w, ship)
     case 'wing':
     case 'salvage':
       return null

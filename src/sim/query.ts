@@ -3,8 +3,7 @@ import { hops } from './routing'
 import type { Civ, Planet, World } from './types'
 
 export function civById(w: World, id: number): Civ | undefined {
-  for (const c of w.civs) if (c.id === id) return c
-  return undefined
+  return w.civIndex.get(id)
 }
 
 export function planetsOf(w: World, civ: Civ): Planet[] {

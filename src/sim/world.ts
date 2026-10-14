@@ -7,7 +7,8 @@ import { EVENTS, SIM_DT } from './config'
 import { generateGalaxy } from './galaxy'
 import { createRng } from './rng'
 import { clampOptions, SETUP, setupOf, type GalaxyOptions } from './setup'
-import { stepShips } from './ships'
+import { stepFleets } from './fleet'
+import { buildGrids, compactShips, moveShips } from './ships'
 import { SpatialGrid } from './spatial'
 import type { Planet, World } from './types'
 
@@ -53,11 +54,16 @@ export function createWorld(seed: number, opts: GalaxyOptions = {}): World {
 export function stepWorld(w: World): void {
   w.t += SIM_DT
   w.tick++
+  w.fxBattle.length = 0
+  w.pushOuts = 0
   stepPopulation(w)
   stepEconomy(w)
   stepBots(w)
   stepUnitCap(w)
-  stepShips(w)
+  stepFleets(w)
+  buildGrids(w)
+  moveShips(w)
+  compactShips(w)
   stepAsteroids(w)
   while (w.fx.length && w.t - w.fx[0].t > EVENTS.fxLife) w.fx.shift()
 }

@@ -39,6 +39,8 @@
   - `glowTexture` (function, 15), `PLANET_TEX` (const, 28), `PLANET_DISC` (const, 30), `PlanetVariant` (type, 33), `planetTexture` (function, 127), `IconKind` (type, 302), `Atlas` (type, 303), `ICON_CELL` (const, 304), `ICON_BODY` (const, 306), `shipAtlas` (function, 309)
 - `src/render/zones.ts` — 216 стр.
   - `Pt` (interface, 5), `Vert` (interface, 13), `ARC` (const, 16), `RADIAL` (const, 17), `SPLIT` (const, 18), `START_ANGLE` (const, 21), `zoneRadius` (function, 25), `clipHalfPlane` (function, 35), `zoneCell` (function, 55), `Sector` (interface, 76), `sectorsOf` (function, 84), `civAtAngle` (function, 97), `clipSector` (function, 107), `polyArea` (function, 126), `ZonePiece` (interface, 136), `systemPieces` (function, 143), `ZoneEdge` (interface, 157), `pieceEdges` (function, 167), `Spot` (interface, 188), `cloudSpots` (function, 198)
+- `src/sim/admiral.ts` — 13 стр.
+  - `createAdmiral` (function, 6)
 - `src/sim/belts.ts` — 35 стр.
   - `asteroidPos` (const, 6), `asteroidVel` (const, 7), `nearestAsteroid` (function, 9), `stepAsteroids` (function, 25)
 - `src/sim/bot.ts` — 24 стр.
@@ -57,30 +59,32 @@
   - `newEconomy` (function, 9), `earn` (function, 38), `spend` (function, 47), `ledgerBalance` (function, 54), `creditLine` (const, 62), `netPerSec` (const, 63), `canAfford` (function, 66), `buy` (function, 74), `EconomyReport` (interface, 83), `report` (function, 95), `shipPrice` (function, 112), `shipUpkeepOf` (function, 118), `shipUpkeep` (function, 123), `taxOf` (function, 133), `stationIncome` (function, 138), `adminTotal` (function, 143), `colonyPrice` (function, 156), `tradeIncome` (function, 163), `stepEconomy` (function, 173)
 - `src/sim/events.ts` — 33 стр.
   - `EventInput` (interface, 4), `pushEvent` (function, 14)
+- `src/sim/fleet.ts` — 112 стр.
+  - `createFleet` (function, 9), `fleetById` (function, 75), `addToFleet` (function, 80), `removeFromFleet` (function, 91), `disbandFleet` (function, 98), `stepFleets` (function, 104), `fleetGoal` (function, 107)
 - `src/sim/galaxy.ts` — 323 стр.
   - `placeSystems` (function, 9), `isConnected` (function, 28), `buildCorridorEdges` (function, 57), `hopMatrix` (function, 178), `assignRoles` (function, 217), `civSlots` (function, 259), `generateGalaxy` (function, 282)
 - `src/sim/invest.ts` — 101 стр.
   - `tryInfra` (function, 9), `tryStation` (function, 17), `tryProject` (function, 26), `tryResearch` (function, 35), `advanceJobs` (function, 45)
 - `src/sim/math.ts` — 9 стр.
   - `Vec` (type, 1), `TAU` (const, 3), `ZERO` (const, 4), `clamp` (const, 6), `lerp` (const, 7), `dist` (const, 8)
-- `src/sim/missions.ts` — 245 стр. — ---------- колонизация ----------
-  - `missionGoal` (function, 14), `checkColonize` (function, 73)
+- `src/sim/missions.ts` — 247 стр. — ---------- колонизация ----------
+  - `missionGoal` (function, 15), `checkColonize` (function, 75)
 - `src/sim/names.ts` — 27 стр. — Слоги из старой ОРБИТЫ
   - `genName` (function, 8), `uniqueName` (function, 15)
 - `src/sim/nav.ts` — 125 стр.
   - `Goal` (interface, 9), `Body` (type, 18), `avoidStar` (function, 21), `steer` (function, 45), `shipSpeed` (function, 64), `planetGoal` (function, 69), `setDestination` (function, 85), `gateGoal` (function, 90), `transitDuration` (function, 99), `advanceTransit` (function, 112)
 - `src/sim/options.ts` — 236 стр.
   - `OptionKind` (type, 13), `Option` (interface, 15), `score` (function, 29), `Route` (interface, 33), `tradeRoutes` (function, 41), `listOptions` (function, 128), `execute` (function, 190)
-- `src/sim/query.ts` — 74 стр.
-  - `civById` (function, 5), `planetsOf` (function, 10), `populatedOf` (function, 16), `capOf` (function, 20), `capitalOf` (function, 25), `capitalSystem` (function, 35), `reachableSystems` (function, 40), `claimedTargets` (function, 46), `colonyTargets` (function, 53), `stationTargets` (function, 65)
+- `src/sim/query.ts` — 73 стр.
+  - `civById` (function, 5), `planetsOf` (function, 9), `populatedOf` (function, 15), `capOf` (function, 19), `capitalOf` (function, 24), `capitalSystem` (function, 34), `reachableSystems` (function, 39), `claimedTargets` (function, 45), `colonyTargets` (function, 52), `stationTargets` (function, 64)
 - `src/sim/rng.ts` — 59 стр. — Генератор случайных чисел с зерном (mulberry32): одно зерно — одна и та же история.
   - `Rng` (interface, 4), `hashString` (function, 19), `createRng` (function, 28)
 - `src/sim/routing.ts` — 71 стр.
   - `hops` (function, 6), `findPath` (function, 26), `gateTo` (function, 54), `gateGalaxyPos` (function, 58), `transitGalaxyPos` (function, 63)
 - `src/sim/setup.ts` — 81 стр.
   - `GalaxyOptions` (interface, 4), `SETUP` (const, 17), `clampOptions` (function, 35), `Setup` (interface, 52), `setupOf` (function, 66)
-- `src/sim/ships.ts` — 82 стр.
-  - `spawnShip` (function, 8), `stepShips` (function, 35)
+- `src/sim/ships.ts` — 135 стр.
+  - `spawnShip` (function, 11), `shipById` (function, 37), `spawnWarship` (function, 43), `turnHeading` (function, 54), `stepShips` (function, 70), `buildGrids` (function, 76), `moveShips` (function, 84), `compactShips` (function, 107)
 - `src/sim/spatial.ts` — 46 стр. — Пространственная сетка: поиск соседей без перебора всех кораблей.
   - `SpatialGrid` (class, 3)
 - `src/sim/stress.ts` — 21 стр.
@@ -89,8 +93,8 @@
   - `Orbiting` (type, 7), `periodOf` (function, 9), `zoneOf` (function, 13), `tempKOf` (function, 20), `planetPos` (function, 24), `planetVel` (function, 29), `makeLook` (function, 50), `habitableCount` (function, 68), `makeAsteroid` (function, 72), `generateSystem` (function, 86)
 - `src/sim/types.ts` — 527 стр. — ---------- война (2А) ----------
   - `Zone` (type, 8), `SystemRole` (type, 9), `PlanetLook` (interface, 11), `Build` (interface, 18), `Planet` (interface, 25), `Belt` (interface, 46), `Asteroid` (interface, 51), `Gate` (interface, 61), `Star` (interface, 68), `StarSystem` (interface, 75), `Corridor` (interface, 93), `Galaxy` (interface, 103), `Mission` (type, 108), `Transit` (interface, 120), `Ship` (interface, 128), `Stage` (type, 148), `IncomeSource` (type, 149), `ExpenseCat` (type, 150), `Ledger` (interface, 152), `CivEconomy` (interface, 158), `CivProject` (interface, 175), `ResearchJob` (interface, 181), `Civ` (interface, 188), `GameEvent` (interface, 204), `Fx` (interface, 216), `World` (interface, 225), `Module` (type, 266), `Trait` (type, 267), `Order` (type, 268), `TargetPriority` (type, 269), `SlotKind` (type, 270), `Slot` (interface, 273), `WingState` (interface, 281), `Hangar` (interface, 287), `Combat` (interface, 298), `FleetMission` (type, 328), `Fleet` (interface, 335), `Admiral` (interface, 401), `ProjectileKind` (type, 411), `Projectile` (interface, 413), `BattlePhase` (type, 439), `BattleSide` (interface, 441), `BattleLogEntry` (interface, 456), `BattleMetrics` (interface, 464), `Battle` (interface, 482), `Debris` (interface, 511), `BattleFx` (type, 524)
-- `src/sim/world.ts` — 64 стр.
-  - `createWorld` (function, 14), `stepWorld` (function, 53)
+- `src/sim/world.ts` — 70 стр.
+  - `createWorld` (function, 15), `stepWorld` (function, 54)
 - `src/ui/Breadcrumbs.tsx` — 18 стр.
   - `Breadcrumbs` (function, 3)
 - `src/ui/Card.tsx` — 24 стр.
@@ -166,6 +170,7 @@
 - `tests/sim/stepEconomy.test.ts` — 167 стр.
 - `tests/sim/system.test.ts` — 110 стр.
 - `tests/sim/war-economy.test.ts` — 77 стр.
+- `tests/sim/warships.test.ts` — 122 стр.
 - `tests/sim/world.test.ts` — 84 стр.
 - `tests/ui/cards.test.ts` — 56 стр.
 - `tests/ui/format.test.ts` — 27 стр.
