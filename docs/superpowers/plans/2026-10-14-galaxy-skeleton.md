@@ -18,6 +18,7 @@
 - Кредиты меняются только функциями `earn` / `spend` / `buy` из `src/sim/economy.ts`.
 - Каждый корабль — отдельная сущность симуляции; никакой агрегации «флот = число».
 - Тексты интерфейса на русском; шрифты Russo One (заголовки) и JetBrains Mono (данные).
+- Перед каждым коммитом — `npm run codemap` (обновляет `docs/CODEMAP.md`, карту кода для агентов); `scripts/codemap.mjs` уже лежит в репозитории, задача 1 его не удаляет.
 - Каждая задача: сначала падающий тест, потом код; весь `npm test` зелёный перед коммитом; коммит в конце задачи с трейлером `Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>`.
 - Работа идёт в ветке `galaxy`. На GitHub ничего не отправлять (`git push` запрещён без согласия владельца).
 - Файлы с кириллицей сохраняются в UTF-8. В репозитории включён autocrlf — предупреждения git про CRLF нормальны.
@@ -125,7 +126,8 @@ rm -rf dist
     "typecheck": "tsc --noEmit",
     "balance": "tsx scripts/balance.ts",
     "stress": "tsx scripts/stress.ts",
-    "smoke": "tsx scripts/smoke.ts"
+    "smoke": "tsx scripts/smoke.ts",
+    "codemap": "node scripts/codemap.mjs"
   },
   "dependencies": {
     "pixi.js": "8.21.0",

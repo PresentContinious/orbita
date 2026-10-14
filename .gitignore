@@ -2,5 +2,7 @@ node_modules/
 dist/
 *.zip
 *.dc.html
-.claude/
+.claude/*
+!.claude/agents/
 .superpowers/
+artifacts/
