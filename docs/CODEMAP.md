@@ -15,6 +15,8 @@
 - `src/app/loop.ts` — 32 стр.
   - `Clock` (interface, 3), `createClock` (function, 10), `advance` (function, 15), `alpha` (function, 29)
 - `src/app/main.tsx` — 78 стр.
+- `src/render/biome.ts` — 75 стр. — Биом планеты — только вид. Выводится из данных планеты (вид, зона, пригодность, хеш id), симуляцию не трогает.
+  - `Biome` (type, 5), `BIOME_NAME` (const, 23), `biomeName` (const, 42), `planetBiome` (function, 61)
 - `src/render/camera.ts` — 136 стр.
   - `View` (interface, 4), `Bounds` (interface, 9), `CamTarget` (interface, 16), `Fly` (interface, 22), `Camera` (interface, 29), `ZOOM_MAX` (const, 40), `LOD` (const, 41), `Lod` (type, 42), `LodInfo` (interface, 43), `createCamera` (function, 49), `worldToScreen` (function, 53), `screenToWorld` (function, 57), `galaxyBounds` (function, 61), `fitZoom` (function, 72), `galaxyZoom` (function, 77), `zoomAt` (function, 83), `flyDuration` (function, 91), `startFly` (function, 95), `updateCamera` (function, 103), `lodOf` (function, 127)
 - `src/render/galaxyLayer.ts` — 274 стр.
@@ -23,18 +25,18 @@
   - `Pick` (type, 7), `pickAt` (function, 10)
 - `src/render/noise.ts` — 78 стр. — Детерминированный шум и генераторы для рендера (отдельно от src/sim: там свой Rng).
   - `seeded` (function, 4), `hashString` (function, 15), `noise3` (function, 30), `fbm3` (function, 45), `Dust` (interface, 59), `beltDust` (function, 69)
-- `src/render/renderer.ts` — 41 стр.
-  - `GameRenderer` (class, 11)
+- `src/render/renderer.ts` — 43 стр.
+  - `GameRenderer` (class, 12)
 - `src/render/shipsLayer.ts` — 106 стр.
   - `ShipsLayer` (class, 20)
 - `src/render/starfield.ts` — 37 стр.
   - `Starfield` (class, 14)
-- `src/render/systemLayer.ts` — 153 стр.
-  - `SystemLayer` (class, 50)
+- `src/render/systemLayer.ts` — 169 стр.
+  - `SystemLayer` (class, 51)
 - `src/render/territory.ts` — 28 стр.
   - `Share` (interface, 4), `territoryShares` (function, 11)
-- `src/render/textures.ts` — 255 стр. — направление на звезду (освещённая сторона слева, чуть к зрителю)
-  - `glowTexture` (function, 13), `PLANET_TEX` (const, 26), `PLANET_DISC` (const, 28), `PlanetVariant` (type, 31), `planetVariant` (function, 32), `planetTexture` (function, 109), `IconKind` (type, 217), `Atlas` (type, 218), `ICON_CELL` (const, 219), `ICON_BODY` (const, 221), `shipAtlas` (function, 224)
+- `src/render/textures.ts` — 340 стр. — направление на звезду (освещённая сторона слева, чуть к зрителю)
+  - `glowTexture` (function, 15), `PLANET_TEX` (const, 28), `PLANET_DISC` (const, 30), `PlanetVariant` (type, 33), `planetTexture` (function, 127), `IconKind` (type, 302), `Atlas` (type, 303), `ICON_CELL` (const, 304), `ICON_BODY` (const, 306), `shipAtlas` (function, 309)
 - `src/render/zones.ts` — 216 стр.
   - `Pt` (interface, 5), `Vert` (interface, 13), `ARC` (const, 16), `RADIAL` (const, 17), `SPLIT` (const, 18), `START_ANGLE` (const, 21), `zoneRadius` (function, 25), `clipHalfPlane` (function, 35), `zoneCell` (function, 55), `Sector` (interface, 76), `sectorsOf` (function, 84), `civAtAngle` (function, 97), `clipSector` (function, 107), `polyArea` (function, 126), `ZonePiece` (interface, 136), `systemPieces` (function, 143), `ZoneEdge` (interface, 157), `pieceEdges` (function, 167), `Spot` (interface, 188), `cloudSpots` (function, 198)
 - `src/sim/belts.ts` — 35 стр.
@@ -61,8 +63,8 @@
   - `genName` (function, 8), `uniqueName` (function, 15)
 - `src/sim/nav.ts` — 125 стр.
   - `Goal` (interface, 9), `Body` (type, 18), `avoidStar` (function, 21), `steer` (function, 45), `shipSpeed` (function, 64), `planetGoal` (function, 69), `setDestination` (function, 85), `gateGoal` (function, 90), `transitDuration` (function, 99), `advanceTransit` (function, 112)
-- `src/sim/options.ts` — 226 стр.
-  - `OptionKind` (type, 12), `Option` (interface, 14), `score` (function, 28), `Route` (interface, 32), `tradeRoutes` (function, 38), `listOptions` (function, 118), `execute` (function, 180)
+- `src/sim/options.ts` — 235 стр.
+  - `OptionKind` (type, 12), `Option` (interface, 14), `score` (function, 28), `Route` (interface, 32), `tradeRoutes` (function, 40), `listOptions` (function, 127), `execute` (function, 189)
 - `src/sim/query.ts` — 74 стр.
   - `civById` (function, 5), `planetsOf` (function, 10), `populatedOf` (function, 16), `capOf` (function, 20), `capitalOf` (function, 25), `capitalSystem` (function, 35), `reachableSystems` (function, 40), `claimedTargets` (function, 46), `colonyTargets` (function, 53), `stationTargets` (function, 65)
 - `src/sim/rng.ts` — 59 стр. — Генератор случайных чисел с зерном (mulberry32): одно зерно — одна и та же история.
@@ -99,7 +101,7 @@
   - `Toasts` (function, 5)
 - `src/ui/Tooltip.tsx` — 16 стр.
   - `Tooltip` (function, 3)
-- `src/ui/ViewMenu.tsx` — 64 стр.
+- `src/ui/ViewMenu.tsx` — 71 стр.
   - `ViewMenu` (function, 28)
 - `src/ui/cards.ts` — 144 стр.
   - `CardRow` (interface, 9), `CardData` (interface, 15), `planetCard` (function, 29), `systemCard` (function, 62), `civCard` (function, 75), `missionText` (function, 99), `shipCard` (function, 121), `cardFor` (function, 138)
@@ -132,13 +134,14 @@
 - `tests/app/loop.test.ts` — 34 стр.
 - `tests/helpers.ts` — 27 стр.
   - `run` (function, 5), `snapshot` (function, 11), `quietWorld` (function, 22)
+- `tests/render/biome.test.ts` — 40 стр.
 - `tests/render/camera.test.ts` — 81 стр.
 - `tests/render/hit.test.ts` — 68 стр.
 - `tests/render/noise.test.ts` — 17 стр.
 - `tests/render/territory.test.ts` — 32 стр.
 - `tests/render/zones.test.ts` — 81 стр.
-- `tests/sim/bot.test.ts` — 127 стр.
-- `tests/sim/economy.test.ts` — 186 стр.
+- `tests/sim/bot.test.ts` — 145 стр.
+- `tests/sim/economy.test.ts` — 187 стр.
 - `tests/sim/events.test.ts` — 35 стр.
 - `tests/sim/galaxy.test.ts` — 124 стр.
 - `tests/sim/invest.test.ts` — 112 стр.
@@ -151,7 +154,7 @@
 - `tests/sim/spatial.test.ts` — 42 стр.
 - `tests/sim/stepEconomy.test.ts` — 166 стр.
 - `tests/sim/system.test.ts` — 110 стр.
-- `tests/sim/world.test.ts` — 83 стр.
+- `tests/sim/world.test.ts` — 84 стр.
 - `tests/ui/cards.test.ts` — 56 стр.
 - `tests/ui/format.test.ts` — 27 стр.
 - `tests/ui/icons.test.ts` — 26 стр.

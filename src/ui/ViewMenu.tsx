@@ -28,20 +28,27 @@ function Row<T extends string | boolean>({ title, options, value, onPick }: { ti
 export function ViewMenu() {
   useSyncExternalStore(subscribe, () => version)
   const [open, setOpen] = useState(false)
+  const openRef = useRef(false)
+  openRef.current = open
   const box = useRef<HTMLSpanElement>(null)
   useEffect(() => {
     const key = (e: KeyboardEvent) => {
       if (e.target instanceof HTMLInputElement) return
       if (e.code === 'KeyV') setOpen((o) => !o)
-      else if (e.code === 'Escape') setOpen(false)
+      else if (e.code === 'Escape' && openRef.current) {
+        // открытое меню забирает Esc себе — камера не уходит на уровень выше
+        setOpen(false)
+        e.stopImmediatePropagation()
+      }
     }
     const down = (e: PointerEvent) => {
       if (box.current && !box.current.contains(e.target as Node)) setOpen(false)
     }
-    window.addEventListener('keydown', key)
+    // фаза перехвата: срабатывает раньше обработчика клавиш камеры (input.ts)
+    window.addEventListener('keydown', key, true)
     window.addEventListener('pointerdown', down)
     return () => {
-      window.removeEventListener('keydown', key)
+      window.removeEventListener('keydown', key, true)
       window.removeEventListener('pointerdown', down)
     }
   }, [])
