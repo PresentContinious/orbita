@@ -6,9 +6,19 @@
 
 - `src/app/loop.ts` — 32 стр.
   - `Clock` (interface, 3), `createClock` (function, 10), `advance` (function, 15), `alpha` (function, 29)
-- `src/app/main.tsx` — 3 стр. — Точка входа. Заполняется в задаче 16.
+- `src/app/main.tsx` — 38 стр.
 - `src/render/camera.ts` — 136 стр.
   - `View` (interface, 4), `Bounds` (interface, 9), `CamTarget` (interface, 16), `Fly` (interface, 22), `Camera` (interface, 29), `ZOOM_MAX` (const, 40), `LOD` (const, 41), `Lod` (type, 42), `LodInfo` (interface, 43), `createCamera` (function, 49), `worldToScreen` (function, 53), `screenToWorld` (function, 57), `galaxyBounds` (function, 61), `fitZoom` (function, 72), `galaxyZoom` (function, 77), `zoomAt` (function, 83), `flyDuration` (function, 91), `startFly` (function, 95), `updateCamera` (function, 103), `lodOf` (function, 127)
+- `src/render/galaxyLayer.ts` — 138 стр.
+  - `GalaxyLayer` (class, 11)
+- `src/render/renderer.ts` — 33 стр.
+  - `GameRenderer` (class, 8)
+- `src/render/starfield.ts` — 37 стр.
+  - `Starfield` (class, 14)
+- `src/render/territory.ts` — 28 стр.
+  - `Share` (interface, 4), `territoryShares` (function, 11)
+- `src/render/textures.ts` — 22 стр.
+  - `glowTexture` (function, 11)
 - `src/sim/civ.ts` — 50 стр.
   - `createCivs` (function, 8), `stepPopulation` (function, 38)
 - `src/sim/config.ts` — 169 стр. — ---------- время ----------
@@ -49,6 +59,7 @@
 ## scripts/
 
 - `scripts/codemap.mjs` — 43 стр. — Карта кода: файл → первая строка-комментарий, длина и экспорты с номерами строк.
+- `scripts/shot.ts` — 30 стр. — Снимок экрана игры: npm run shot -- "<параметры URL>" <файл.png> "<JS перед снимком>"
 
 ## tests/
 
@@ -56,6 +67,7 @@
 - `tests/helpers.ts` — 27 стр.
   - `run` (function, 5), `snapshot` (function, 11), `quietWorld` (function, 22)
 - `tests/render/camera.test.ts` — 81 стр.
+- `tests/render/territory.test.ts` — 32 стр.
 - `tests/sim/economy.test.ts` — 186 стр.
 - `tests/sim/events.test.ts` — 35 стр.
 - `tests/sim/galaxy.test.ts` — 124 стр.

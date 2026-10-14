@@ -11,7 +11,8 @@
     "typecheck": "tsc --noEmit",
     "balance": "tsx scripts/balance.ts",
     "stress": "tsx scripts/stress.ts",
-    "smoke": "tsx scripts/smoke.ts",
+    "shot": "tsx scripts/shot.ts",
+    "smoke":"tsx scripts/smoke.ts",
     "codemap": "node scripts/codemap.mjs",
     "panel": "python tools/panel/panel.py"
   },
