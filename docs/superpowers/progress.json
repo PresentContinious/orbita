@@ -40,7 +40,7 @@
     "17": { "status": "done", "note": "fcc1ca2, ревью PASS; FPS на арене — после задачи 14" },
     "18": { "status": "done", "note": "67d4d69, ревью PASS; снимки artifacts/battle/wip-*.png" },
     "19": { "status": "done", "note": "32a3cea, ревью PASS; снимок artifacts/battle/wip-card.png" },
-    "20": { "status": "active", "note": "пишется в worktree (без панели арены — она в задаче 14)" },
+    "20": { "status": "done", "note": "88c3864 + правка smoke (×20 = индекс 3), ревью FIX→исправлено; панель арены — в задаче 14" },
     "6": { "status": "done", "note": "коммиты d64f7f3 + 464301e (FIX: порог малого овала), ревью PASS" }
   }
 }

@@ -5,7 +5,7 @@ export const SIM_DT = 0.1
 export const YEAR_SECONDS = 20
 export const MAX_STEPS_PER_FRAME = 60
 export const MAX_FRAME_DT = 0.25
-/** скорости времени: клавиши 1–4 */
+/** скорости времени: клавиши 1–5 */
 export const SPEEDS = [1, 2, 5, 20, 50] as const
 
 // ---------- галактика ----------

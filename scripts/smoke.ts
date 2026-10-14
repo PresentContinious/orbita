@@ -75,7 +75,7 @@ try {
       const o = (window as any).__orbita
       o.controller.select(null)
       o.controller.flyToGalaxy(true)
-      o.controller.setSpeed(2)
+      o.controller.setSpeed(3) // ×20 (SPEEDS = [1, 2, 5, 20, 50])
     })
     await frameTime(page, 'галактика ×20')
     await page.close()
