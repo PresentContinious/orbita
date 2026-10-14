@@ -87,8 +87,8 @@
   - `Hud` (function, 14)
 - `src/ui/Minimap.tsx` — 58 стр.
   - `Minimap` (function, 7)
-- `src/ui/TimeControls.tsx` — 42 стр.
-  - `TimeControls` (function, 5)
+- `src/ui/TimeControls.tsx` — 43 стр.
+  - `TimeControls` (function, 6)
 - `src/ui/Toasts.tsx` — 21 стр.
   - `Toasts` (function, 5)
 - `src/ui/Tooltip.tsx` — 16 стр.
@@ -97,8 +97,8 @@
   - `CardRow` (interface, 9), `CardData` (interface, 15), `planetCard` (function, 29), `systemCard` (function, 62), `civCard` (function, 75), `missionText` (function, 99), `shipCard` (function, 121), `cardFor` (function, 138)
 - `src/ui/format.ts` — 30 стр.
   - `yearOf` (const, 3), `fmtInt` (function, 6), `fmtPop` (const, 11), `fmtRate` (function, 14), `fmtCredits` (const, 19), `fmtDuration` (function, 21), `roman` (const, 27), `hex` (const, 29)
-- `src/ui/icons.tsx` — 75 стр.
-  - `IconName` (type, 3), `KIND_ICON` (const, 6), `iconFor` (const, 22), `EventIcon` (function, 56)
+- `src/ui/icons.tsx` — 90 стр.
+  - `IconName` (type, 3), `KIND_ICON` (const, 6), `iconFor` (const, 22), `EventIcon` (function, 68), `Icon` (function, 72)
 - `src/ui/model.ts` — 60 стр.
   - `Toast` (interface, 3), `TOAST_LIFE` (const, 9), `MAX_TOASTS` (const, 10), `updateToasts` (function, 13), `TrendTracker` (class, 30), `UiModel` (class, 49)
 - `src/ui/snapshot.ts` — 109 стр.

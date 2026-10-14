@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react'
 
-export type IconName = 'colony' | 'trade' | 'research' | 'port' | 'build' | 'crisis' | 'bankrupt' | 'recovered' | 'other'
+export type IconName = 'colony' | 'trade' | 'research' | 'port' | 'build' | 'crisis' | 'bankrupt' | 'recovered' | 'other' | 'target' | 'dice'
 
 /** kind события -> имя значка */
 export const KIND_ICON: Record<string, IconName> = {
@@ -24,8 +24,8 @@ export const iconFor = (kind: string): IconName => KIND_ICON[kind] ?? 'other'
 const PATHS: Record<IconName, ReactNode> = {
   colony: (
     <>
-      <circle cx="6" cy="8" r="3.5" />
-      <path d="M11 3v4M9 5h4" />
+      <circle cx="6" cy="9.5" r="3" />
+      <path d="M6 6.5V1h6L10 3.5 12 6H6" />
     </>
   ),
   trade: (
@@ -51,10 +51,25 @@ const PATHS: Record<IconName, ReactNode> = {
   ),
   recovered: <path d="M2 10l3.5-3.5 2.5 2.5L12 4M9 4h3v3" />,
   other: <circle cx="7" cy="7" r="1.8" />,
+  target: (
+    <>
+      <circle cx="7" cy="7" r="3.5" />
+      <path d="M7 1v3M7 10v3M1 7h3M10 7h3" />
+    </>
+  ),
+  dice: (
+    <>
+      <rect x="2" y="2" width="10" height="10" rx="2" />
+      <path d="M4.8 4.8h.8M8.4 4.8h.8M6.6 6.6h.8M4.8 8.4h.8M8.4 8.4h.8" strokeWidth="1.6" />
+    </>
+  ),
 }
 
 export function EventIcon({ kind, size = 13 }: { kind: string; size?: number }) {
-  const name = iconFor(kind)
+  return <Icon name={iconFor(kind)} size={size} />
+}
+
+export function Icon({ name, size = 13 }: { name: IconName; size?: number }) {
   return (
     <svg
       className={`evicon ev-${name}`}

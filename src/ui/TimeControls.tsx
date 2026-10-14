@@ -1,5 +1,6 @@
 import type { Controller } from '../app/controller'
 import { SPEEDS } from '../sim/config'
+import { Icon } from './icons'
 import type { Snapshot } from './snapshot'
 
 export function TimeControls({ s, controller }: { s: Snapshot; controller: Controller }) {
@@ -21,7 +22,7 @@ export function TimeControls({ s, controller }: { s: Snapshot; controller: Contr
         ))}
       </span>
       <button className={s.follow ? 'on' : ''} onClick={() => controller.toggleFollow()} title="Камера следит за самым интересным — F">
-        🎥
+        <Icon name="target" size={14} />
       </button>
       <button
         className="seed"
@@ -34,7 +35,7 @@ export function TimeControls({ s, controller }: { s: Snapshot; controller: Contr
         зерно {s.seed}
       </button>
       <button title="Новая случайная галактика" onClick={() => newSeed(Math.floor(Math.random() * 1_000_000))}>
-        🎲
+        <Icon name="dice" size={14} />
       </button>
     </div>
   )
