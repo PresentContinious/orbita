@@ -8,6 +8,7 @@ import { buildSnapshot } from '../ui/snapshot'
 import { createStore } from '../ui/store'
 import { spawnStressShips } from '../sim/stress'
 import { createWorld, stepWorld } from '../sim/world'
+import { initDisplay } from './display'
 import { Controller } from './controller'
 import { attachInput } from './input'
 import { advance, alpha, createClock } from './loop'
@@ -17,6 +18,7 @@ async function boot(): Promise<void> {
   const seed = Number(params.get('seed')) || Math.floor(Math.random() * 1_000_000)
   const world = createWorld(seed)
 
+  initDisplay(location.search)
   const app = new Application()
   await app.init({ background: '#04060c', resizeTo: window, antialias: true, autoDensity: true, resolution: Math.min(window.devicePixelRatio, 2) })
   document.getElementById('stage')!.appendChild(app.canvas)

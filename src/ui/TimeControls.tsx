@@ -1,6 +1,7 @@
 import type { Controller } from '../app/controller'
 import { SPEEDS } from '../sim/config'
 import { Icon } from './icons'
+import { ViewMenu } from './ViewMenu'
 import type { Snapshot } from './snapshot'
 
 export function TimeControls({ s, controller }: { s: Snapshot; controller: Controller }) {
@@ -24,6 +25,7 @@ export function TimeControls({ s, controller }: { s: Snapshot; controller: Contr
       <button className={s.follow ? 'on' : ''} onClick={() => controller.toggleFollow()} title="Камера следит за самым интересным — F">
         <Icon name="target" size={14} />
       </button>
+      <ViewMenu />
       <button
         className="seed"
         title="Зерно галактики: щёлкни, чтобы ввести своё"

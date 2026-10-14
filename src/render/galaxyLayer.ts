@@ -2,11 +2,17 @@ import { Container, Graphics, Sprite, Text, type Texture } from 'pixi.js'
 import { TAU } from '../sim/math'
 import { findPath, gateGalaxyPos, gateTo } from '../sim/routing'
 import type { World } from '../sim/types'
+import { display } from '../app/display'
 import { worldToScreen, type Camera, type LodInfo, type View } from './camera'
 import { territoryShares, type Share } from './territory'
 import { cloudSpots, pieceEdges, systemPieces, zoneRadius, type Sector } from './zones'
 
 const LABEL = { fontFamily: 'JetBrains Mono, monospace', fontSize: 12, fill: 0xcfe0ff, letterSpacing: 1.5 }
+
+/** какие слои территорий видны при выбранном режиме */
+export function territoryVisibility(mode: 'off' | 'zones' | 'clouds'): { zones: boolean; clouds: boolean } {
+  return { zones: mode === 'zones', clouds: mode === 'clouds' }
+}
 
 /** общий план: коридоры, звёзды-значки, кольца долей держав, торговые трассы */
 export class GalaxyLayer {
@@ -23,9 +29,9 @@ export class GalaxyLayer {
   private tradeAt = -Infinity
   private tradeZ = 0
   private hopsSet = new Set<string>()
-  /** вариант отрисовки территорий: a — карта с границами, b — облака (?territory=a|b) */
-  private readonly mode: 'a' | 'b' =
-    typeof location !== 'undefined' && new URLSearchParams(location.search).get('territory') === 'b' ? 'b' : 'a'
+  private counts: number[] = []
+  private mapSig = ''
+  private cloudSig = ''
   private readonly zoneGfx = new Graphics()
   private readonly cloudBox = new Container()
   private readonly clouds: Sprite[][] = []
@@ -71,7 +77,10 @@ export class GalaxyLayer {
       this.names.push(name)
       this.labels.addChild(name)
     }
-    this.under.addChildAt(this.mode === 'a' ? this.zoneGfx : this.cloudBox, 0)
+    this.under.addChildAt(this.zoneGfx, 0)
+    this.under.addChildAt(this.cloudBox, 1)
+    this.zoneGfx.visible = false
+    this.cloudBox.visible = false
     this.under.addChild(this.corridors, this.spokes, this.trade)
     this.over.addChild(this.rings)
   }
@@ -118,6 +127,7 @@ export class GalaxyLayer {
     this.cloudBox.alpha = 1 - focus
     this.spokes.alpha = 1 - focus
     this.trade.alpha = 1 - focus
+    this.trade.visible = display.trade
     let redraw = z !== this.tradeZ
     if (Math.abs(w.t - this.tradeAt) > 0.25) {
       this.tradeAt = w.t
@@ -130,25 +140,35 @@ export class GalaxyLayer {
     }
   }
 
-  /** доли держав — не чаще раза в 0.5 с игры; геометрия зон пересчитывается только при смене владения */
+  /** доли держав — не чаще раза в 0.5 с игры; геометрия зон строится лениво и только для включённого режима */
   private refreshZones(w: World): void {
-    if (Math.abs(w.t - this.sharesAt) < 0.5) return
-    this.sharesAt = w.t
-    let sig = ''
-    const counts: number[] = []
-    w.galaxy.systems.forEach((s, i) => {
-      const sh = territoryShares(w, s)
-      this.shares[i] = sh
-      let n = 0
-      for (const p of s.planets) if (p.owner !== null && (p.pop > 0 || p.station)) n++
-      counts.push(n)
-      for (const x of sh) sig += `${x.civ}:${x.share.toFixed(2)},`
-      sig += `${n}|`
-    })
-    if (sig === this.sig) return
-    this.sig = sig
-    if (this.mode === 'a') this.buildMap()
-    else this.buildClouds(counts)
+    const vis = territoryVisibility(display.territory)
+    this.zoneGfx.visible = vis.zones
+    this.cloudBox.visible = vis.clouds
+    if (Math.abs(w.t - this.sharesAt) >= 0.5 || this.sharesAt === -Infinity) {
+      this.sharesAt = w.t
+      let sig = ''
+      const counts: number[] = []
+      w.galaxy.systems.forEach((s, i) => {
+        const sh = territoryShares(w, s)
+        this.shares[i] = sh
+        let n = 0
+        for (const p of s.planets) if (p.owner !== null && (p.pop > 0 || p.station)) n++
+        counts.push(n)
+        for (const x of sh) sig += `${x.civ}:${x.share.toFixed(2)},`
+        sig += `${n}|`
+      })
+      this.sig = sig
+      this.counts = counts
+    }
+    if (vis.zones && this.mapSig !== this.sig) {
+      this.mapSig = this.sig
+      this.buildMap()
+    }
+    if (vis.clouds && this.cloudSig !== this.sig) {
+      this.cloudSig = this.sig
+      this.buildClouds(this.counts)
+    }
   }
 
   private buildMap(): void {
@@ -160,7 +180,7 @@ export class GalaxyLayer {
       for (const pc of pieces) {
         const flat: number[] = []
         for (const v of pc.poly) flat.push(v.x, v.y)
-        g.poly(flat).fill({ color: pc.color, alpha: 0.22 })
+        g.poly(flat).fill({ color: pc.color, alpha: 0.1 })
       }
     }
     for (let i = 0; i < parts.length; i++) {
@@ -168,8 +188,15 @@ export class GalaxyLayer {
       for (const pc of parts[i].pieces) {
         for (const e of pieceEdges(this.sites, sectors, pc)) {
           g.moveTo(e.ax, e.ay).lineTo(e.bx, e.by)
-          if (e.bright) g.stroke({ width: wd * 0.7, color: 0xe6eeff, alpha: 0.6 })
-          else g.stroke({ width: wd * 1.6, color: pc.color, alpha: 0.4 })
+          if (e.bright) g.stroke({ width: wd * 0.35, color: 0xaab8d8, alpha: 0.1 })
+          else {
+            // край растворяется: несколько прозрачных полос разной ширины вместо одной жёсткой линии
+            g.stroke({ width: wd * 7, color: pc.color, alpha: 0.025 })
+            g.moveTo(e.ax, e.ay).lineTo(e.bx, e.by)
+            g.stroke({ width: wd * 4, color: pc.color, alpha: 0.035 })
+            g.moveTo(e.ax, e.ay).lineTo(e.bx, e.by)
+            g.stroke({ width: wd * 1.8, color: pc.color, alpha: 0.05 })
+          }
         }
       }
     }
@@ -200,7 +227,7 @@ export class GalaxyLayer {
         sp.position.set(c.x, c.y)
         sp.scale.set((c.r * 2) / 128)
         sp.tint = c.color
-        sp.alpha = c.alpha
+        sp.alpha = c.alpha * 0.7
       }
     }
   }

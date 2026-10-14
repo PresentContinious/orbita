@@ -84,3 +84,9 @@ button.on { background: var(--accent); color: #fff; }
 .card dd { margin: 0; text-align: right; }
 
 .tooltip { pointer-events: none; max-width: 280px; padding: 4px 8px; }
+
+.viewmenu { position: relative; display: inline-flex; }
+.viewpanel { right: 170px; top: 34px; width: 270px; display: flex; flex-direction: column; gap: 6px; z-index: 5; }
+.viewpanel header { font-size: 11px; letter-spacing: 1px; }
+.viewpanel .vrow { display: flex; flex-direction: column; gap: 2px; }
+.viewpanel .seg { display: flex; gap: 2px; }
