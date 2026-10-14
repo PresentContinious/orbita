@@ -1,5 +1,5 @@
 import type { Planet } from '../sim/types'
-import { Texture } from 'pixi.js'
+import { Rectangle, Texture } from 'pixi.js'
 
 function canvas(w: number, h: number): [HTMLCanvasElement, CanvasRenderingContext2D] {
   const c = document.createElement('canvas')
@@ -84,4 +84,43 @@ export function planetTexture(p: Planet): Texture {
   ctx.fill()
   if (p.look.rings) ring(ctx, x, y, r, 0, Math.PI)
   return Texture.from(c)
+}
+
+export type IconKind = 'colony' | 'caravan' | 'miner' | 'dot'
+export type Atlas = Record<IconKind, Texture>
+export const ICON_CELL = 32
+/** длина корпуса значка внутри клетки, px — по ней считается масштаб */
+export const ICON_BODY = 24
+
+/** белые силуэты кораблей в одной текстуре — для пакетной отрисовки и перекраски tint */
+export function shipAtlas(): Atlas {
+  const S = ICON_CELL
+  const [c, ctx] = canvas(S * 4, S)
+  ctx.fillStyle = '#fff'
+  // караван — вытянутый грузовой корпус
+  ctx.beginPath()
+  ctx.roundRect(4, 11, 24, 10, 3)
+  ctx.fill()
+  // колонисты — ромб
+  ctx.beginPath()
+  ctx.moveTo(S + 28, 16)
+  ctx.lineTo(S + 16, 7)
+  ctx.lineTo(S + 4, 16)
+  ctx.lineTo(S + 16, 25)
+  ctx.closePath()
+  ctx.fill()
+  // шахтёр — треугольник носом вперёд
+  ctx.beginPath()
+  ctx.moveTo(2 * S + 28, 16)
+  ctx.lineTo(2 * S + 4, 6)
+  ctx.lineTo(2 * S + 4, 26)
+  ctx.closePath()
+  ctx.fill()
+  // точка — корабль в коридоре на общем плане
+  ctx.beginPath()
+  ctx.arc(3 * S + 16, 16, 10, 0, TAU)
+  ctx.fill()
+  const base = Texture.from(c)
+  const frame = (i: number) => new Texture({ source: base.source, frame: new Rectangle(i * S, 0, S, S) })
+  return { caravan: frame(0), colony: frame(1), miner: frame(2), dot: frame(3) }
 }

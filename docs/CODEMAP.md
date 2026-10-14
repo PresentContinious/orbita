@@ -11,16 +11,18 @@
   - `View` (interface, 4), `Bounds` (interface, 9), `CamTarget` (interface, 16), `Fly` (interface, 22), `Camera` (interface, 29), `ZOOM_MAX` (const, 40), `LOD` (const, 41), `Lod` (type, 42), `LodInfo` (interface, 43), `createCamera` (function, 49), `worldToScreen` (function, 53), `screenToWorld` (function, 57), `galaxyBounds` (function, 61), `fitZoom` (function, 72), `galaxyZoom` (function, 77), `zoomAt` (function, 83), `flyDuration` (function, 91), `startFly` (function, 95), `updateCamera` (function, 103), `lodOf` (function, 127)
 - `src/render/galaxyLayer.ts` — 138 стр.
   - `GalaxyLayer` (class, 11)
-- `src/render/renderer.ts` — 38 стр.
-  - `GameRenderer` (class, 10)
+- `src/render/renderer.ts` — 41 стр.
+  - `GameRenderer` (class, 11)
+- `src/render/shipsLayer.ts` — 106 стр.
+  - `ShipsLayer` (class, 20)
 - `src/render/starfield.ts` — 37 стр.
   - `Starfield` (class, 14)
 - `src/render/systemLayer.ts` — 134 стр.
   - `SystemLayer` (class, 28)
 - `src/render/territory.ts` — 28 стр.
   - `Share` (interface, 4), `territoryShares` (function, 11)
-- `src/render/textures.ts` — 88 стр.
-  - `glowTexture` (function, 12), `PLANET_TEX` (const, 25), `PLANET_DISC` (const, 27), `planetTexture` (function, 43)
+- `src/render/textures.ts` — 127 стр.
+  - `glowTexture` (function, 12), `PLANET_TEX` (const, 25), `PLANET_DISC` (const, 27), `planetTexture` (function, 43), `IconKind` (type, 89), `Atlas` (type, 90), `ICON_CELL` (const, 91), `ICON_BODY` (const, 93), `shipAtlas` (function, 96)
 - `src/sim/belts.ts` — 35 стр.
   - `asteroidPos` (const, 6), `asteroidVel` (const, 7), `nearestAsteroid` (function, 9), `stepAsteroids` (function, 25)
 - `src/sim/bot.ts` — 24 стр.
