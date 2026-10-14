@@ -5,6 +5,7 @@ import { tryInfra, tryProject, tryResearch, tryStation } from './invest'
 import { setDestination } from './nav'
 import { capOf, capitalOf, capitalSystem, colonyTargets, populatedOf, stationTargets } from './query'
 import { findPath, hops } from './routing'
+import { trafficAllowed } from './cap'
 import { spawnShip } from './ships'
 import { planetPos } from './system'
 import type { Civ, Planet, World } from './types'
@@ -172,13 +173,13 @@ export function listOptions(w: World, civ: Civ): Option[] {
   for (const slot of ['internal', 'external', 'inter'] as const) {
     if (routes.filter((r) => routeSlot(r) === slot).length >= routeLimit) continue
     const best = bestRoute(w, civ, slot, routes)
-    if (best) {
+    if (best && trafficAllowed(w, civ)) {
       out.push({ kind: 'caravan', price: shipPrice(civ, 'caravan'), envelope: 'trade', dIncome: best.rate, dUpkeep: shipUpkeep(civ, 'caravan'), planetId: best.a.id, partnerId: best.b.id })
     }
   }
 
   const miners = w.ships.filter((s) => s.alive && s.owner === civ.id && s.kind === 'miner').length
-  if (miners < Math.min(BOT.minerMax, BOT.minerBase + Math.floor(mine.length / 2))) {
+  if (trafficAllowed(w, civ) && miners < Math.min(BOT.minerMax, BOT.minerBase + Math.floor(mine.length / 2))) {
     const base = minerBase(w, civ)
     if (base) out.push({ kind: 'miner', price: shipPrice(civ, 'miner'), envelope: 'trade', dIncome: base.rate, dUpkeep: shipUpkeep(civ, 'miner'), planetId: base.planet.id })
   }
