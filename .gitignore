@@ -6,3 +6,4 @@ dist/
 !.claude/agents/
 .superpowers/
 artifacts/
+__pycache__/
