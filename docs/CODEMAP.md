@@ -17,6 +17,10 @@
 - `src/app/main.tsx` — 98 стр.
 - `src/app/setup.ts` — 103 стр. — Параметры галактики в адресе и запоминание выбора в браузере.
   - `UI_DEFAULTS` (const, 5), `parseSetup` (function, 30), `setupQuery` (function, 52), `loadUnitCap` (function, 62), `saveUnitCap` (function, 71), `SetupValues` (type, 79), `loadSetupValues` (function, 81), `saveSetupValues` (function, 96)
+- `src/render/battleGeom.ts` — 47 стр.
+  - `shipScreenLen` (function, 7), `headingOf` (function, 12), `drawBudget` (function, 17), `shouldDraw` (function, 21), `projTexture` (function, 26), `burnTint` (function, 31), `debrisAlpha` (function, 42)
+- `src/render/battleLayer.ts` — 113 стр.
+  - `BattleLayer` (class, 16)
 - `src/render/biome.ts` — 75 стр. — Биом планеты — только вид. Выводится из данных планеты (вид, зона, пригодность, хеш id), симуляцию не трогает.
   - `Biome` (type, 5), `BIOME_NAME` (const, 23), `biomeName` (const, 42), `planetBiome` (function, 61)
 - `src/render/camera.ts` — 136 стр.
@@ -27,8 +31,8 @@
   - `Pick` (type, 7), `pickAt` (function, 10)
 - `src/render/noise.ts` — 78 стр. — Детерминированный шум и генераторы для рендера (отдельно от src/sim: там свой Rng).
   - `seeded` (function, 4), `hashString` (function, 15), `noise3` (function, 30), `fbm3` (function, 45), `Dust` (interface, 59), `beltDust` (function, 69)
-- `src/render/renderer.ts` — 43 стр.
-  - `GameRenderer` (class, 12)
+- `src/render/renderer.ts` — 47 стр.
+  - `GameRenderer` (class, 13)
 - `src/render/shipsLayer.ts` — 111 стр.
   - `ShipsLayer` (class, 20)
 - `src/render/starfield.ts` — 37 стр.
@@ -37,8 +41,8 @@
   - `SystemLayer` (class, 51)
 - `src/render/territory.ts` — 28 стр.
   - `Share` (interface, 4), `territoryShares` (function, 11)
-- `src/render/textures.ts` — 340 стр. — направление на звезду (освещённая сторона слева, чуть к зрителю)
-  - `glowTexture` (function, 15), `PLANET_TEX` (const, 28), `PLANET_DISC` (const, 30), `PlanetVariant` (type, 33), `planetTexture` (function, 127), `IconKind` (type, 302), `Atlas` (type, 303), `ICON_CELL` (const, 304), `ICON_BODY` (const, 306), `shipAtlas` (function, 309)
+- `src/render/textures.ts` — 419 стр. — направление на звезду (освещённая сторона слева, чуть к зрителю)
+  - `glowTexture` (function, 15), `PLANET_TEX` (const, 28), `PLANET_DISC` (const, 30), `PlanetVariant` (type, 33), `planetTexture` (function, 127), `IconKind` (type, 302), `Atlas` (type, 305), `ICON_CELL` (const, 306), `ICON_BODY` (const, 308), `shipAtlas` (function, 325), `FxKind` (type, 379), `FX_CELL` (const, 380), `fxAtlas` (function, 384)
 - `src/render/zones.ts` — 216 стр.
   - `Pt` (interface, 5), `Vert` (interface, 13), `ARC` (const, 16), `RADIAL` (const, 17), `SPLIT` (const, 18), `START_ANGLE` (const, 21), `zoneRadius` (function, 25), `clipHalfPlane` (function, 35), `zoneCell` (function, 55), `Sector` (interface, 76), `sectorsOf` (function, 84), `civAtAngle` (function, 97), `clipSector` (function, 107), `polyArea` (function, 126), `ZonePiece` (interface, 136), `systemPieces` (function, 143), `ZoneEdge` (interface, 157), `pieceEdges` (function, 167), `Spot` (interface, 188), `cloudSpots` (function, 198)
 - `src/sim/admiral.ts` — 13 стр.
@@ -162,6 +166,7 @@
 - `tests/app/setup.test.ts` — 31 стр.
 - `tests/helpers.ts` — 27 стр.
   - `run` (function, 5), `snapshot` (function, 11), `quietWorld` (function, 22)
+- `tests/render/battleLayer.test.ts` — 62 стр.
 - `tests/render/biome.test.ts` — 40 стр.
 - `tests/render/camera.test.ts` — 81 стр.
 - `tests/render/hit.test.ts` — 68 стр.

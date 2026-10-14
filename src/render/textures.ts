@@ -299,41 +299,120 @@ export function planetTexture(p: Planet, variant: PlanetVariant = 'calm'): Textu
   return Texture.from(c)
 }
 
-export type IconKind = 'colony' | 'caravan' | 'miner' | 'dot'
+export type IconKind =
+  | 'colony' | 'caravan' | 'miner' | 'dot'
+  | 'corvette' | 'torpedo' | 'frigate' | 'battleship' | 'carrier' | 'interceptor' | 'bomber' | 'trooper' | 'supply' | 'scout'
 export type Atlas = Record<IconKind, Texture>
 export const ICON_CELL = 32
 /** длина корпуса значка внутри клетки, px — по ней считается масштаб */
 export const ICON_BODY = 24
 
+const ICON_ORDER: IconKind[] = [
+  'caravan', 'colony', 'miner', 'dot',
+  'corvette', 'torpedo', 'frigate', 'battleship', 'carrier', 'interceptor', 'bomber', 'trooper', 'supply', 'scout',
+]
+
+/** контур по точкам относительно левого края клетки; нос — в +x */
+function poly(ctx: CanvasRenderingContext2D, ox: number, pts: number[]): void {
+  ctx.beginPath()
+  ctx.moveTo(ox + pts[0], pts[1])
+  for (let i = 2; i < pts.length; i += 2) ctx.lineTo(ox + pts[i], pts[i + 1])
+  ctx.closePath()
+  ctx.fill()
+}
+
 /** белые силуэты кораблей в одной текстуре — для пакетной отрисовки и перекраски tint */
 export function shipAtlas(): Atlas {
   const S = ICON_CELL
-  const [c, ctx] = canvas(S * 4, S)
+  const [c, ctx] = canvas(S * ICON_ORDER.length, S)
   ctx.fillStyle = '#fff'
+  const at = (k: IconKind) => ICON_ORDER.indexOf(k) * S
   // караван — вытянутый грузовой корпус
   ctx.beginPath()
-  ctx.roundRect(4, 11, 24, 10, 3)
+  ctx.roundRect(at('caravan') + 4, 11, 24, 10, 3)
   ctx.fill()
   // колонисты — ромб
-  ctx.beginPath()
-  ctx.moveTo(S + 28, 16)
-  ctx.lineTo(S + 16, 7)
-  ctx.lineTo(S + 4, 16)
-  ctx.lineTo(S + 16, 25)
-  ctx.closePath()
-  ctx.fill()
+  poly(ctx, at('colony'), [28, 16, 16, 7, 4, 16, 16, 25])
   // шахтёр — треугольник носом вперёд
-  ctx.beginPath()
-  ctx.moveTo(2 * S + 28, 16)
-  ctx.lineTo(2 * S + 4, 6)
-  ctx.lineTo(2 * S + 4, 26)
-  ctx.closePath()
-  ctx.fill()
+  poly(ctx, at('miner'), [28, 16, 4, 6, 4, 26])
   // точка — корабль в коридоре на общем плане
   ctx.beginPath()
-  ctx.arc(3 * S + 16, 16, 10, 0, TAU)
+  ctx.arc(at('dot') + 16, 16, 10, 0, TAU)
   ctx.fill()
+  // корвет — узкая стрела с вырезом сзади
+  poly(ctx, at('corvette'), [29, 16, 6, 9, 10, 16, 6, 23])
+  // торпедный катер — тонкий корпус с двумя носовыми аппаратами
+  poly(ctx, at('torpedo'), [29, 16, 24, 13, 6, 13, 3, 14.5, 3, 17.5, 6, 19, 24, 19])
+  poly(ctx, at('torpedo'), [26, 9, 20, 9, 20, 13, 26, 13])
+  poly(ctx, at('torpedo'), [26, 19, 20, 19, 20, 23, 26, 23])
+  // фрегат — клин с широкой кормой
+  poly(ctx, at('frigate'), [30, 16, 12, 8, 3, 6, 5, 16, 3, 26, 12, 24])
+  // линкор — длинный корпус, надстройка и башни
+  poly(ctx, at('battleship'), [31, 16, 27, 12, 4, 11, 1, 13, 1, 19, 4, 21, 27, 20])
+  ctx.fillRect(at('battleship') + 9, 6, 8, 20)
+  ctx.fillRect(at('battleship') + 19, 8, 6, 16)
+  // носитель — плоская палуба с разметкой
+  ctx.fillRect(at('carrier') + 2, 6, 27, 20)
+  poly(ctx, at('carrier'), [29, 6, 31, 16, 29, 26])
+  ctx.clearRect(at('carrier') + 5, 15, 21, 2)
+  // перехватчик — малая стрела
+  poly(ctx, at('interceptor'), [29, 16, 6, 6, 11, 16, 6, 26])
+  // бомбардировщик — тупая дельта
+  poly(ctx, at('bomber'), [26, 16, 6, 3, 10, 16, 6, 29])
+  // десантный — транспорт со срезанным носом
+  poly(ctx, at('trooper'), [29, 13, 29, 19, 25, 23, 4, 23, 4, 9, 25, 9])
+  // снабженец — бочка с разрезом
+  ctx.beginPath()
+  ctx.roundRect(at('supply') + 4, 9, 22, 14, 4)
+  ctx.fill()
+  ctx.clearRect(at('supply') + 14, 9, 2, 14)
+  // разведчик — тонкий ромб
+  poly(ctx, at('scout'), [30, 16, 14, 10, 4, 16, 14, 22])
   const base = Texture.from(c)
-  const frame = (i: number) => new Texture({ source: base.source, frame: new Rectangle(i * S, 0, S, S) })
-  return { caravan: frame(0), colony: frame(1), miner: frame(2), dot: frame(3) }
+  const out = {} as Atlas
+  ICON_ORDER.forEach((k, i) => {
+    out[k] = new Texture({ source: base.source, frame: new Rectangle(i * S, 0, S, S) })
+  })
+  return out
+}
+
+export type FxKind = 'missile' | 'decoy' | 'torpedo' | 'tracer' | 'debris' | 'shield' | 'smoke' | 'boom'
+export const FX_CELL = 16
+const FX_ORDER: FxKind[] = ['missile', 'decoy', 'torpedo', 'tracer', 'debris', 'shield', 'smoke', 'boom']
+
+/** белые значки снарядов и вспышек в одной текстуре; нос — в +x */
+export function fxAtlas(): Record<FxKind, Texture> {
+  const S = FX_CELL
+  const [c, ctx] = canvas(S * FX_ORDER.length, S)
+  ctx.fillStyle = '#fff'
+  const at = (k: FxKind) => FX_ORDER.indexOf(k) * S
+  poly(ctx, at('missile'), [15, 8, 3, 4, 5, 8, 3, 12])
+  poly(ctx, at('decoy'), [13, 8, 8, 5, 3, 8, 8, 11])
+  ctx.beginPath()
+  ctx.roundRect(at('torpedo') + 2, 5, 12, 6, 3)
+  ctx.fill()
+  // трассер — полоса во всю клетку, растягивается по длине
+  ctx.fillRect(at('tracer'), 6, S, 4)
+  poly(ctx, at('debris'), [13, 7, 9, 13, 3, 10, 4, 4, 10, 3])
+  const g = ctx.createRadialGradient(at('shield') + 8, 8, 3, at('shield') + 8, 8, 8)
+  g.addColorStop(0, 'rgba(255,255,255,0)')
+  g.addColorStop(0.75, 'rgba(255,255,255,0.35)')
+  g.addColorStop(1, 'rgba(255,255,255,0.9)')
+  ctx.fillStyle = g
+  ctx.fillRect(at('shield'), 0, S, S)
+  const blob = (k: FxKind, a: number) => {
+    const gg = ctx.createRadialGradient(at(k) + 8, 8, 0, at(k) + 8, 8, 8)
+    gg.addColorStop(0, `rgba(255,255,255,${a})`)
+    gg.addColorStop(1, 'rgba(255,255,255,0)')
+    ctx.fillStyle = gg
+    ctx.fillRect(at(k), 0, S, S)
+  }
+  blob('smoke', 0.5)
+  blob('boom', 1)
+  const base = Texture.from(c)
+  const out = {} as Record<FxKind, Texture>
+  FX_ORDER.forEach((k, i) => {
+    out[k] = new Texture({ source: base.source, frame: new Rectangle(i * S, 0, S, S) })
+  })
+  return out
 }

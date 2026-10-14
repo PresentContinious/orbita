@@ -1,10 +1,10 @@
 import { Container, Particle, ParticleContainer, Text } from 'pixi.js'
-import { SHIP_KINDS } from '../sim/config'
 import { lerp } from '../sim/math'
 import { civById } from '../sim/query'
 import { transitGalaxyPos } from '../sim/routing'
 import type { Fx, Ship, World } from '../sim/types'
 import { worldToScreen, type Camera, type LodInfo, type View } from './camera'
+import { burnTint, headingOf, shipScreenLen } from './battleGeom'
 import { ICON_BODY, type Atlas } from './textures'
 
 interface Popup {
@@ -28,9 +28,8 @@ export class ShipsLayer {
 
   constructor(private readonly atlas: Atlas) {}
 
-  /** силуэты боевых классов — задача 17; пока им достаётся значок каравана */
   private tex(kind: Ship['kind']) {
-    return this.atlas[kind as keyof Atlas] ?? this.atlas.caravan
+    return this.atlas[kind]
   }
 
   update(w: World, cam: Camera, view: View, lods: LodInfo[], alpha: number, now: number): void {
@@ -45,7 +44,8 @@ export class ShipsLayer {
         this.parts.set(s.id, p)
       }
       this.seen.set(s.id, this.frame)
-      p.tint = civById(w, s.owner)?.color ?? 0xffffff
+      const col = civById(w, s.owner)?.color ?? 0xffffff
+      p.tint = s.combat?.burning != null ? burnTint(col) : col
       if (s.transit) {
         const g = transitGalaxyPos(w.galaxy, s.transit, alpha)
         p.texture = this.atlas.dot
@@ -67,8 +67,8 @@ export class ShipsLayer {
       p.texture = this.tex(s.kind)
       p.x = sys.pos.x + lerp(s.prevPos.x, s.pos.x, alpha)
       p.y = sys.pos.y + lerp(s.prevPos.y, s.pos.y, alpha)
-      p.rotation = Math.atan2(s.vel.y, s.vel.x)
-      const screenLen = Math.max(SHIP_KINDS[s.kind].length * z, 6)
+      p.rotation = headingOf(s)
+      const screenLen = shipScreenLen(s.kind, z)
       const sc = screenLen / z / ICON_BODY
       p.scaleX = sc
       p.scaleY = sc
