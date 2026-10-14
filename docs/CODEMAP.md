@@ -10,7 +10,7 @@
   - `attachInput` (function, 6)
 - `src/app/loop.ts` — 32 стр.
   - `Clock` (interface, 3), `createClock` (function, 10), `advance` (function, 15), `alpha` (function, 29)
-- `src/app/main.tsx` — 38 стр.
+- `src/app/main.tsx` — 54 стр.
 - `src/render/camera.ts` — 136 стр.
   - `View` (interface, 4), `Bounds` (interface, 9), `CamTarget` (interface, 16), `Fly` (interface, 22), `Camera` (interface, 29), `ZOOM_MAX` (const, 40), `LOD` (const, 41), `Lod` (type, 42), `LodInfo` (interface, 43), `createCamera` (function, 49), `worldToScreen` (function, 53), `screenToWorld` (function, 57), `galaxyBounds` (function, 61), `fitZoom` (function, 72), `galaxyZoom` (function, 77), `zoomAt` (function, 83), `flyDuration` (function, 91), `startFly` (function, 95), `updateCamera` (function, 103), `lodOf` (function, 127)
 - `src/render/galaxyLayer.ts` — 138 стр.
@@ -73,6 +73,26 @@
   - `Zone` (type, 7), `SystemRole` (type, 8), `PlanetLook` (interface, 10), `Build` (interface, 17), `Planet` (interface, 24), `Belt` (interface, 45), `Asteroid` (interface, 50), `Gate` (interface, 60), `Star` (interface, 67), `StarSystem` (interface, 74), `Corridor` (interface, 92), `Galaxy` (interface, 102), `Mission` (type, 107), `Transit` (interface, 114), `Ship` (interface, 122), `Stage` (type, 139), `IncomeSource` (type, 140), `ExpenseCat` (type, 141), `Ledger` (interface, 143), `CivEconomy` (interface, 149), `CivProject` (interface, 166), `ResearchJob` (interface, 172), `Civ` (interface, 179), `GameEvent` (interface, 195), `Fx` (interface, 207), `World` (interface, 216)
 - `src/sim/world.ts` — 45 стр.
   - `createWorld` (function, 12), `stepWorld` (function, 35)
+- `src/ui/Breadcrumbs.tsx` — 18 стр.
+  - `Breadcrumbs` (function, 3)
+- `src/ui/CivBar.tsx` — 26 стр.
+  - `CivBar` (function, 6)
+- `src/ui/FeedDrawer.tsx` — 23 стр.
+  - `FeedDrawer` (function, 4)
+- `src/ui/Hud.tsx` — 24 стр.
+  - `Hud` (function, 11)
+- `src/ui/TimeControls.tsx` — 42 стр.
+  - `TimeControls` (function, 5)
+- `src/ui/Toasts.tsx` — 15 стр.
+  - `Toasts` (function, 4)
+- `src/ui/format.ts` — 30 стр.
+  - `yearOf` (const, 3), `fmtInt` (function, 6), `fmtPop` (const, 11), `fmtRate` (function, 14), `fmtCredits` (const, 19), `fmtDuration` (function, 21), `roman` (const, 27), `hex` (const, 29)
+- `src/ui/model.ts` — 60 стр.
+  - `Toast` (interface, 3), `TOAST_LIFE` (const, 9), `MAX_TOASTS` (const, 10), `updateToasts` (function, 13), `TrendTracker` (class, 30), `UiModel` (class, 49)
+- `src/ui/snapshot.ts` — 65 стр.
+  - `CivSummary` (interface, 8), `Snapshot` (interface, 20), `buildSnapshot` (function, 34)
+- `src/ui/store.ts` — 24 стр.
+  - `Store` (interface, 3), `createStore` (function, 9)
 
 ## scripts/
 
@@ -105,3 +125,6 @@
 - `tests/sim/stepEconomy.test.ts` — 152 стр.
 - `tests/sim/system.test.ts` — 110 стр.
 - `tests/sim/world.test.ts` — 83 стр.
+- `tests/ui/format.test.ts` — 27 стр.
+- `tests/ui/model.test.ts` — 37 стр.
+- `tests/ui/snapshot.test.ts` — 23 стр.

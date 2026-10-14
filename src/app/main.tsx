@@ -1,6 +1,11 @@
 import { Application } from 'pixi.js'
 import { createCamera } from '../render/camera'
 import { GameRenderer } from '../render/renderer'
+import { createRoot } from 'react-dom/client'
+import { Hud } from '../ui/Hud'
+import { UiModel } from '../ui/model'
+import { buildSnapshot } from '../ui/snapshot'
+import { createStore } from '../ui/store'
 import { createWorld, stepWorld } from '../sim/world'
 import { Controller } from './controller'
 import { attachInput } from './input'
@@ -22,11 +27,22 @@ async function boot(): Promise<void> {
   controller.flyToGalaxy(true)
   attachInput(app.canvas, controller)
 
+  const store = createStore()
+  const model = new UiModel()
+  createRoot(document.getElementById('hud')!).render(<Hud store={store} controller={controller} />)
+  let uiT = 0
+
   app.ticker.add((ticker) => {
     const dt = ticker.deltaMS / 1000
     advance(clock, dt, () => stepWorld(world))
     controller.update(performance.now() / 1000, dt)
     renderer.render(world, controller.cam, view(), alpha(clock), controller.selectedPlanet())
+    uiT += dt
+    if (uiT >= 0.2) {
+      uiT = 0
+      model.tick(world, performance.now() / 1000)
+      store.set(buildSnapshot(world, controller, model))
+    }
   })
 
   Object.assign(window, {
