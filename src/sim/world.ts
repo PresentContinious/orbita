@@ -2,6 +2,7 @@ import { createCivs, stepPopulation } from './civ'
 import { SIM_DT } from './config'
 import { generateGalaxy } from './galaxy'
 import { createRng } from './rng'
+import { stepShips } from './ships'
 import { SpatialGrid } from './spatial'
 import type { Planet, World } from './types'
 
@@ -32,4 +33,5 @@ export function stepWorld(w: World): void {
   w.t += SIM_DT
   w.tick++
   stepPopulation(w)
+  stepShips(w)
 }
