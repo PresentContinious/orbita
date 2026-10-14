@@ -17,11 +17,13 @@ import threading
 import time
 from datetime import datetime, timezone
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
-from urllib.parse import unquote, urlparse
+from urllib.parse import parse_qs, unquote, urlparse
 
 AQUI = os.path.dirname(os.path.abspath(__file__))
 ACTIVO_S = 120
 MAX_TEXTO = 600
+MAX_EVENTOS = 300
+MAX_EVENTO = 4000
 CHARS_TOKEN = 4
 TOKENS_IMAGEN = 1600
 CAMPOS = ("input_tokens", "cache_creation_input_tokens", "cache_read_input_tokens", "output_tokens")
@@ -60,6 +62,7 @@ class Registro:
         self.flujos = {}
         self.rutas = {}
         self.mensajes = collections.deque(maxlen=10)
+        self.eventos = collections.deque(maxlen=MAX_EVENTOS)
         self.ult_id = None
         self.final = False
         self.malas = 0
@@ -131,6 +134,44 @@ def texto_final(entrada):
     return ""
 
 
+def evento(reg, tipo, hora, texto, **extra):
+    """лента агента: задание, слова, мысли, вызовы инструментов, результаты"""
+    e = {"k": tipo, "t": hora, "x": recortar(texto, MAX_EVENTO)}
+    e.update(extra)
+    reg.eventos.append(e)
+
+
+def detalle(nombre, entrada):
+    """подробности вызова инструмента для ленты"""
+    if nombre in ("Edit", "MultiEdit"):
+        return "%s\n— было:\n%s\n— стало:\n%s" % (cadena(entrada.get("file_path")), cadena(entrada.get("old_string")), cadena(entrada.get("new_string")))
+    if nombre == "Write":
+        return "%s\n%s" % (cadena(entrada.get("file_path")), cadena(entrada.get("content")))
+    if nombre in ("Bash", "PowerShell"):
+        return cadena(entrada.get("command"))
+    if nombre in ("Agent", "Task"):
+        return cadena(entrada.get("prompt"))
+    try:
+        return json.dumps(entrada, ensure_ascii=False, indent=1)
+    except (TypeError, ValueError):
+        return ""
+
+
+def texto_resultado(contenido):
+    if isinstance(contenido, str):
+        return contenido
+    partes = []
+    if isinstance(contenido, list):
+        for b in contenido:
+            if not isinstance(b, dict):
+                continue
+            if b.get("type") == "image":
+                partes.append("[изображение]")
+            elif isinstance(b.get("text"), str):
+                partes.append(b["text"])
+    return "\n".join(partes)
+
+
 def anadir_mensaje(reg, rol, hora, texto, mid=None):
     texto = recortar(texto)
     if mid and reg.ult_id == mid and reg.mensajes and reg.mensajes[-1]["rol"] == rol:
@@ -166,6 +207,9 @@ def asistente(reg, d):
             tipo = b.get("type")
             if tipo == "text" and isinstance(b.get("text"), str) and b["text"].strip():
                 textos.append(b["text"])
+                evento(reg, "say", d.get("timestamp"), b["text"])
+            elif tipo == "thinking" and isinstance(b.get("thinking"), str) and b["thinking"].strip():
+                evento(reg, "think", d.get("timestamp"), b["thinking"])
             elif tipo in ("tool_use", "server_tool_use"):
                 herramienta = True
                 tid = b.get("id")
@@ -177,6 +221,7 @@ def asistente(reg, d):
                 reg.llamadas[grupo(nombre)] += 1
                 entrada = b.get("input") if isinstance(b.get("input"), dict) else {}
                 reg.accion = una_linea(accion(nombre, entrada), 160)
+                evento(reg, "tool", d.get("timestamp"), una_linea(accion(nombre, entrada), 200), n=nombre, d=recortar(detalle(nombre, entrada), MAX_EVENTO))
                 if nombre == "Workflow" and tid and isinstance(entrada.get("scriptPath"), str):
                     reg.rutas[tid] = entrada["scriptPath"]
                 if nombre in ("StructuredOutput", "SubagentHandback"):
@@ -220,6 +265,7 @@ def usuario(reg, d):
                 r[1] += imagenes
                 r[2] += 1
                 reg.final = nombre == "StructuredOutput" and not b.get("is_error")
+                evento(reg, "res", d.get("timestamp"), texto_resultado(b.get("content")), n=nombre, err=bool(b.get("is_error")))
             elif b.get("type") == "text" and isinstance(b.get("text"), str):
                 textos.append(b["text"])
         if resultado:
@@ -233,6 +279,7 @@ def usuario(reg, d):
     if not reg.prompt:
         reg.prompt = una_linea(texto, 200)
     anadir_mensaje(reg, "user", d.get("timestamp"), texto)
+    evento(reg, "ask", d.get("timestamp"), texto)
 
 
 def procesar(reg, d):
@@ -965,6 +1012,30 @@ def carpeta_proyecto():
 CARPETA = carpeta_proyecto()
 
 
+def eventos(base, sid, k):
+    """лента одного участника сессии: k = 'chat' | 'ag:<агент>' | 'ag:<конвейер>/<агент>'"""
+    if not ID_OK.match(sid or "") or not isinstance(k, str):
+        return None
+    ruta = None
+    with _cerrojo:
+        if k == "chat":
+            ruta = ficheros_sesion(base).get(sid)
+        elif k.startswith("ag:"):
+            wid, _, aid = k[3:].rpartition("/")
+            if not ID_OK.match(aid) or (wid and not ID_OK.match(wid)):
+                return None
+            for c in carpetas(base):
+                d = os.path.join(c, sid, "subagents")
+                p = os.path.join(d, "workflows", wid, "agent-%s.jsonl" % aid) if wid else os.path.join(d, "agent-%s.jsonl" % aid)
+                if os.path.isfile(p):
+                    ruta = p
+                    break
+        if not ruta:
+            return None
+        reg = leer(ruta)
+        return {"eventos": list(reg.eventos) if reg else []}
+
+
 class Manejador(BaseHTTPRequestHandler):
     base = CARPETA
 
@@ -1001,6 +1072,10 @@ class Manejador(BaseHTTPRequestHandler):
                 self.enviar(200, tareas())
             elif ruta == "/api/sesiones":
                 self.enviar(200, listar_sesiones(self.base))
+            elif ruta == "/api/eventos":
+                q = parse_qs(urlparse(self.path).query)
+                e = eventos(self.base, (q.get("s") or [""])[0], (q.get("k") or [""])[0])
+                self.enviar(200, e) if e is not None else self.enviar(404, {"error": "нет такого участника"})
             elif ruta.startswith("/api/sesion/"):
                 s = sesion(self.base, unquote(ruta[len("/api/sesion/"):]))
                 self.enviar(200, s) if s else self.enviar(404, {"error": "sesion desconocida"})

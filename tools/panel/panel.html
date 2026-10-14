@@ -154,6 +154,21 @@ body.vista-tareas #lista { display: none; }
 .tarea .que { grid-column: 1; color: #4b5563; font-size: 13px; }
 .tarea .est { grid-row: 1 / span 2; grid-column: 2; align-self: start; text-align: right; }
 .tarea .por { display: block; margin-top: 4px; color: var(--suave); font-size: 12px; max-width: 260px; }
+.lenta { max-height: 560px; overflow-y: auto; padding: 2px 4px; font-size: 13px; }
+.ev { display: block; padding: 6px 0; border-bottom: 1px dashed #e5e7eb; }
+.ev:last-child { border-bottom: 0; }
+.ev-h { font-size: 11.5px; color: var(--suave); margin-right: 6px; }
+.ev-x { white-space: pre-wrap; word-break: break-word; margin-top: 2px; }
+.ev.think .ev-x { color: #6b21a8; font-style: italic; }
+.ev.ask .ev-x { color: #5b21b6; }
+.ev.say .ev-x { color: #111827; }
+details.ev summary { cursor: pointer; list-style: none; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+details.ev summary::-webkit-details-marker { display: none; }
+details.ev pre { margin: 6px 0 2px; padding: 8px 10px; background: #f6f7f9; border-radius: 6px; white-space: pre-wrap; word-break: break-word; font-size: 12px; max-height: 340px; overflow: auto; }
+details.ev.tool summary b { color: #1d4ed8; }
+details.ev.res summary { color: var(--suave); }
+details.ev.res.err summary { color: #b91c1c; font-weight: 600; }
+.lenta-pie { color: var(--suave); font-size: 11.5px; margin-top: 4px; }
 @media (max-width: 900px) {
   main { grid-template-columns: minmax(0, 1fr); padding: 12px 16px; }
   #lista { position: static; max-height: 260px; }
@@ -199,7 +214,7 @@ body.vista-tareas #lista { display: none; }
           <span class="zoom"><button type="button" data-z="-1" title="мельче">−</button><button type="button" data-z="0" title="обычный размер">100%</button><button type="button" data-z="1" title="крупнее">+</button></span>
         </div>
         <div class="lienzo" id="lienzo"></div>
-        <div class="nota">Наведите на прямоугольник: подробности. Клик: последние 10 сообщений. Клик по заголовку конвейера: свернуть или развернуть. Схему можно тянуть мышью.</div>
+        <div class="nota">Наведите на прямоугольник: подробности. Клик: лента агента. Клик по заголовку конвейера: свернуть или развернуть. Схему можно тянуть мышью.</div>
       </div>
     </section>
   </div>
@@ -321,7 +336,7 @@ function listaMensajes(n) {
 }
 
 function mensajes(n, k) {
-  return '<tr class="detalle" data-det="' + esc(k) + '"><td colspan="7">' + listaMensajes(n) + '</td></tr>';
+  return '<tr class="detalle" data-det="' + esc(k) + '"><td colspan="7"><div class="lenta" data-lenta="' + esc(k) + '"></div></td></tr>';
 }
 
 function texto(n) {
@@ -400,7 +415,7 @@ function pintarTabla() {
     '<div class="cifras">' + cifras.map(c => '<div class="cifra ' + c[0] + '" title="' + exacto(c[2]) + '"><b>' + fmt(c[2]) + '</b><span>' + c[1] + '</span></div>').join('') + '</div></div>';
   h += '<div class="bloque">' + barraParticipantes(d, col) + '<div class="separa"></div>' + barraHerramientas(d) + '</div>';
   h += '<div class="bloque">' + arbol(d, col) +
-    '<div class="nota">«работает»: файл агента менялся за последние 2 минуты. Клик по строке: последние 10 сообщений.' + (d.totales.malas ? ' Пропущено битых строк: ' + d.totales.malas + '.' : '') + '</div></div>';
+    '<div class="nota">«работает»: файл агента менялся за последние 2 минуты. Клик по строке: лента агента — задание, что говорит, каждое действие и результат.' + (d.totales.malas ? ' Пропущено битых строк: ' + d.totales.malas + '.' : '') + '</div></div>';
   cont.innerHTML = h;
 }
 
@@ -653,8 +668,10 @@ function pintarCajon() {
     chip(n.estado) + (n.bloqueado ? ' ' + chip('bloq') : '') + ' ' + fmt(val(t)) + ' ток. · ' + dur(n.duracion_s) + ' · вызовов ' + (n.llamadas || 0) +
     '<span id="cajonHace"></span><br>вход ' + exacto(t.entrada) + ', запись кэша ' + exacto(t.cache_escritura) + ', чтение кэша ' + exacto(t.cache_lectura) + ', выход ' + exacto(t.salida) + '</div>' +
     (n.ultima_accion ? '<div class="meta">последний шаг: ' + esc(n.ultima_accion) + '</div>' : '') +
-    '<h4>Последние сообщения</h4>' + listaMensajes(n);
+    '<h4>Лента: задание, слова, мысли, действия и результаты</h4><div class="lenta" data-lenta="' + esc(selNodo) + '"></div>' +
+    '<div class="lenta-pie">Внутренние рассуждения агентов сервер хранит зашифрованными — видно то, что агент написал и сделал. Клик по действию или результату: подробности.</div>';
   if (html !== cajonHtml) { c.innerHTML = html; cajonHtml = html; }
+  pintarLentas();
   const span = document.getElementById('cajonHace'), txt = h != null ? ' · последняя запись ' + dur(h) + ' назад' : '';
   if (span.textContent !== txt) span.textContent = txt;
   c.hidden = false;
@@ -680,6 +697,67 @@ function globoHtml(k) {
 
 function pintarSesion() {
   if (vista === 'esquema') pintarEsquema(); else pintarTabla();
+  pintarLentas();
+}
+
+// ---------- лента агента ----------
+const lentas = {};
+const pintado = new WeakMap();
+const ICONO = { ask: '📝 задание', say: '💬 говорит', think: '💭 думает' };
+
+function sinNombre(e) {
+  const x = String(e.x || '');
+  return x.startsWith(e.n + ': ') ? x.slice(e.n.length + 2) : x;
+}
+
+function eventoHtml(e, i) {
+  const h = '<span class="ev-h">' + esc(hora(e.t)) + '</span>';
+  if (e.k === 'tool') return '<details class="ev tool" data-i="' + i + '"><summary>' + h + '🔧 <b>' + esc(e.n) + '</b> ' + esc(sinNombre(e)) + '</summary>' + (e.d ? '<pre>' + esc(e.d) + '</pre>' : '') + '</details>';
+  if (e.k === 'res') return '<details class="ev res' + (e.err ? ' err' : '') + '" data-i="' + i + '"><summary>' + h + '↳ ' + (e.err ? 'ошибка: ' : 'результат: ') + esc(corta(String(e.x || '').replace(/\s+/g, ' '), 200)) + '</summary><pre>' + esc(e.x) + '</pre></details>';
+  return '<div class="ev ' + esc(e.k) + '">' + h + '<span class="ev-h">' + (ICONO[e.k] || '') + '</span><div class="ev-x">' + esc(e.x) + '</div></div>';
+}
+
+async function cargarLenta(k) {
+  const c = lentas[k] || (lentas[k] = { json: '', html: '', t: 0, cargando: false });
+  if (c.cargando || Date.now() - c.t < 4000 || !sel) return;
+  c.cargando = true;
+  try {
+    const t = await pedir('/api/eventos?s=' + encodeURIComponent(sel) + '&k=' + encodeURIComponent(k));
+    if (t !== c.json) {
+      c.json = t;
+      const ev = JSON.parse(t).eventos || [];
+      c.html = ev.length ? ev.map(eventoHtml).join('') : '<div class="gris">записей пока нет</div>';
+    }
+  } catch (e) {
+    c.html = c.html || '<div class="gris">не удалось загрузить ленту</div>';
+  } finally {
+    c.t = Date.now();
+    c.cargando = false;
+  }
+  pintarLentas();
+}
+
+function pintarLentas() {
+  document.querySelectorAll('[data-lenta]').forEach(el => {
+    const k = el.dataset.lenta, c = lentas[k];
+    if (!c || !c.html) {
+      if (!el.innerHTML) el.innerHTML = '<div class="gris">загрузка ленты…</div>';
+      cargarLenta(k);
+      return;
+    }
+    if (pintado.get(el) === c.html) return;
+    const primera = !pintado.has(el);
+    const abajo = el.scrollHeight - el.scrollTop - el.clientHeight < 40;
+    const abiertos = new Set([...el.querySelectorAll('details[open]')].map(x => x.dataset.i));
+    el.innerHTML = c.html;
+    pintado.set(el, c.html);
+    el.querySelectorAll('details').forEach(x => { if (abiertos.has(x.dataset.i)) x.open = true; });
+    if (primera || abajo) el.scrollTop = el.scrollHeight;
+  });
+}
+
+function refrescarLentas() {
+  document.querySelectorAll('[data-lenta]').forEach(el => cargarLenta(el.dataset.lenta));
 }
 
 function ponerVista(v) {
@@ -764,6 +842,7 @@ async function refrescar(forzar) {
     if (forzar || ts !== jsonSesion) { jsonSesion = ts; datos = ts && ts !== 'null' ? JSON.parse(ts) : null; pintarSesion(); }
     else if (vista === 'esquema') pintarCajon();
     if (nuevaLista) pintarLista();
+    refrescarLentas();
     est.className = '';
     est.textContent = 'обновлено ' + hora(new Date().toISOString()) + ' · каждые 5 с';
   } catch (e) {
@@ -779,6 +858,7 @@ document.getElementById('lista').addEventListener('click', ev => {
   if (!s || s.dataset.s === sel) return;
   sel = s.dataset.s;
   abiertos.clear();
+  for (const k in lentas) delete lentas[k];
   selNodo = null;
   history.replaceState(null, '', '#' + encodeURIComponent(sel));
   pintarLista();
