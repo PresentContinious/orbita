@@ -6,20 +6,32 @@ const ev = (id: number, pri: 0 | 1 | 2): GameEvent => ({ id, t: 0, kind: 'x', pr
 
 describe('всплывающие события', () => {
   test('новые P0/P1 появляются, P2 — нет; живут 8 и 5 с', () => {
-    const r = updateToasts([], [ev(1, 0), ev(2, 1), ev(3, 2)], 0, 100)
+    const r = updateToasts([], [ev(1, 0), ev(2, 1), ev(3, 2)], 0, 100, 1)
     expect(r.toasts.map((t) => [t.ev.id, t.until])).toEqual([[1, 108], [2, 105]])
     expect(r.lastId).toBe(3)
     expect(updateToasts(r.toasts, [], r.lastId, 106).toasts.map((t) => t.ev.id)).toEqual([1])
   })
 
   test('не больше трёх; лишние P1 вытесняются раньше P0', () => {
-    const r = updateToasts([], [ev(1, 0), ev(2, 1), ev(3, 1), ev(4, 1)], 0, 0)
+    const r = updateToasts([], [ev(1, 0), ev(2, 1), ev(3, 1), ev(4, 1)], 0, 0, 1)
     expect(r.toasts.map((t) => t.ev.id)).toEqual([1, 3, 4])
   })
 
   test('уже показанные события не повторяются', () => {
-    const r = updateToasts([], [ev(1, 1)], 0, 0)
-    expect(updateToasts([], [ev(1, 1)], r.lastId, 1).toasts).toEqual([])
+    const r = updateToasts([], [ev(1, 1)], 0, 0, 1)
+    expect(updateToasts([], [ev(1, 1)], r.lastId, 1, 1).toasts).toEqual([])
+  })
+})
+
+describe('фильтр всплывашек', () => {
+  test('по умолчанию («важное») только pri 0', () => {
+    const r = updateToasts([], [ev(1, 0), ev(2, 1), ev(3, 2)], 0, 0)
+    expect(r.toasts.map((t) => t.ev.id)).toEqual([1])
+    expect(r.lastId).toBe(3)
+  })
+  test('«всё» (maxPri 1) добавляет pri 1, но не pri 2', () => {
+    const r = updateToasts([], [ev(1, 0), ev(2, 1), ev(3, 2)], 0, 0, 1)
+    expect(r.toasts.map((t) => t.ev.id)).toEqual([1, 2])
   })
 })
 

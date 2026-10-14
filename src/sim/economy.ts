@@ -274,13 +274,13 @@ function stageEvent(w: World, civ: Civ, was: Stage): void {
   const now = civ.eco.stage
   const at = { system: capitalSystem(w, civ), planet: civ.capital }
   if (now === 'ok') {
-    pushEvent(w, { kind: 'recovered', pri: 1, text: `💰 ${civ.name} выбралось из долгов`, civs: [civ.id], at })
+    pushEvent(w, { kind: 'recovered', pri: 1, text: `${civ.name} выбралось из долгов`, civs: [civ.id], at })
     return
   }
   if (BADNESS[now] <= BADNESS[was]) return
-  if (now === 'deficit') pushEvent(w, { kind: 'deficit', pri: 1, text: `💸 ${civ.name} не сводит бюджет`, civs: [civ.id], at })
-  if (now === 'crisis') pushEvent(w, { kind: 'crisis', pri: 1, text: `📉 ${civ.name}: финансовый кризис — стройки встали`, civs: [civ.id], at })
-  if (now === 'bankrupt') pushEvent(w, { kind: 'bankrupt', pri: 0, text: `🏚 ${civ.name} обанкротилось — корабли идут на слом`, civs: [civ.id], at })
+  if (now === 'deficit') pushEvent(w, { kind: 'deficit', pri: 1, text: `${civ.name} не сводит бюджет`, civs: [civ.id], at })
+  if (now === 'crisis') pushEvent(w, { kind: 'crisis', pri: 1, text: `${civ.name}: финансовый кризис — стройки встали`, civs: [civ.id], at })
+  if (now === 'bankrupt') pushEvent(w, { kind: 'bankrupt', pri: 0, text: `${civ.name} обанкротилось — корабли идут на слом`, civs: [civ.id], at })
 }
 
 /** банкрот списывает самый дорогой в содержании корабль (кроме колонистов), а без кораблей — продаёт станцию */
@@ -302,8 +302,8 @@ function decommission(w: World, civ: Civ): void {
     pushEvent(w, {
       kind: 'decommission',
       pri: 2,
-      text: `✂️ ${civ.name} списывает корабль за долги`,
-      textMany: (n) => `✂️ ${civ.name} списало ${n} кораблей за долги`,
+      text: `${civ.name} списывает корабль за долги`,
+      textMany: (n) => `${civ.name} списало ${n} кораблей за долги`,
       civs: [civ.id],
       at: { system: victim.systemId },
     })
@@ -318,8 +318,8 @@ function decommission(w: World, civ: Civ): void {
   pushEvent(w, {
     kind: 'station-sold',
     pri: 2,
-    text: `✂️ ${civ.name} продаёт станцию на ${station.name}`,
-    textMany: (n) => `✂️ ${civ.name} продало ${n} станций за долги`,
+    text: `${civ.name} продаёт станцию на ${station.name}`,
+    textMany: (n) => `${civ.name} продало ${n} станций за долги`,
     civs: [civ.id],
     at: { system: station.systemId, planet: station.id },
   })

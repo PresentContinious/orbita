@@ -36,6 +36,7 @@ export interface Snapshot {
   follow: boolean
   minimapOn: boolean
   feedOpen: boolean
+  feedAll: boolean
   crumbs: Crumb[]
   civs: CivSummary[]
   toasts: Toast[]
@@ -91,10 +92,11 @@ export function buildSnapshot(w: World, c: Controller, model: UiModel): Snapshot
     follow: c.ui.follow,
     minimapOn: c.ui.minimap,
     feedOpen: c.ui.feedOpen,
+    feedAll: c.ui.feedAll,
     crumbs: c.crumbs(),
     civs,
     toasts: model.toasts,
-    feed: c.ui.feedOpen ? w.events.slice(-200).reverse() : [],
+    feed: c.ui.feedOpen ? w.events.filter((e) => e.pri <= (c.ui.feedAll ? 1 : 0)).slice(-200).reverse() : [],
     card: c.civCardId !== null && !c.ui.selected ? civCard(w, c.civCardId) : cardFor(w, c.ui.selected),
     hover: (() => {
       if (!c.hoverReady()) return null

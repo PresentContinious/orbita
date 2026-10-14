@@ -19,6 +19,8 @@ export interface UiState {
   follow: boolean
   minimap: boolean
   feedOpen: boolean
+  /** false: в ленте и всплывашках только pri 0; true: pri 0-1 */
+  feedAll: boolean
   selected: Pick | null
   hovered: Pick | null
   mouse: { x: number; y: number }
@@ -28,7 +30,7 @@ export interface UiState {
 const APPROACH_R = 420
 
 export class Controller {
-  readonly ui: UiState = { speedIndex: 0, paused: false, follow: false, minimap: true, feedOpen: false, selected: null, hovered: null, mouse: { x: 0, y: 0 } }
+  readonly ui: UiState = { speedIndex: 0, paused: false, follow: false, minimap: true, feedOpen: false, feedAll: false, selected: null, hovered: null, mouse: { x: 0, y: 0 } }
   protected now = 0
   private focus: Focus | null = null
   private seenEvent = 0
@@ -71,6 +73,10 @@ export class Controller {
 
   toggleMinimap(): void {
     this.ui.minimap = !this.ui.minimap
+  }
+
+  toggleFeedAll(): void {
+    this.ui.feedAll = !this.ui.feedAll
   }
 
   toggleFeed(): void {

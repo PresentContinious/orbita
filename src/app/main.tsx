@@ -57,7 +57,7 @@ async function boot(): Promise<void> {
     uiT += dt
     if (uiT >= 0.2) {
       uiT = 0
-      model.tick(world, performance.now() / 1000)
+      model.tick(world, performance.now() / 1000, controller.ui.feedAll ? 1 : 0)
       store.set(buildSnapshot(world, controller, model))
     }
     const i = frameStats.n % RING

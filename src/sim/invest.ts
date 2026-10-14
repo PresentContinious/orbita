@@ -56,8 +56,8 @@ export function advanceJobs(w: World, civ: Civ): void {
       pushEvent(w, {
         kind: 'infra',
         pri: 2,
-        text: `🏗 ${civ.name} подняло инфраструктуру ${p.name} до ${ROMAN[b.level]}`,
-        textMany: (n) => `🏗 ${civ.name} достроило инфраструктуру на ${n} планетах`,
+        text: `${civ.name} подняло инфраструктуру ${p.name} до ${ROMAN[b.level]}`,
+        textMany: (n) => `${civ.name} достроило инфраструктуру на ${n} планетах`,
         civs: [civ.id],
         at: { system: p.systemId, planet: p.id },
       })
@@ -65,8 +65,8 @@ export function advanceJobs(w: World, civ: Civ): void {
       pushEvent(w, {
         kind: 'station',
         pri: 2,
-        text: `🛰 ${civ.name} построило станцию на ${p.name}`,
-        textMany: (n) => `🛰 ${civ.name} построило ${n} станций`,
+        text: `${civ.name} построило станцию на ${p.name}`,
+        textMany: (n) => `${civ.name} построило ${n} станций`,
         civs: [civ.id],
         at: { system: p.systemId, planet: p.id },
       })
@@ -78,7 +78,7 @@ export function advanceJobs(w: World, civ: Civ): void {
       const kind = civ.project.kind
       civ.project = null
       civ[kind] = true
-      const text = kind === 'port' ? `⚓ ${civ.name} открыло торговый порт` : `🛠 ${civ.name} построило верфь`
+      const text = kind === 'port' ? `${civ.name} открыло торговый порт` : `${civ.name} построило верфь`
       pushEvent(w, { kind, pri: 1, text, civs: [civ.id], at: { system: capitalSystem(w, civ), planet: civ.capital } })
     }
   }
@@ -91,7 +91,7 @@ export function advanceJobs(w: World, civ: Civ): void {
       pushEvent(w, {
         kind: 'research',
         pri: 1,
-        text: `🔬 ${civ.name} открыло ${RESEARCH[branch].label} ${ROMAN[level]}`,
+        text: `${civ.name} открыло ${RESEARCH[branch].label} ${ROMAN[level]}`,
         civs: [civ.id],
         at: { system: capitalSystem(w, civ), planet: civ.capital },
       })

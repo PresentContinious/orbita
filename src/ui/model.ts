@@ -10,13 +10,13 @@ export const TOAST_LIFE: Record<0 | 1, number> = { 0: 8, 1: 5 }
 export const MAX_TOASTS = 3
 
 /** новые P0/P1 события становятся всплывашками; не больше трёх, лишние P1 уходят первыми */
-export function updateToasts(toasts: Toast[], events: GameEvent[], lastId: number, now: number): { toasts: Toast[]; lastId: number } {
+export function updateToasts(toasts: Toast[], events: GameEvent[], lastId: number, now: number, maxPri: 0 | 1 = 0): { toasts: Toast[]; lastId: number } {
   const next = toasts.filter((t) => t.until > now)
   let maxId = lastId
   for (const ev of events) {
     if (ev.id <= lastId) continue
     maxId = Math.max(maxId, ev.id)
-    if (ev.pri === 2) continue
+    if (ev.pri === 2 || ev.pri > maxPri) continue
     next.push({ ev, until: now + TOAST_LIFE[ev.pri] })
   }
   while (next.length > MAX_TOASTS) {
@@ -51,8 +51,8 @@ export class UiModel {
   lastId = 0
   readonly trends = new TrendTracker()
 
-  tick(w: World, now: number): void {
-    const r = updateToasts(this.toasts, w.events, this.lastId, now)
+  tick(w: World, now: number, maxPri: 0 | 1 = 0): void {
+    const r = updateToasts(this.toasts, w.events, this.lastId, now, maxPri)
     this.toasts = r.toasts
     this.lastId = r.lastId
   }

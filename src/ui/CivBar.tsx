@@ -1,4 +1,5 @@
 import { fmtRate } from './format'
+import { EventIcon } from './icons'
 import type { CivSummary } from './snapshot'
 
 const ARROW = { 1: '↑', 0: '→', [-1]: '↓' } as const
@@ -13,7 +14,7 @@ export function CivBar({ civs, onPick, onFeed }: { civs: CivSummary[]; onPick: (
             <b>{c.name}</b>
             <span className="muted">{c.planets}пл</span>
             <span className={c.trend > 0 ? 'good' : c.trend < 0 ? 'bad' : 'muted'}>{ARROW[c.trend]}</span>
-            {c.stage !== 'ok' && <span title="долги">💸</span>}
+            {c.stage !== 'ok' && <span className="bad" title="долги"><EventIcon kind="deficit" size={12} /></span>}
           </button>
         ))}
       </div>

@@ -4,8 +4,8 @@
 
 ## src/
 
-- `src/app/controller.ts` — 278 стр.
-  - `Crumb` (interface, 11), `UiState` (interface, 16), `Controller` (class, 30)
+- `src/app/controller.ts` — 284 стр.
+  - `Crumb` (interface, 11), `UiState` (interface, 16), `Controller` (class, 32)
 - `src/app/director.ts` — 20 стр.
   - `Focus` (interface, 3), `pickFocus` (function, 10)
 - `src/app/input.ts` — 105 стр.
@@ -79,28 +79,30 @@
   - `Breadcrumbs` (function, 3)
 - `src/ui/Card.tsx` — 24 стр.
   - `Card` (function, 3)
-- `src/ui/CivBar.tsx` — 26 стр.
-  - `CivBar` (function, 6)
-- `src/ui/FeedDrawer.tsx` — 23 стр.
-  - `FeedDrawer` (function, 4)
-- `src/ui/Hud.tsx` — 30 стр.
+- `src/ui/CivBar.tsx` — 27 стр.
+  - `CivBar` (function, 7)
+- `src/ui/FeedDrawer.tsx` — 49 стр.
+  - `FeedDrawer` (function, 5)
+- `src/ui/Hud.tsx` — 32 стр.
   - `Hud` (function, 14)
 - `src/ui/Minimap.tsx` — 58 стр.
   - `Minimap` (function, 7)
 - `src/ui/TimeControls.tsx` — 42 стр.
   - `TimeControls` (function, 5)
-- `src/ui/Toasts.tsx` — 15 стр.
-  - `Toasts` (function, 4)
+- `src/ui/Toasts.tsx` — 21 стр.
+  - `Toasts` (function, 5)
 - `src/ui/Tooltip.tsx` — 16 стр.
   - `Tooltip` (function, 3)
 - `src/ui/cards.ts` — 144 стр.
   - `CardRow` (interface, 9), `CardData` (interface, 15), `planetCard` (function, 29), `systemCard` (function, 62), `civCard` (function, 75), `missionText` (function, 99), `shipCard` (function, 121), `cardFor` (function, 138)
 - `src/ui/format.ts` — 30 стр.
   - `yearOf` (const, 3), `fmtInt` (function, 6), `fmtPop` (const, 11), `fmtRate` (function, 14), `fmtCredits` (const, 19), `fmtDuration` (function, 21), `roman` (const, 27), `hex` (const, 29)
+- `src/ui/icons.tsx` — 75 стр.
+  - `IconName` (type, 3), `KIND_ICON` (const, 6), `iconFor` (const, 22), `EventIcon` (function, 56)
 - `src/ui/model.ts` — 60 стр.
   - `Toast` (interface, 3), `TOAST_LIFE` (const, 9), `MAX_TOASTS` (const, 10), `updateToasts` (function, 13), `TrendTracker` (class, 30), `UiModel` (class, 49)
-- `src/ui/snapshot.ts` — 107 стр.
-  - `CivSummary` (interface, 12), `MinimapData` (interface, 24), `Snapshot` (interface, 31), `buildSnapshot` (function, 69)
+- `src/ui/snapshot.ts` — 109 стр.
+  - `CivSummary` (interface, 12), `MinimapData` (interface, 24), `Snapshot` (interface, 31), `buildSnapshot` (function, 70)
 - `src/ui/store.ts` — 24 стр.
   - `Store` (interface, 3), `createStore` (function, 9)
 
@@ -139,5 +141,6 @@
 - `tests/sim/world.test.ts` — 83 стр.
 - `tests/ui/cards.test.ts` — 56 стр.
 - `tests/ui/format.test.ts` — 27 стр.
-- `tests/ui/model.test.ts` — 37 стр.
+- `tests/ui/icons.test.ts` — 26 стр.
+- `tests/ui/model.test.ts` — 49 стр.
 - `tests/ui/snapshot.test.ts` — 23 стр.

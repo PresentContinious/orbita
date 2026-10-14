@@ -207,7 +207,7 @@ export function execute(w: World, civ: Civ, o: Option): boolean {
       if (newLink) {
         const sa = w.galaxy.systems[a.systemId]
         const sb = w.galaxy.systems[b.systemId]
-        pushEvent(w, { kind: 'trade-route', pri: 1, text: `🛤 ${civ.name} открыло торговую трассу ${sa.name} — ${sb.name}`, civs: [civ.id], at: { system: a.systemId } })
+        pushEvent(w, { kind: 'trade-route', pri: 1, text: `${civ.name} открыло торговую трассу ${sa.name} — ${sb.name}`, civs: [civ.id], at: { system: a.systemId } })
       }
       return true
     }

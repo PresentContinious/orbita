@@ -112,9 +112,9 @@ function settle(w: World, ship: Ship): void {
   const sys = w.galaxy.systems[p.systemId]
   const at = { system: p.systemId, planet: p.id }
   if (p.systemId !== civ.homeSystem) {
-    pushEvent(w, { kind: 'colony', pri: 0, text: `🌌 ${civ.name} основало колонию в системе ${sys.name}: ${p.name}`, civs: [civ.id], at })
+    pushEvent(w, { kind: 'colony', pri: 0, text: `${civ.name} основало колонию в системе ${sys.name}: ${p.name}`, civs: [civ.id], at })
   } else {
-    pushEvent(w, { kind: 'colony', pri: 1, text: `🏙 ${civ.name} основало колонию на ${p.name}`, civs: [civ.id], at })
+    pushEvent(w, { kind: 'colony', pri: 1, text: `${civ.name} основало колонию на ${p.name}`, civs: [civ.id], at })
   }
 }
 
