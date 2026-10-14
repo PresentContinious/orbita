@@ -3,7 +3,8 @@ import { TAU } from '../sim/math'
 import { findPath, gateGalaxyPos, gateTo } from '../sim/routing'
 import type { World } from '../sim/types'
 import { worldToScreen, type Camera, type LodInfo, type View } from './camera'
-import { territoryShares } from './territory'
+import { territoryShares, type Share } from './territory'
+import { cloudSpots, pieceEdges, systemPieces, zoneRadius, type Sector } from './zones'
 
 const LABEL = { fontFamily: 'JetBrains Mono, monospace', fontSize: 12, fill: 0xcfe0ff, letterSpacing: 1.5 }
 
@@ -22,8 +23,24 @@ export class GalaxyLayer {
   private tradeAt = -Infinity
   private tradeZ = 0
   private hopsSet = new Set<string>()
+  /** вариант отрисовки территорий: a — карта с границами, b — облака (?territory=a|b) */
+  private readonly mode: 'a' | 'b' =
+    typeof location !== 'undefined' && new URLSearchParams(location.search).get('territory') === 'b' ? 'b' : 'a'
+  private readonly zoneGfx = new Graphics()
+  private readonly cloudBox = new Container()
+  private readonly clouds: Sprite[][] = []
+  private readonly glow: Texture
+  private readonly sites: { x: number; y: number }[]
+  private readonly radii: number[]
+  private shares: Share[][] = []
+  private sig = ''
+  private sharesAt = -Infinity
 
   constructor(w: World, glow: Texture) {
+    this.glow = glow
+    this.sites = w.galaxy.systems.map((s) => s.pos)
+    this.radii = this.sites.map((_, i) => zoneRadius(this.sites, i))
+    this.shares = w.galaxy.systems.map(() => [])
     for (const c of w.galaxy.corridors) {
       const A = w.galaxy.systems[c.a]
       const B = w.galaxy.systems[c.b]
@@ -54,6 +71,7 @@ export class GalaxyLayer {
       this.names.push(name)
       this.labels.addChild(name)
     }
+    this.under.addChildAt(this.mode === 'a' ? this.zoneGfx : this.cloudBox, 0)
     this.under.addChild(this.corridors, this.spokes, this.trade)
     this.over.addChild(this.rings)
   }
@@ -62,6 +80,7 @@ export class GalaxyLayer {
     const z = cam.zoom
     let focus = 0
     this.rings.clear()
+    this.refreshZones(w)
     w.galaxy.systems.forEach((s, i) => {
       const L = lods[i]
       focus = Math.max(focus, L.approachAlpha)
@@ -69,12 +88,12 @@ export class GalaxyLayer {
       const icon = this.icons[i]
       icon.scale.set(28 / 128 / z)
       icon.alpha = far
-      const shares = territoryShares(w, s)
+      const shares = this.shares[i]
       const halo = this.halos[i]
       if (shares.length) {
         halo.tint = shares[0].color
         halo.scale.set(150 / 128 / z)
-        halo.alpha = 0.35 * far
+        halo.alpha = 0.2 * far
       } else {
         halo.alpha = 0
       }
@@ -95,6 +114,8 @@ export class GalaxyLayer {
       name.position.set(sp.x, sp.y + 18)
       name.alpha = (1 - L.systemAlpha) * 0.9
     })
+    this.zoneGfx.alpha = 1 - focus
+    this.cloudBox.alpha = 1 - focus
     this.spokes.alpha = 1 - focus
     this.trade.alpha = 1 - focus
     let redraw = z !== this.tradeZ
@@ -106,6 +127,81 @@ export class GalaxyLayer {
     if (redraw) {
       this.tradeZ = z
       this.drawTrade(w, z)
+    }
+  }
+
+  /** доли держав — не чаще раза в 0.5 с игры; геометрия зон пересчитывается только при смене владения */
+  private refreshZones(w: World): void {
+    if (Math.abs(w.t - this.sharesAt) < 0.5) return
+    this.sharesAt = w.t
+    let sig = ''
+    const counts: number[] = []
+    w.galaxy.systems.forEach((s, i) => {
+      const sh = territoryShares(w, s)
+      this.shares[i] = sh
+      let n = 0
+      for (const p of s.planets) if (p.owner !== null && (p.pop > 0 || p.station)) n++
+      counts.push(n)
+      for (const x of sh) sig += `${x.civ}:${x.share.toFixed(2)},`
+      sig += `${n}|`
+    })
+    if (sig === this.sig) return
+    this.sig = sig
+    if (this.mode === 'a') this.buildMap()
+    else this.buildClouds(counts)
+  }
+
+  private buildMap(): void {
+    const g = this.zoneGfx
+    g.clear()
+    const parts = this.shares.map((sh, i) => systemPieces(this.sites, i, sh, this.radii[i]))
+    const sectors: Sector[][] = parts.map((p) => p.sectors)
+    for (const { pieces } of parts) {
+      for (const pc of pieces) {
+        const flat: number[] = []
+        for (const v of pc.poly) flat.push(v.x, v.y)
+        g.poly(flat).fill({ color: pc.color, alpha: 0.22 })
+      }
+    }
+    for (let i = 0; i < parts.length; i++) {
+      const wd = this.radii[i] * 0.025
+      for (const pc of parts[i].pieces) {
+        for (const e of pieceEdges(this.sites, sectors, pc)) {
+          g.moveTo(e.ax, e.ay).lineTo(e.bx, e.by)
+          if (e.bright) g.stroke({ width: wd * 0.7, color: 0xe6eeff, alpha: 0.6 })
+          else g.stroke({ width: wd * 1.6, color: pc.color, alpha: 0.4 })
+        }
+      }
+    }
+  }
+
+  private buildClouds(counts: number[]): void {
+    for (let i = 0; i < this.sites.length; i++) {
+      let pool = this.clouds[i]
+      if (!pool) {
+        pool = this.clouds[i] = []
+        for (let k = 0; k < 4; k++) {
+          const sp = new Sprite(this.glow)
+          sp.anchor.set(0.5)
+          sp.blendMode = 'normal'
+          this.cloudBox.addChild(sp)
+          pool.push(sp)
+        }
+      }
+      const spots = cloudSpots(this.sites[i], this.shares[i].slice(0, pool.length), counts[i], this.radii[i])
+      for (let k = 0; k < pool.length; k++) {
+        const sp = pool[k]
+        const c = spots[k]
+        if (!c) {
+          sp.visible = false
+          continue
+        }
+        sp.visible = true
+        sp.position.set(c.x, c.y)
+        sp.scale.set((c.r * 2) / 128)
+        sp.tint = c.color
+        sp.alpha = c.alpha
+      }
     }
   }
 

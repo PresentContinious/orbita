@@ -15,8 +15,8 @@
 - `src/app/main.tsx` — 76 стр.
 - `src/render/camera.ts` — 136 стр.
   - `View` (interface, 4), `Bounds` (interface, 9), `CamTarget` (interface, 16), `Fly` (interface, 22), `Camera` (interface, 29), `ZOOM_MAX` (const, 40), `LOD` (const, 41), `Lod` (type, 42), `LodInfo` (interface, 43), `createCamera` (function, 49), `worldToScreen` (function, 53), `screenToWorld` (function, 57), `galaxyBounds` (function, 61), `fitZoom` (function, 72), `galaxyZoom` (function, 77), `zoomAt` (function, 83), `flyDuration` (function, 91), `startFly` (function, 95), `updateCamera` (function, 103), `lodOf` (function, 127)
-- `src/render/galaxyLayer.ts` — 151 стр.
-  - `GalaxyLayer` (class, 11)
+- `src/render/galaxyLayer.ts` — 247 стр.
+  - `GalaxyLayer` (class, 12)
 - `src/render/hit.ts` — 47 стр.
   - `Pick` (type, 7), `pickAt` (function, 10)
 - `src/render/renderer.ts` — 41 стр.
@@ -31,6 +31,8 @@
   - `Share` (interface, 4), `territoryShares` (function, 11)
 - `src/render/textures.ts` — 127 стр.
   - `glowTexture` (function, 12), `PLANET_TEX` (const, 25), `PLANET_DISC` (const, 27), `planetTexture` (function, 43), `IconKind` (type, 89), `Atlas` (type, 90), `ICON_CELL` (const, 91), `ICON_BODY` (const, 93), `shipAtlas` (function, 96)
+- `src/render/zones.ts` — 216 стр.
+  - `Pt` (interface, 5), `Vert` (interface, 13), `ARC` (const, 16), `RADIAL` (const, 17), `SPLIT` (const, 18), `START_ANGLE` (const, 21), `zoneRadius` (function, 25), `clipHalfPlane` (function, 35), `zoneCell` (function, 55), `Sector` (interface, 76), `sectorsOf` (function, 84), `civAtAngle` (function, 97), `clipSector` (function, 107), `polyArea` (function, 126), `ZonePiece` (interface, 136), `systemPieces` (function, 143), `ZoneEdge` (interface, 157), `pieceEdges` (function, 167), `Spot` (interface, 188), `cloudSpots` (function, 198)
 - `src/sim/belts.ts` — 35 стр.
   - `asteroidPos` (const, 6), `asteroidVel` (const, 7), `nearestAsteroid` (function, 9), `stepAsteroids` (function, 25)
 - `src/sim/bot.ts` — 24 стр.
@@ -124,6 +126,7 @@
 - `tests/render/camera.test.ts` — 81 стр.
 - `tests/render/hit.test.ts` — 68 стр.
 - `tests/render/territory.test.ts` — 32 стр.
+- `tests/render/zones.test.ts` — 81 стр.
 - `tests/sim/bot.test.ts` — 127 стр.
 - `tests/sim/economy.test.ts` — 186 стр.
 - `tests/sim/events.test.ts` — 35 стр.
