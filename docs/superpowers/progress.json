@@ -9,8 +9,19 @@
     "7": { "status": "done", "note": "коммит 71c8c5f, ревью PASS" },
     "8": { "status": "done", "note": "коммит 9764bbc, ревью PASS" },
     "9": { "status": "done", "note": "коммит 7d89522, ревью PASS" },
-    "10": { "status": "active", "note": "implementer пишет" },
+    "10": { "status": "done", "note": "коммит ba7806f, ревью PASS" },
+    "11": { "status": "done", "note": "коммит cb89cb6, ревью PASS" },
+    "12": { "status": "done", "note": "коммит 3a2a002 (зерно теста 2→5), ревью PASS" },
+    "13": { "status": "done", "note": "коммит ff755c7, ревью PASS" },
+    "14": { "status": "fix", "note": "коммит 1ba79be, ревью PASS; веха 2: потолок конверта, колонисты; баланс — ждёт решения владельца" },
     "15": { "status": "done", "note": "коммит 152d20f + веха 1 (25b924b: galaxyZoom), ревью PASS" },
-    "16": { "status": "active", "note": "implementer пишет (параллельно, в worktree)" }
+    "16": { "status": "done", "note": "коммит a2fce67 + 38a08a3 (shot закрывает браузер), ревью PASS" },
+    "17": { "status": "done", "note": "коммиты 1dc54e8 + a085a20 + веха 3 (a13f52c: трассы на паузе), ревью PASS" },
+    "18": { "status": "done", "note": "коммит d9657df, ревью PASS" },
+    "19": { "status": "done", "note": "коммит 4421525 + веха 3 (a13f52c: плавная слежка, клик по летящему кораблю), ревью PASS" },
+    "20": { "status": "done", "note": "коммит 1a7af80, ревью PASS" },
+    "21": { "status": "done", "note": "коммиты d9c1f77 + 4d2375c, ревью PASS" },
+    "22": { "status": "done", "note": "коммиты a0d95b9 + 1ebb3d9, ревью PASS" },
+    "23": { "status": "active", "note": "implementer пишет (в worktree)" }
   }
 }

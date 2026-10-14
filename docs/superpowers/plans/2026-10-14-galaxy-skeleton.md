@@ -8278,6 +8278,7 @@ git commit -m "app: follow-cam director picks the most important fresh event"
 **Interfaces:**
 - Consumes: всё.
 - Produces: `npm run smoke` — снимки трёх уровней на 1600×900 и галактики на 1280×720 в `artifacts/smoke/`, проверка ошибок консоли, наличия панелей и того, что центр экрана свободен, замер кадров (обычный и нагрузочный). `?fps=1` — счётчик кадров в углу, `?stress=1` — 2000 кораблей.
+- Заметка с ревью задачи 16: в `scripts/smoke.ts` всё после запуска браузера обернуть в `try { … } finally { await browser.close(); await server.close() }` — как в `scripts/shot.ts` (коммит 38a08a3). Иначе при таймауте или ошибке страницы Chrome и dev-сервер остаются висеть в фоне.
 
 - [ ] **Step 1: Modify `src/app/main.tsx`**
 
