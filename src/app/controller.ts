@@ -86,7 +86,11 @@ export class Controller {
   select(p: Pick | null): void {
     this.ui.selected = p
     this.civCardId = null
-    if (p === null) this.cam.follow = null
+    if (p === null) {
+      // снятие выбора (Esc, крошки) — ручное действие: слежка выключается, иначе камера застынет без привязки
+      this.cam.follow = null
+      this.ui.follow = false
+    }
   }
 
   hover(p: Pick | null, mouse?: { x: number; y: number }): void {

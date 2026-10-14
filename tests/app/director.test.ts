@@ -42,4 +42,13 @@ describe('слежка в контроллере', () => {
     expect(c.cam.fly).not.toBeNull()
     expect(c.ui.selected).toBeNull()
   })
+
+  test('Esc (снятие выбора) выключает слежку — камера не застывает с включённой слежкой', () => {
+    const w = quietWorld(4815)
+    const c = new Controller(w, createCamera(), createClock(1), () => ({ width: 1600, height: 900 }))
+    c.toggleFollow(true)
+    c.select(null)
+    expect(c.ui.follow).toBe(false)
+    expect(c.cam.follow).toBeNull()
+  })
 })
