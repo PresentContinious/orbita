@@ -23,5 +23,11 @@
     "21": { "status": "done", "note": "коммиты d9c1f77 + 4d2375c, ревью PASS" },
     "22": { "status": "done", "note": "коммиты a0d95b9 + 1ebb3d9, ревью PASS" },
     "23": { "status": "done", "note": "коммиты 107e517 + 4f82e6d (бюджет времени кадра 20 мс), ревью PASS" }
+  },
+  "2026-10-14-galaxy-setup": {
+    "1": { "status": "active", "note": "пишется" }
+  },
+  "2026-10-14-battle": {
+    "1": { "status": "active", "note": "пишется параллельно в worktree" }
   }
 }
