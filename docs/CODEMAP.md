@@ -13,6 +13,8 @@
   - `genName` (function, 8), `uniqueName` (function, 15)
 - `src/sim/rng.ts` — 59 стр. — Генератор случайных чисел с зерном (mulberry32): одно зерно — одна и та же история.
   - `Rng` (interface, 4), `hashString` (function, 19), `createRng` (function, 28)
+- `src/sim/spatial.ts` — 46 стр. — Пространственная сетка: поиск соседей без перебора всех кораблей.
+  - `SpatialGrid` (class, 3)
 - `src/sim/types.ts` — 3 стр. — Временный файл; полностью заменяется в задаче 4
   - `SystemRole` (type, 2)
 
@@ -24,3 +26,4 @@
 
 - `tests/sim/names.test.ts` — 11 стр.
 - `tests/sim/rng.test.ts` — 60 стр.
+- `tests/sim/spatial.test.ts` — 42 стр.
