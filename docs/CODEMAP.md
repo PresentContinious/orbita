@@ -51,8 +51,8 @@
   - `newEconomy` (function, 7), `earn` (function, 35), `spend` (function, 44), `ledgerBalance` (function, 51), `creditLine` (const, 59), `netPerSec` (const, 60), `canAfford` (function, 63), `buy` (function, 71), `EconomyReport` (interface, 80), `report` (function, 92), `shipPrice` (function, 109), `shipUpkeep` (function, 114), `taxOf` (function, 118), `stationIncome` (function, 123), `adminTotal` (function, 128), `colonyPrice` (function, 141), `tradeIncome` (function, 148), `stepEconomy` (function, 158)
 - `src/sim/events.ts` — 33 стр.
   - `EventInput` (interface, 4), `pushEvent` (function, 14)
-- `src/sim/galaxy.ts` — 281 стр.
-  - `placeSystems` (function, 8), `isConnected` (function, 26), `buildCorridorEdges` (function, 55), `hopMatrix` (function, 153), `assignRoles` (function, 192), `civSlots` (function, 228), `generateGalaxy` (function, 250)
+- `src/sim/galaxy.ts` — 323 стр.
+  - `placeSystems` (function, 9), `isConnected` (function, 28), `buildCorridorEdges` (function, 57), `hopMatrix` (function, 178), `assignRoles` (function, 217), `civSlots` (function, 259), `generateGalaxy` (function, 282)
 - `src/sim/invest.ts` — 101 стр.
   - `tryInfra` (function, 9), `tryStation` (function, 17), `tryProject` (function, 26), `tryResearch` (function, 35), `advanceJobs` (function, 45)
 - `src/sim/math.ts` — 9 стр.
@@ -71,6 +71,8 @@
   - `Rng` (interface, 4), `hashString` (function, 19), `createRng` (function, 28)
 - `src/sim/routing.ts` — 71 стр.
   - `hops` (function, 6), `findPath` (function, 26), `gateTo` (function, 54), `gateGalaxyPos` (function, 58), `transitGalaxyPos` (function, 63)
+- `src/sim/setup.ts` — 81 стр.
+  - `GalaxyOptions` (interface, 4), `SETUP` (const, 17), `clampOptions` (function, 35), `Setup` (interface, 52), `setupOf` (function, 66)
 - `src/sim/ships.ts` — 80 стр.
   - `spawnShip` (function, 8), `stepShips` (function, 33)
 - `src/sim/spatial.ts` — 46 стр. — Пространственная сетка: поиск соседей без перебора всех кораблей.
@@ -79,10 +81,10 @@
   - `spawnStressShips` (function, 6)
 - `src/sim/system.ts` — 172 стр.
   - `Orbiting` (type, 7), `periodOf` (function, 9), `zoneOf` (function, 13), `tempKOf` (function, 20), `planetPos` (function, 24), `planetVel` (function, 29), `makeLook` (function, 50), `habitableCount` (function, 68), `makeAsteroid` (function, 72), `generateSystem` (function, 86)
-- `src/sim/types.ts` — 231 стр.
-  - `Zone` (type, 7), `SystemRole` (type, 8), `PlanetLook` (interface, 10), `Build` (interface, 17), `Planet` (interface, 24), `Belt` (interface, 45), `Asteroid` (interface, 50), `Gate` (interface, 60), `Star` (interface, 67), `StarSystem` (interface, 74), `Corridor` (interface, 92), `Galaxy` (interface, 102), `Mission` (type, 107), `Transit` (interface, 114), `Ship` (interface, 122), `Stage` (type, 139), `IncomeSource` (type, 140), `ExpenseCat` (type, 141), `Ledger` (interface, 143), `CivEconomy` (interface, 149), `CivProject` (interface, 166), `ResearchJob` (interface, 172), `Civ` (interface, 179), `GameEvent` (interface, 195), `Fx` (interface, 207), `World` (interface, 216)
-- `src/sim/world.ts` — 45 стр.
-  - `createWorld` (function, 12), `stepWorld` (function, 35)
+- `src/sim/types.ts` — 236 стр.
+  - `Zone` (type, 8), `SystemRole` (type, 9), `PlanetLook` (interface, 11), `Build` (interface, 18), `Planet` (interface, 25), `Belt` (interface, 46), `Asteroid` (interface, 51), `Gate` (interface, 61), `Star` (interface, 68), `StarSystem` (interface, 75), `Corridor` (interface, 93), `Galaxy` (interface, 103), `Mission` (type, 108), `Transit` (interface, 115), `Ship` (interface, 123), `Stage` (type, 140), `IncomeSource` (type, 141), `ExpenseCat` (type, 142), `Ledger` (interface, 144), `CivEconomy` (interface, 150), `CivProject` (interface, 167), `ResearchJob` (interface, 173), `Civ` (interface, 180), `GameEvent` (interface, 196), `Fx` (interface, 208), `World` (interface, 217)
+- `src/sim/world.ts` — 49 стр.
+  - `createWorld` (function, 13), `stepWorld` (function, 39)
 - `src/ui/Breadcrumbs.tsx` — 18 стр.
   - `Breadcrumbs` (function, 3)
 - `src/ui/Card.tsx` — 24 стр.
@@ -150,6 +152,7 @@
 - `tests/sim/names.test.ts` — 11 стр.
 - `tests/sim/rng.test.ts` — 60 стр.
 - `tests/sim/routing.test.ts` — 111 стр. — 0 —60— 1 —60— 2 —60— 3, напрямую 0 —200— 2; система 4 ни с кем не связана
+- `tests/sim/setup.test.ts` — 116 стр.
 - `tests/sim/ships.test.ts` — 77 стр.
 - `tests/sim/spatial.test.ts` — 42 стр.
 - `tests/sim/stepEconomy.test.ts` — 166 стр.

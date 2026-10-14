@@ -1,20 +1,22 @@
 import { CIVS, GALAXY, ORBIT } from './config'
+import { SETUP, type GalaxyOptions } from './setup'
 import { dist, TAU, type Vec } from './math'
 import type { Rng } from './rng'
 import { generateSystem } from './system'
 import type { Corridor, Galaxy, StarSystem, SystemRole } from './types'
 
 /** точки в эллипсе с минимальной дистанцией; если не влезли — эллипс +10% */
-export function placeSystems(rng: Rng, n: number): Vec[] {
-  let w = GALAXY.ellipseW
-  let h = GALAXY.ellipseH
+export function placeSystems(rng: Rng, n: number, scale = 1): Vec[] {
+  let w = GALAXY.ellipseW * scale
+  let h = GALAXY.ellipseH * scale
+  const minDist = GALAXY.minDist * scale
   for (let round = 0; round < 30; round++) {
     const pts: Vec[] = []
     for (let i = 0; i < GALAXY.placementAttempts && pts.length < n; i++) {
       const a = rng.float(0, TAU)
       const r = Math.sqrt(rng.next())
       const p = { x: (Math.cos(a) * r * w) / 2, y: (Math.sin(a) * r * h) / 2 }
-      if (pts.every((q) => dist(p, q) >= GALAXY.minDist)) pts.push(p)
+      if (pts.every((q) => dist(p, q) >= minDist)) pts.push(p)
     }
     if (pts.length === n) return pts
     w *= 1.1
@@ -52,7 +54,7 @@ function segmentsCross(p1: Vec, p2: Vec, p3: Vec, p4: Vec): boolean {
 }
 
 /** граф относительного соседства + одна петля, если вышло дерево; степень ≤ 4 */
-export function buildCorridorEdges(pts: Vec[]): [number, number][] {
+export function buildCorridorEdges(pts: Vec[], extra = 0): [number, number][] {
   const n = pts.length
   let edges: [number, number][] = []
   for (let i = 0; i < n; i++) {
@@ -147,6 +149,29 @@ export function buildCorridorEdges(pts: Vec[]): [number, number][] {
     }
     if (best) edges.push(best)
   }
+  for (let added = 0; added < extra; added++) {
+    const has = new Set(edges.map(([a, b]) => `${a}-${b}`))
+    const deg = new Array(n).fill(0)
+    for (const [a, b] of edges) {
+      deg[a]++
+      deg[b]++
+    }
+    let best: [number, number] | null = null
+    let bestLen = Infinity
+    for (let i = 0; i < n; i++) {
+      for (let j = i + 1; j < n; j++) {
+        if (has.has(`${i}-${j}`) || deg[i] >= GALAXY.maxDegree || deg[j] >= GALAXY.maxDegree) continue
+        const len = dist(pts[i], pts[j])
+        if (len >= bestLen) continue
+        if (pts.some((q, k) => k !== i && k !== j && distToSegment(q, pts[i], pts[j]) < 1e-9)) continue
+        if (edges.some(([a, b]) => a !== i && a !== j && b !== i && b !== j && segmentsCross(pts[i], pts[j], pts[a], pts[b]))) continue
+        best = [i, j]
+        bestLen = len
+      }
+    }
+    if (!best) break
+    edges.push(best)
+  }
   return edges
 }
 
@@ -189,8 +214,8 @@ function combinations(n: number, k: number): number[][] {
 }
 
 /** обитаемые — как можно дальше друг от друга; «Яма» — на развилке; рудная — из оставшихся */
-export function assignRoles(rng: Rng, n: number, edges: [number, number][]): SystemRole[] {
-  const k = n === 5 ? 3 : 4
+export function assignRoles(rng: Rng, n: number, edges: [number, number][], inhabited?: number, ore = 1, pits = 1): SystemRole[] {
+  const k = inhabited ?? (n === 5 ? 3 : 4)
   const hop = hopMatrix(n, edges)
   let best: number[] = []
   let bestMin = -1
@@ -218,20 +243,27 @@ export function assignRoles(rng: Rng, n: number, edges: [number, number][]): Sys
     deg[b]++
   }
   const rest = rng.shuffle([...Array(n).keys()].filter((i) => roles[i] !== 'inhabited'))
-  const pit = rest.reduce((b, i) => (deg[i] > deg[b] ? i : b), rest[0])
-  roles[pit] = 'pit'
-  roles[rest.find((i) => i !== pit)!] = 'ore'
+  const pitCount = Math.min(pits, rest.length)
+  const oreCount = Math.min(ore, rest.length - pitCount)
+  const left = [...rest]
+  for (let c = 0; c < pitCount; c++) {
+    const pit = left.reduce((b, i) => (deg[i] > deg[b] ? i : b), left[0])
+    roles[pit] = 'pit'
+    left.splice(left.indexOf(pit), 1)
+  }
+  for (let c = 0; c < oreCount; c++) roles[left[c]] = 'ore'
   return roles
 }
 
 /** сколько цивилизаций в каждой обитаемой системе: по 2–3, всего 8–10 */
-export function civSlots(rng: Rng, inhabited: number): number[] {
-  const total = Math.min(Math.max(rng.int(CIVS.min, CIVS.max), inhabited * 2), inhabited * 3)
-  const slots = new Array(inhabited).fill(2)
-  let extra = total - inhabited * 2
+export function civSlots(rng: Rng, inhabited: number, civs?: number, perSystem = 3): number[] {
+  const base = Math.min(2, perSystem)
+  const total = Math.min(Math.max(civs ?? rng.int(CIVS.min, CIVS.max), inhabited * base), inhabited * perSystem)
+  const slots = new Array(inhabited).fill(base)
+  let extra = total - inhabited * base
   while (extra > 0) {
     const i = rng.int(0, inhabited - 1)
-    if (slots[i] < 3) {
+    if (slots[i] < perSystem) {
       slots[i]++
       extra--
     }
@@ -247,13 +279,22 @@ function gatePos(from: StarSystem, to: StarSystem): Vec {
   return { x: (dx / d) * r, y: (dy / d) * r }
 }
 
-export function generateGalaxy(rng: Rng): Galaxy {
-  const n = rng.pick([5, 6, 6, 7])
-  const pts = placeSystems(rng, n)
-  const edges = buildCorridorEdges(pts)
-  const roles = assignRoles(rng, n, edges)
+export function generateGalaxy(rng: Rng, opts: GalaxyOptions = {}): Galaxy {
+  const n = opts.systems ?? rng.pick([5, 6, 6, 7])
+  const perSystem = opts.perSystem ?? SETUP.perSystem.def
+  const size = opts.size ?? SETUP.size.def
+  const wanted =
+    opts.civs !== undefined
+      ? Math.ceil(opts.civs / perSystem)
+      : opts.systems !== undefined
+        ? Math.round(n * SETUP.inhabitedShare)
+        : undefined
+  const want = wanted === undefined ? undefined : Math.max(1, Math.min(n - 1, wanted))
+  const pts = placeSystems(rng, n, size)
+  const edges = buildCorridorEdges(pts, Math.round((opts.links ?? 0) * n / 2))
+  const roles = assignRoles(rng, n, edges, want, opts.ore ?? SETUP.ore.def, opts.pits ?? SETUP.pits.def)
   const inhabited = roles.flatMap((r, i) => (r === 'inhabited' ? [i] : []))
-  const slots = civSlots(rng, inhabited.length)
+  const slots = civSlots(rng, inhabited.length, opts.civs, perSystem)
   const used = new Set<string>()
   const systems = pts.map((p, i) =>
     generateSystem(rng, i, roles[i], roles[i] === 'inhabited' ? slots[inhabited.indexOf(i)] : 0, p, used),
@@ -268,9 +309,10 @@ export function generateGalaxy(rng: Rng): Galaxy {
   const hi = Math.max(...lens)
   for (const c of corridors) {
     c.transit =
-      hi - lo < 1e-6
+      size *
+      (hi - lo < 1e-6
         ? (GALAXY.transitMin + GALAXY.transitMax) / 2
-        : GALAXY.transitMin + ((GALAXY.transitMax - GALAXY.transitMin) * (c.length - lo)) / (hi - lo)
+        : GALAXY.transitMin + ((GALAXY.transitMax - GALAXY.transitMin) * (c.length - lo)) / (hi - lo))
     const A = systems[c.a]
     const B = systems[c.b]
     A.gates.push({ corridorId: c.id, toSystem: c.b, pos: gatePos(A, B) })

@@ -5,13 +5,15 @@ import { stepEconomy } from './economy'
 import { EVENTS, SIM_DT } from './config'
 import { generateGalaxy } from './galaxy'
 import { createRng } from './rng'
+import { clampOptions, SETUP, setupOf, type GalaxyOptions } from './setup'
 import { stepShips } from './ships'
 import { SpatialGrid } from './spatial'
 import type { Planet, World } from './types'
 
-export function createWorld(seed: number): World {
+export function createWorld(seed: number, opts: GalaxyOptions = {}): World {
+  const o = clampOptions(opts)
   const root = createRng(seed)
-  const galaxy = generateGalaxy(root.fork('galaxy'))
+  const galaxy = generateGalaxy(root.fork('galaxy'), o)
   const planets = new Map<string, Planet>()
   for (const s of galaxy.systems) for (const p of s.planets) planets.set(p.id, p)
   const w: World = {
@@ -27,6 +29,8 @@ export function createWorld(seed: number): World {
     rng: root.fork('sim'),
     nextId: 1,
     planets,
+    settings: setupOf(galaxy, o),
+    unitCap: o.unitCap ?? SETUP.unitCap.def,
   }
   createCivs(w, root.fork('civs'))
   return w

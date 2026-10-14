@@ -1,6 +1,7 @@
 import type { Envelope, PlanetKind, ResearchBranch, ShipKind, StarType } from './config'
 import type { Vec } from './math'
 import type { Rng } from './rng'
+import type { Setup } from './setup'
 import type { SpatialGrid } from './spatial'
 
 export type { Vec }
@@ -227,4 +228,8 @@ export interface World {
   rng: Rng
   nextId: number
   planets: Map<string, Planet>
+  /** что вышло при генерации галактики */
+  settings: Setup
+  /** лимит юнитов на карте */
+  unitCap: number
 }
