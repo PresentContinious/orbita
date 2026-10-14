@@ -41,8 +41,11 @@ export class SystemLayer {
     const orbits = new Graphics()
     for (const p of s.planets) orbits.circle(0, 0, p.orbit)
     orbits.stroke({ width: 1, color: 0x1f2a44, alpha: 1, pixelLine: true })
-    for (const b of s.belts) orbits.circle(0, 0, b.orbit)
-    orbits.stroke({ width: 1, color: 0x2a3348, alpha: 0.6, pixelLine: true })
+    // пояс — статичная полоса, рисуется один раз
+    const bands = new Graphics()
+    for (const b of s.belts) bands.circle(0, 0, b.orbit).stroke({ width: b.width * 2, color: 0x9a8a70, alpha: 0.08 })
+    for (const b of s.belts) bands.circle(0, 0, b.orbit - b.width).circle(0, 0, b.orbit + b.width)
+    bands.stroke({ width: 1, color: 0x9a8a70, alpha: 0.12, pixelLine: true })
     const corona = new Sprite(this.glow)
     corona.anchor.set(0.5)
     corona.tint = s.star.color
@@ -67,7 +70,7 @@ export class SystemLayer {
       this.labels.addChild(label)
       return { p, sprite, halo, label }
     })
-    root.addChild(orbits, belt, corona, disc, gates, ...planets.map((v) => v.halo), ...planets.map((v) => v.sprite), marks)
+    root.addChild(bands, orbits, belt, corona, disc, gates, ...planets.map((v) => v.halo), ...planets.map((v) => v.sprite), marks)
     this.root.addChild(root)
     return { s, root, belt, marks, planets }
   }
@@ -88,7 +91,7 @@ export class SystemLayer {
         const q = asteroidPos(a, t)
         v.belt.circle(q.x, q.y, Math.max(a.size, dot))
       }
-      v.belt.fill({ color: 0x8a8f99, alpha: 0.85 })
+      v.belt.fill({ color: 0xc2ad8c, alpha: 0.85 })
 
       v.marks.clear()
       const labelA = Math.min(1, Math.max(0, (v.s.radius * z - 400) / 150))

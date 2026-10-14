@@ -15,7 +15,7 @@
   - `GameRenderer` (class, 10)
 - `src/render/starfield.ts` — 37 стр.
   - `Starfield` (class, 14)
-- `src/render/systemLayer.ts` — 131 стр.
+- `src/render/systemLayer.ts` — 134 стр.
   - `SystemLayer` (class, 28)
 - `src/render/territory.ts` — 28 стр.
   - `Share` (interface, 4), `territoryShares` (function, 11)
